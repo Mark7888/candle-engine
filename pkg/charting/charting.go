@@ -8,7 +8,7 @@ import (
 
 type CoolChart struct {
 	source     sources.Source
-	indicators []indicators.BasicIndicator
+	indicators []indicators.PlotIndicator
 
 	interval string
 	data     []sources.ChartEntry
@@ -20,7 +20,7 @@ func NewCoolChart(source sources.Source) *CoolChart {
 	}
 }
 
-func (c *CoolChart) AddIndicator(indicator indicators.BasicIndicator) {
+func (c *CoolChart) AddIndicator(indicator indicators.PlotIndicator) {
 	c.indicators = append(c.indicators, indicator)
 }
 

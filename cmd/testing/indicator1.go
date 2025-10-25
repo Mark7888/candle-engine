@@ -21,6 +21,6 @@ func (ti *TestIndicator1) HandleEntry(lastPoint indicators.PlotPoint, chartData 
 	return newPoint, nil
 }
 
-func CreateTestIndicator1() indicators.BasicIndicator {
+func CreateTestIndicator1() indicators.PlotIndicator {
 	return &TestIndicator1{Name: "TestIndicator1"}
 }
