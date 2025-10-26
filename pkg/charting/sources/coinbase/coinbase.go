@@ -133,8 +133,6 @@ func (c *CoinbaseSource) fetchTradingPairsIfNeeded() {
 func (c *CoinbaseSource) fetchDataIfNeeded(pairId string, granularity int, start time.Time, end time.Time) ([]CoinbaseCandle, error) {
 	url := "/products/" + pairId + "/candles"
 
-	// TODO - Implement caching of fetched data to avoid redundant API calls.
-
 	// TODO - Coinbase will only return max 300 candles per request. You may need to make multiple requests if the time range is large.
 	// https://docs.cdp.coinbase.com/exchange/rest-api/pagination
 	// TODO - Implement rate limiting handling as per Coinbase API guidelines.
