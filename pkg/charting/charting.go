@@ -4,11 +4,16 @@ import (
 	"fmt"
 	"testcharting/pkg/charting/sources"
 	"testcharting/pkg/indicators"
+	"time"
 )
 
 type CoolChart struct {
+	// TODO - enable multiple sources?
 	source     sources.Source
 	indicators []indicators.PlotIndicator
+
+	// TODO - support selecting multiple pairs
+	pair string // e.g., "Coinbase:BTC-USD"
 
 	interval string
 	data     []sources.ChartEntry
@@ -25,7 +30,8 @@ func (c *CoolChart) AddIndicator(indicator indicators.PlotIndicator) {
 }
 
 func (c *CoolChart) FetchData() error {
-	data, err := c.source.GetData(c.interval)
+	// TODO - implement logic to select pair and actual time range
+	data, err := c.source.GetData(c.pair, c.interval, time.Now().Add(-24*time.Hour), time.Now())
 	if err != nil {
 		return err
 	}

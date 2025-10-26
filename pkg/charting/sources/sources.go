@@ -2,6 +2,14 @@ package sources
 
 import "time"
 
+type TradingPair struct {
+	Id     string
+	Name   string
+	Base   string
+	Quote  string
+	Status string
+}
+
 type ChartEntry struct {
 	Timestamp time.Time
 
@@ -15,6 +23,7 @@ type ChartEntry struct {
 // TODO - Add extra methods and fields as needed to display the charts properly
 type Source interface {
 	GetName() string
+	GetTradingPairs() []TradingPair
 	GetValidIntervals() []string
-	GetData(interval string) ([]ChartEntry, error)
+	GetData(pairId string, interval string, start time.Time, end time.Time) ([]ChartEntry, error)
 }

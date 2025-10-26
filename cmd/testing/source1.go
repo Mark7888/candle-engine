@@ -2,6 +2,7 @@ package main
 
 import (
 	"testcharting/pkg/charting/sources"
+	"time"
 )
 
 type MySource struct {
@@ -12,11 +13,15 @@ func (s *MySource) GetName() string {
 	return s.Name
 }
 
+func (s *MySource) GetTradingPairs() []sources.TradingPair {
+	return []sources.TradingPair{}
+}
+
 func (s *MySource) GetValidIntervals() []string {
 	return []string{"1m", "5m", "15m", "1h", "1d"}
 }
 
-func (s *MySource) GetData(interval string) ([]sources.ChartEntry, error) {
+func (s *MySource) GetData(pairId string, interval string, start time.Time, end time.Time) ([]sources.ChartEntry, error) {
 	return []sources.ChartEntry{
 		{
 			Open:   1.00,
