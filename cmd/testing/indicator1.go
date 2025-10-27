@@ -13,7 +13,12 @@ func (ti *TestIndicator1) GetName() string {
 	return ti.Name
 }
 
-func (ti *TestIndicator1) HandleEntry(lastPoint indicators.PlotPoint, chartData []sources.ChartEntry, config indicators.ChartConfig) (indicators.PlotPoint, error) {
+func (ti *TestIndicator1) HandleEntry(plotPoints []indicators.PlotPoint, chartData []sources.ChartEntry, config indicators.ChartConfig) (indicators.PlotPoint, error) {
+	lastPoint := indicators.PlotPoint{}
+	if len(plotPoints) > 0 {
+		lastPoint = plotPoints[len(plotPoints)-1]
+	}
+
 	newPoint := indicators.PlotPoint{
 		Value: lastPoint.Value + 1.0,
 		Color: "green",

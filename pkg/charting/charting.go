@@ -72,12 +72,7 @@ func (c *CoolChart) CalculateIndicators(chartConfig indicators.ChartConfig) map[
 	for i := range c.data {
 		// Loop through indicators and get their plot points
 		for _, indicator := range c.indicators {
-			lastPoint := indicators.PlotPoint{}
-			if len(plotData[indicator.GetName()]) > 0 {
-				lastPoint = plotData[indicator.GetName()][i-1]
-			}
-
-			point, err := indicator.HandleEntry(lastPoint, c.data[:i+1], chartConfig)
+			point, err := indicator.HandleEntry(plotData[indicator.GetName()], c.data[:i+1], chartConfig)
 			if err != nil {
 				point = indicators.GenerateInvalidPlotPoint()
 			}
