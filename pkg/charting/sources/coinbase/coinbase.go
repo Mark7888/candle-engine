@@ -1,11 +1,8 @@
 package coinbase
 
 import (
-	"encoding/json"
 	"errors"
-	"io"
 	"maps"
-	"net/http"
 	"slices"
 	"testcharting/pkg/charting/sources"
 	"time"
@@ -87,23 +84,6 @@ func (c *CoinbaseSource) getValidIntervalMap() map[string]int {
 	}
 }
 
-func (c *CoinbaseSource) makeRequest(endpoint string, params map[string]string) (*http.Response, error) {
-	url := c.BaseURL + endpoint
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	q := req.URL.Query()
-	for k, v := range params {
-		q.Set(k, v)
-	}
-	req.URL.RawQuery = q.Encode()
-
-	client := &http.Client{}
-	return client.Do(req)
-}
-
 func (c *CoinbaseSource) fetchTradingPairsIfNeeded() {
 	if len(c.TradingPairs) > 0 {
 		return
@@ -111,32 +91,27 @@ func (c *CoinbaseSource) fetchTradingPairsIfNeeded() {
 
 	url := c.BaseURL + "/products"
 
-	resp, err := c.makeRequest(url, nil)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
+	pairs, _, err := sources.GetRequestParse[[]CoinbaseTradingPair](url, nil)
 	if err != nil {
 		return
 	}
 
-	var pairs []CoinbaseTradingPair
-	if err := json.Unmarshal(body, &pairs); err != nil {
-		return
-	}
-
-	c.TradingPairs = pairs
+	c.TradingPairs = *pairs
 }
 
 func (c *CoinbaseSource) fetchDataIfNeeded(pairId string, granularity int, start time.Time, end time.Time) ([]CoinbaseCandle, error) {
-	url := "/products/" + pairId + "/candles"
+	url := c.BaseURL + "/products/" + pairId + "/candles"
 
 	// TODO - Coinbase will only return max 300 candles per request. You may need to make multiple requests if the time range is large.
-	// https://docs.cdp.coinbase.com/exchange/rest-api/pagination
 	// TODO - Implement rate limiting handling as per Coinbase API guidelines.
 	// https://docs.cdp.coinbase.com/exchange/rest-api/rate-limits
+
+	candleCount := int(end.Sub(start).Seconds()) / granularity
+	requestCount := (candleCount + 299) / 300
+	// TODO - implement multiple requests if needed
+	if requestCount > 1 {
+		return nil, errors.New("time range too large, multiple requests needed - not implemented yet")
+	}
 
 	params := map[string]string{
 		"start":       start.UTC().Format(time.RFC3339),
@@ -144,21 +119,12 @@ func (c *CoinbaseSource) fetchDataIfNeeded(pairId string, granularity int, start
 		"granularity": string(rune(granularity)),
 	}
 
-	resp, err := c.makeRequest(url, params)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
+	candles, statusCode, err := sources.GetRequestParse[[]CoinbaseCandle](url, params)
 	if err != nil {
 		return nil, err
 	}
 
-	var candles []CoinbaseCandle
-	if err := json.Unmarshal(body, &candles); err != nil {
-		return nil, err
-	}
+	_ = statusCode // TODO - handle non-200 status codes
 
-	return candles, nil
+	return *candles, nil
 }
