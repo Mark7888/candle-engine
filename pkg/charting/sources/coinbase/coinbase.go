@@ -2,8 +2,10 @@ package coinbase
 
 import (
 	"errors"
+	"fmt"
 	"maps"
 	"slices"
+	"strconv"
 	"testcharting/pkg/charting/sources"
 	"time"
 )
@@ -102,29 +104,65 @@ func (c *CoinbaseSource) fetchTradingPairsIfNeeded() {
 func (c *CoinbaseSource) fetchDataIfNeeded(pairId string, granularity int, start time.Time, end time.Time) ([]CoinbaseCandle, error) {
 	url := c.BaseURL + "/products/" + pairId + "/candles"
 
-	// TODO - Coinbase will only return max 300 candles per request. You may need to make multiple requests if the time range is large.
 	// TODO - Implement rate limiting handling as per Coinbase API guidelines.
 	// https://docs.cdp.coinbase.com/exchange/rest-api/rate-limits
 
+	const maxCandlesPerRequest = 300
 	candleCount := int(end.Sub(start).Seconds()) / granularity
-	requestCount := (candleCount + 299) / 300
-	// TODO - implement multiple requests if needed
-	if requestCount > 1 {
-		return nil, errors.New("time range too large, multiple requests needed - not implemented yet")
+	requestCount := (candleCount + maxCandlesPerRequest - 1) / maxCandlesPerRequest
+
+	if requestCount == 0 {
+		requestCount = 1
 	}
 
-	params := map[string]string{
-		"start":       start.UTC().Format(time.RFC3339),
-		"end":         end.UTC().Format(time.RFC3339),
-		"granularity": string(rune(granularity)),
+	allCandles := make([]CoinbaseCandle, 0, candleCount)
+
+	// Fetch data in segments if needed
+	for i := 0; i < requestCount; i++ {
+		fmt.Println("Fetching segment", i+1, "of", requestCount)
+
+		segmentStart := start.Add(time.Duration(i*maxCandlesPerRequest*granularity) * time.Second)
+		segmentEnd := segmentStart.Add(time.Duration(maxCandlesPerRequest*granularity) * time.Second)
+
+		if segmentEnd.After(end) {
+			segmentEnd = end
+		}
+		params := map[string]string{
+			"start":       segmentStart.UTC().Format(time.RFC3339),
+			"end":         segmentEnd.UTC().Format(time.RFC3339),
+			"granularity": strconv.Itoa(granularity),
+		}
+
+		candlesRaw, statusCode, err := sources.GetRequestParse[[][]float64](url, params)
+		if err != nil {
+			return nil, err
+		}
+
+		_ = statusCode // TODO - handle non-200 status codes
+
+		candles := make([]CoinbaseCandle, 0, len(*candlesRaw))
+
+		for _, candle := range *candlesRaw {
+			if len(candle) != 6 {
+				continue
+			}
+			candles = append(candles, CoinbaseCandle{
+				Time:   int64(candle[0]),
+				Low:    candle[1],
+				High:   candle[2],
+				Open:   candle[3],
+				Close:  candle[4],
+				Volume: candle[5],
+			})
+		}
+
+		if candles != nil {
+			allCandles = append(allCandles, candles...)
+		}
 	}
 
-	candles, statusCode, err := sources.GetRequestParse[[]CoinbaseCandle](url, params)
-	if err != nil {
-		return nil, err
-	}
+	// Coinbase API returns candles in reverse chronological order, so we need to reverse them
+	slices.Reverse(allCandles)
 
-	_ = statusCode // TODO - handle non-200 status codes
-
-	return *candles, nil
+	return allCandles, nil
 }
