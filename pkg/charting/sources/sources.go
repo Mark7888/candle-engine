@@ -25,5 +25,6 @@ type Source interface {
 	GetName() string
 	GetTradingPairs() []TradingPair
 	GetValidIntervals() []string
+	GetIntervalSeconds(interval string) []int64 // Required to calculate time ranges for each source correctly
 	GetData(pairId string, interval string, start time.Time, end time.Time) ([]ChartEntry, error)
 }

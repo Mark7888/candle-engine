@@ -24,6 +24,10 @@ func (c *CachedSource) GetValidIntervals() []string {
 	return c.Source.GetValidIntervals()
 }
 
+func (c *CachedSource) GetIntervalSeconds(interval string) []int64 {
+	return c.Source.GetIntervalSeconds(interval)
+}
+
 func (c *CachedSource) GetData(pairId string, interval string, start time.Time, end time.Time) ([]sources.ChartEntry, error) {
 	// TODO - implement caching logic
 	return c.Source.GetData(pairId, interval, start, end)

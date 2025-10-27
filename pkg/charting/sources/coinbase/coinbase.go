@@ -48,6 +48,15 @@ func (c *CoinbaseSource) GetValidIntervals() []string {
 	return slices.Collect(maps.Keys(intervalMap))
 }
 
+func (c *CoinbaseSource) GetIntervalSeconds(interval string) []int64 {
+	intervalMap := c.getValidIntervalMap()
+	granularity, ok := intervalMap[interval]
+	if !ok {
+		return nil
+	}
+	return []int64{int64(granularity)}
+}
+
 func (c *CoinbaseSource) GetData(pairId string, interval string, start time.Time, end time.Time) ([]sources.ChartEntry, error) {
 	intervalMap := c.getValidIntervalMap()
 	granularity, ok := intervalMap[interval]
