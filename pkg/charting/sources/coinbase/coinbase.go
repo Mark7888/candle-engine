@@ -69,18 +69,7 @@ func (c *CoinbaseSource) GetData(pairId string, interval string, start time.Time
 		return nil, err
 	}
 
-	entries := make([]sources.ChartEntry, len(candles))
-	for i, candle := range candles {
-		entries[i] = sources.ChartEntry{
-			Timestamp: time.Unix(candle.Time, 0),
-			Open:      candle.Open,
-			High:      candle.High,
-			Low:       candle.Low,
-			Close:     candle.Close,
-			Volume:    candle.Volume,
-		}
-	}
-	return entries, nil
+	return candles, nil
 }
 
 func (c *CoinbaseSource) getValidIntervalMap() map[string]int {
@@ -110,7 +99,7 @@ func (c *CoinbaseSource) fetchTradingPairsIfNeeded() {
 	c.TradingPairs = *pairs
 }
 
-func (c *CoinbaseSource) fetchDataIfNeeded(pairId string, granularity int, start time.Time, end time.Time) ([]CoinbaseCandle, error) {
+func (c *CoinbaseSource) fetchDataIfNeeded(pairId string, granularity int, start time.Time, end time.Time) ([]sources.ChartEntry, error) {
 	url := c.BaseURL + "/products/" + pairId + "/candles"
 
 	// TODO - Implement rate limiting handling as per Coinbase API guidelines.
@@ -124,7 +113,7 @@ func (c *CoinbaseSource) fetchDataIfNeeded(pairId string, granularity int, start
 		requestCount = 1
 	}
 
-	allCandles := make([]CoinbaseCandle, 0, candleCount)
+	allCandles := make([]sources.ChartEntry, 0, candleCount)
 
 	// Fetch data in segments if needed
 	for i := 0; i < requestCount; i++ {
@@ -149,19 +138,19 @@ func (c *CoinbaseSource) fetchDataIfNeeded(pairId string, granularity int, start
 
 		_ = statusCode // TODO - handle non-200 status codes
 
-		candles := make([]CoinbaseCandle, 0, len(*candlesRaw))
+		candles := make([]sources.ChartEntry, 0, len(*candlesRaw))
 
 		for _, candle := range *candlesRaw {
 			if len(candle) != 6 {
 				continue
 			}
-			candles = append(candles, CoinbaseCandle{
-				Time:   int64(candle[0]),
-				Low:    candle[1],
-				High:   candle[2],
-				Open:   candle[3],
-				Close:  candle[4],
-				Volume: candle[5],
+			candles = append(candles, sources.ChartEntry{
+				Timestamp: time.Unix(int64(candle[0]), 0),
+				Low:       candle[1],
+				High:      candle[2],
+				Open:      candle[3],
+				Close:     candle[4],
+				Volume:    candle[5],
 			})
 		}
 

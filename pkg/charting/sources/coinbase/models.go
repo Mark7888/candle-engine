@@ -20,12 +20,3 @@ type CoinbaseTradingPair struct {
 	AuctionMode            bool   `json:"auction_mode"`
 	HighBidLimitPercentage string `json:"high_bid_limit_percentage"`
 }
-
-type CoinbaseCandle struct {
-	Time   int64   `json:"time"`
-	Low    float64 `json:"low"`
-	High   float64 `json:"high"`
-	Open   float64 `json:"open"`
-	Close  float64 `json:"close"`
-	Volume float64 `json:"volume"`
-}

@@ -21,6 +21,23 @@ func (s *MySource) GetValidIntervals() []string {
 	return []string{"1m", "5m", "15m", "1h", "1d"}
 }
 
+func (s *MySource) GetIntervalSeconds(interval string) []int64 {
+	switch interval {
+	case "1m":
+		return []int64{60}
+	case "5m":
+		return []int64{300}
+	case "15m":
+		return []int64{900}
+	case "1h":
+		return []int64{3600}
+	case "1d":
+		return []int64{86400}
+	default:
+		return []int64{}
+	}
+}
+
 func (s *MySource) GetData(pairId string, interval string, start time.Time, end time.Time) ([]sources.ChartEntry, error) {
 	return []sources.ChartEntry{
 		{

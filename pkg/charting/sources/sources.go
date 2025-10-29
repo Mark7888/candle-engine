@@ -3,21 +3,21 @@ package sources
 import "time"
 
 type TradingPair struct {
-	Id     string
-	Name   string
-	Base   string
-	Quote  string
-	Status string
+	Id     string `json:"id"`
+	Name   string `json:"name"`
+	Base   string `json:"base"`
+	Quote  string `json:"quote"`
+	Status string `json:"status"`
 }
 
 type ChartEntry struct {
-	Timestamp time.Time
+	Timestamp time.Time `json:"timestamp"`
 
-	Open   float64
-	High   float64
-	Low    float64
-	Close  float64
-	Volume float64
+	Open   float64 `json:"open"`
+	High   float64 `json:"high"`
+	Low    float64 `json:"low"`
+	Close  float64 `json:"close"`
+	Volume float64 `json:"volume"`
 }
 
 // TODO - Add extra methods and fields as needed to display the charts properly
