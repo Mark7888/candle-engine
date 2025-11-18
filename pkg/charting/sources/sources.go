@@ -20,11 +20,16 @@ type ChartEntry struct {
 	Volume float64 `json:"volume"`
 }
 
+type TimeRange struct {
+	Start time.Time
+	End   time.Time
+}
+
 // TODO - Add extra methods and fields as needed to display the charts properly
 type Source interface {
 	GetName() string
 	GetTradingPairs() []TradingPair
 	GetValidIntervals() []string
 	GetIntervalSeconds(interval string) []int64 // Required to calculate time ranges for each source correctly
-	GetData(pairId string, interval string, start time.Time, end time.Time) ([]ChartEntry, error)
+	GetData(pairId string, interval string, timeRange TimeRange) ([]ChartEntry, error)
 }

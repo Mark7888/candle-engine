@@ -31,7 +31,11 @@ func (c *CoolChart) AddIndicator(indicator indicators.PlotIndicator) {
 
 func (c *CoolChart) FetchData() error {
 	// TODO - implement logic to select pair and actual time range
-	data, err := c.source.GetData(c.pair, c.interval, time.Now().Add(-24*time.Hour), time.Now())
+	timeRange := sources.TimeRange{
+		Start: time.Now().Add(-24 * time.Hour),
+		End:   time.Now(),
+	}
+	data, err := c.source.GetData(c.pair, c.interval, timeRange)
 	if err != nil {
 		return err
 	}

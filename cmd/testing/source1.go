@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"testcharting/pkg/charting/sources"
 	"time"
 )
@@ -38,30 +39,35 @@ func (s *MySource) GetIntervalSeconds(interval string) []int64 {
 	}
 }
 
-func (s *MySource) GetData(pairId string, interval string, start time.Time, end time.Time) ([]sources.ChartEntry, error) {
-	return []sources.ChartEntry{
-		{
-			Open:   1.00,
-			High:   1.05,
-			Low:    0.95,
-			Close:  1.00,
-			Volume: 1000,
-		},
-		{
-			Open:   1.00,
-			High:   1.10,
-			Low:    0.90,
-			Close:  1.05,
-			Volume: 1500,
-		},
-		{
-			Open:   2.00,
-			High:   2.05,
-			Low:    1.95,
-			Close:  2.00,
-			Volume: 2000,
-		},
-	}, nil
+func (s *MySource) GetData(pairId string, interval string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
+	fmt.Printf("🔥 API CALL - GetData(%s, %s, %s, %s)\n",
+		pairId, interval, timeRange.Start.Format("2006-01-02 15:04"), timeRange.End.Format("2006-01-02 15:04"))
+
+	// Generate data for each hour between start and end
+	var entries []sources.ChartEntry
+	current := timeRange.Start
+
+	intervalSecondsSlice := s.GetIntervalSeconds(interval)
+	if len(intervalSecondsSlice) == 0 {
+		fmt.Printf("   → Invalid interval, returning empty data\n")
+		return entries, nil
+	}
+	intervalSeconds := intervalSecondsSlice[0]
+
+	for !current.After(timeRange.End) {
+		entries = append(entries, sources.ChartEntry{
+			Timestamp: current,
+			Open:      100.0,
+			High:      105.0,
+			Low:       95.0,
+			Close:     102.0,
+			Volume:    1000.0,
+		})
+		current = current.Add(time.Duration(intervalSeconds) * time.Second)
+	}
+
+	fmt.Printf("   → Returned %d entries\n", len(entries))
+	return entries, nil
 }
 
 func CreateMySource() sources.Source {

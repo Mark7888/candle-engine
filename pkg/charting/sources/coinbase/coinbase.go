@@ -57,14 +57,14 @@ func (c *CoinbaseSource) GetIntervalSeconds(interval string) []int64 {
 	return []int64{int64(granularity)}
 }
 
-func (c *CoinbaseSource) GetData(pairId string, interval string, start time.Time, end time.Time) ([]sources.ChartEntry, error) {
+func (c *CoinbaseSource) GetData(pairId string, interval string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
 	intervalMap := c.getValidIntervalMap()
 	granularity, ok := intervalMap[interval]
 	if !ok {
 		return nil, errors.New("invalid interval")
 	}
 
-	candles, err := c.fetchDataIfNeeded(pairId, granularity, start, end)
+	candles, err := c.fetchDataIfNeeded(pairId, granularity, timeRange)
 	if err != nil {
 		return nil, err
 	}
@@ -99,14 +99,14 @@ func (c *CoinbaseSource) fetchTradingPairsIfNeeded() {
 	c.TradingPairs = *pairs
 }
 
-func (c *CoinbaseSource) fetchDataIfNeeded(pairId string, granularity int, start time.Time, end time.Time) ([]sources.ChartEntry, error) {
+func (c *CoinbaseSource) fetchDataIfNeeded(pairId string, granularity int, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
 	url := c.BaseURL + "/products/" + pairId + "/candles"
 
 	// TODO - Implement rate limiting handling as per Coinbase API guidelines.
 	// https://docs.cdp.coinbase.com/exchange/rest-api/rate-limits
 
 	const maxCandlesPerRequest = 300
-	candleCount := int(end.Sub(start).Seconds()) / granularity
+	candleCount := int(timeRange.End.Sub(timeRange.Start).Seconds()) / granularity
 	requestCount := (candleCount + maxCandlesPerRequest - 1) / maxCandlesPerRequest
 
 	if requestCount == 0 {
@@ -119,11 +119,11 @@ func (c *CoinbaseSource) fetchDataIfNeeded(pairId string, granularity int, start
 	for i := 0; i < requestCount; i++ {
 		fmt.Println("Fetching segment", i+1, "of", requestCount)
 
-		segmentStart := start.Add(time.Duration(i*maxCandlesPerRequest*granularity) * time.Second)
+		segmentStart := timeRange.Start.Add(time.Duration(i*maxCandlesPerRequest*granularity) * time.Second)
 		segmentEnd := segmentStart.Add(time.Duration(maxCandlesPerRequest*granularity) * time.Second)
 
-		if segmentEnd.After(end) {
-			segmentEnd = end
+		if segmentEnd.After(timeRange.End) {
+			segmentEnd = timeRange.End
 		}
 		params := map[string]string{
 			"start":       segmentStart.UTC().Format(time.RFC3339),
