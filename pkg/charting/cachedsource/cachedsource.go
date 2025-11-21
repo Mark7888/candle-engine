@@ -1,30 +1,27 @@
 package cachedsource
 
 import (
+	"encoding/json"
+	"fmt"
+	"os"
 	"sort"
 	"sync"
 	"testcharting/pkg/charting/sources"
 	"time"
 )
 
-// cacheKey uniquely identifies cached data by pair and interval
-type cacheKey struct {
-	pairId   string
-	interval string
-}
-
 // cachedData stores chart entries with their time range
 type cachedData struct {
-	entries []sources.ChartEntry
-	start   time.Time
-	end     time.Time
+	Entries []sources.ChartEntry `json:"entries"`
+	Start   time.Time            `json:"start"`
+	End     time.Time            `json:"end"`
 }
 
 type CachedSource struct {
-	Source sources.Source
-	cache  map[cacheKey][]cachedData
-	mu     sync.RWMutex
-	// TODO - save cache to file?
+	Source   sources.Source
+	cache    map[string]map[string][]cachedData // pairId -> interval -> []cachedData
+	mu       sync.RWMutex
+	filePath string // empty string disables file persistence
 }
 
 func (c *CachedSource) GetName() string {
@@ -44,29 +41,32 @@ func (c *CachedSource) GetIntervalSeconds(interval string) []int64 {
 }
 
 func (c *CachedSource) GetData(pairId string, interval string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
-	key := cacheKey{pairId: pairId, interval: interval}
-
 	c.mu.RLock()
-	cachedRanges, exists := c.cache[key]
+	pairCache, pairExists := c.cache[pairId]
+	var cachedRanges []cachedData
+	var exists bool
+	if pairExists {
+		cachedRanges, exists = pairCache[interval]
+	}
 	c.mu.RUnlock()
 
 	if !exists {
 		// No cache for this pair/interval, fetch all data
-		return c.fetchAndCache(key, timeRange)
+		return c.fetchAndCache(pairId, interval, timeRange)
 	}
 
 	// Find what ranges we need to fetch
 	missingRanges := c.findMissingRanges(cachedRanges, timeRange)
 	// Fetch missing ranges
 	for _, missingRange := range missingRanges {
-		_, err := c.fetchAndCache(key, missingRange)
+		_, err := c.fetchAndCache(pairId, interval, missingRange)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// Now collect all relevant cached data for the requested range
-	return c.getFromCache(key, timeRange), nil
+	return c.getFromCache(pairId, interval, timeRange), nil
 }
 
 // findMissingRanges determines which time ranges are not covered by the cache
@@ -79,7 +79,7 @@ func (c *CachedSource) findMissingRanges(cachedRanges []cachedData, timeRange so
 	sortedRanges := make([]cachedData, len(cachedRanges))
 	copy(sortedRanges, cachedRanges)
 	sort.Slice(sortedRanges, func(i, j int) bool {
-		return sortedRanges[i].start.Before(sortedRanges[j].start)
+		return sortedRanges[i].Start.Before(sortedRanges[j].Start)
 	})
 
 	var missing []sources.TimeRange
@@ -87,8 +87,8 @@ func (c *CachedSource) findMissingRanges(cachedRanges []cachedData, timeRange so
 
 	for _, cached := range sortedRanges {
 		// If there's a gap before this cached range
-		if currentStart.Before(cached.start) && cached.start.Before(timeRange.End) {
-			gapEnd := cached.start
+		if currentStart.Before(cached.Start) && cached.Start.Before(timeRange.End) {
+			gapEnd := cached.Start
 			if timeRange.End.Before(gapEnd) {
 				gapEnd = timeRange.End
 			}
@@ -96,8 +96,8 @@ func (c *CachedSource) findMissingRanges(cachedRanges []cachedData, timeRange so
 		}
 
 		// Move currentStart past this cached range
-		if cached.end.After(currentStart) {
-			currentStart = cached.end
+		if cached.End.After(currentStart) {
+			currentStart = cached.End
 		}
 
 		// If we've covered up to or past the requested end, we're done
@@ -115,8 +115,8 @@ func (c *CachedSource) findMissingRanges(cachedRanges []cachedData, timeRange so
 }
 
 // fetchAndCache fetches data from the source and adds it to the cache
-func (c *CachedSource) fetchAndCache(key cacheKey, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
-	entries, err := c.Source.GetData(key.pairId, key.interval, timeRange)
+func (c *CachedSource) fetchAndCache(pairId string, interval string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
+	entries, err := c.Source.GetData(pairId, interval, timeRange)
 	if err != nil {
 		return nil, err
 	}
@@ -130,25 +130,38 @@ func (c *CachedSource) fetchAndCache(key cacheKey, timeRange sources.TimeRange) 
 	actualEnd := entries[len(entries)-1].Timestamp
 
 	newCache := cachedData{
-		entries: entries,
-		start:   actualStart,
-		end:     actualEnd,
+		Entries: entries,
+		Start:   actualStart,
+		End:     actualEnd,
 	}
 
 	c.mu.Lock()
-	if c.cache[key] == nil {
-		c.cache[key] = []cachedData{}
+	if c.cache[pairId] == nil {
+		c.cache[pairId] = make(map[string][]cachedData)
 	}
-	c.cache[key] = append(c.cache[key], newCache)
+	if c.cache[pairId][interval] == nil {
+		c.cache[pairId][interval] = []cachedData{}
+	}
+	c.cache[pairId][interval] = append(c.cache[pairId][interval], newCache)
+
+	// Export to file if persistence is enabled
+	if c.filePath != "" {
+		if err := c.exportCacheToFile(); err != nil {
+			fmt.Printf("⚠️  [CachedSource] Failed to export cache to file '%s': %v\n", c.filePath, err)
+		}
+	}
 	c.mu.Unlock()
 
 	return entries, nil
 }
 
 // getFromCache retrieves all cached entries within the specified time range
-func (c *CachedSource) getFromCache(key cacheKey, timeRange sources.TimeRange) []sources.ChartEntry {
+func (c *CachedSource) getFromCache(pairId string, interval string, timeRange sources.TimeRange) []sources.ChartEntry {
 	c.mu.RLock()
-	cachedRanges := c.cache[key]
+	var cachedRanges []cachedData
+	if pairCache, exists := c.cache[pairId]; exists {
+		cachedRanges = pairCache[interval]
+	}
 	c.mu.RUnlock()
 
 	var result []sources.ChartEntry
@@ -156,11 +169,11 @@ func (c *CachedSource) getFromCache(key cacheKey, timeRange sources.TimeRange) [
 
 	for _, cached := range cachedRanges {
 		// Check if this cached range overlaps with requested range
-		if cached.end.Before(timeRange.Start) || cached.start.After(timeRange.End) {
+		if cached.End.Before(timeRange.Start) || cached.Start.After(timeRange.End) {
 			continue
 		}
 
-		for _, entry := range cached.entries {
+		for _, entry := range cached.Entries {
 			// Check if entry is within requested range and not already added
 			if !entry.Timestamp.Before(timeRange.Start) && !entry.Timestamp.After(timeRange.End) && !seen[entry.Timestamp] {
 				result = append(result, entry)
@@ -177,9 +190,67 @@ func (c *CachedSource) getFromCache(key cacheKey, timeRange sources.TimeRange) [
 	return result
 }
 
-func NewCachedSource(source sources.Source) sources.Source {
-	return &CachedSource{
-		Source: source,
-		cache:  make(map[cacheKey][]cachedData),
+// exportCacheToFile writes the cache to disk
+// Must be called with mu Lock held
+func (c *CachedSource) exportCacheToFile() error {
+	fmt.Printf("💾 [CachedSource] Exporting cache to file: %s\n", c.filePath)
+	data, err := json.MarshalIndent(c.cache, "", "  ")
+	if err != nil {
+		fmt.Printf("❌ [CachedSource] Failed to marshal cache data: %v\n", err)
+		return err
 	}
+	err = os.WriteFile(c.filePath, data, 0644)
+	if err != nil {
+		fmt.Printf("❌ [CachedSource] Failed to write cache file '%s': %v\n", c.filePath, err)
+		return err
+	}
+	fmt.Printf("✅ [CachedSource] Cache exported successfully to: %s\n", c.filePath)
+	return nil
+}
+
+// importCacheFromFile loads the cache from disk
+// Must be called with mu Lock held
+func (c *CachedSource) importCacheFromFile() error {
+	fmt.Printf("📂 [CachedSource] Importing cache from file: %s\n", c.filePath)
+	data, err := os.ReadFile(c.filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			fmt.Printf("ℹ️  [CachedSource] Cache file does not exist yet: %s\n", c.filePath)
+			return nil
+		}
+		fmt.Printf("❌ [CachedSource] Failed to read cache file '%s': %v\n", c.filePath, err)
+		return err
+	}
+
+	if len(data) == 0 {
+		fmt.Printf("ℹ️  [CachedSource] Cache file is empty: %s\n", c.filePath)
+		return nil
+	}
+
+	err = json.Unmarshal(data, &c.cache)
+	if err != nil {
+		fmt.Printf("❌ [CachedSource] Failed to unmarshal cache data from '%s': %v\n", c.filePath, err)
+		return err
+	}
+	fmt.Printf("✅ [CachedSource] Cache imported successfully from: %s\n", c.filePath)
+	return nil
+}
+
+func NewCachedSource(source sources.Source, file string) sources.Source {
+	cs := &CachedSource{
+		Source:   source,
+		cache:    make(map[string]map[string][]cachedData),
+		filePath: file,
+	}
+
+	// Import existing cache if file persistence is enabled
+	if file != "" {
+		cs.mu.Lock()
+		if err := cs.importCacheFromFile(); err != nil {
+			fmt.Printf("⚠️  [CachedSource] Failed to import cache on initialization, starting with empty cache: %v\n", err)
+		}
+		cs.mu.Unlock()
+	}
+
+	return cs
 }
