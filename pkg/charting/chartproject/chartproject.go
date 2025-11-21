@@ -25,14 +25,22 @@ func NewChartProject(title string) *ChartProject {
 	}
 }
 
-func (c *ChartProject) AddSource(source sources.Source) {
+func (c *ChartProject) AddSources(sources_ ...sources.Source) {
 	if c.loadedSources == nil {
 		c.loadedSources = make(map[string]sources.Source)
 	}
-	c.loadedSources[source.GetName()] = source
+	for _, source := range sources_ {
+		c.loadedSources[source.GetName()] = source
+	}
 }
 
-func (c *ChartProject) AddTradingPair(pair string) {
+func (c *ChartProject) AddTradingPairs(pairs ...string) {
+	for _, pair := range pairs {
+		c.addTradingPair(pair)
+	}
+}
+
+func (c *ChartProject) addTradingPair(pair string) {
 	for _, p := range c.selectedPairs {
 		if p == pair {
 			return
