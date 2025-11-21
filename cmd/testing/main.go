@@ -17,7 +17,10 @@ func main() {
 	indicator1 := CreateTestIndicator1()
 	indicator2 := CreateTestIndicator2()
 
-	chart := charting.NewCoolChart(source)
+	chart := charting.NewCoolChart()
+	chart.AddSource(source)
+	chart.AddTradingPair("Coinbase:BTC-USD")
+	chart.SetInterval("1h")
 	chart.AddIndicator(indicator1)
 	chart.AddIndicator(indicator2)
 

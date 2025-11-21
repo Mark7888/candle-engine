@@ -8,21 +8,39 @@ import (
 )
 
 type CoolChart struct {
-	// TODO - enable multiple sources?
-	source     sources.Source
-	indicators []indicators.PlotIndicator
-
-	// TODO - support selecting multiple pairs
-	pair string // e.g., "Coinbase:BTC-USD"
+	// TODO - is map the best structure here?
+	loadedSources map[string]sources.Source // key is source name
+	selectedPairs []string                  // e.g., "Coinbase:BTC-USD"
+	indicators    []indicators.PlotIndicator
 
 	interval string
-	data     []sources.ChartEntry
+
+	data []sources.ChartEntry
 }
 
-func NewCoolChart(source sources.Source) *CoolChart {
-	return &CoolChart{
-		source: source,
+func NewCoolChart() *CoolChart {
+	return &CoolChart{}
+}
+
+func (c *CoolChart) AddSource(source sources.Source) {
+	if c.loadedSources == nil {
+		c.loadedSources = make(map[string]sources.Source)
 	}
+	c.loadedSources[source.GetName()] = source
+}
+
+func (c *CoolChart) AddTradingPair(pair string) {
+	for _, p := range c.selectedPairs {
+		if p == pair {
+			return
+		}
+	}
+
+	c.selectedPairs = append(c.selectedPairs, pair)
+}
+
+func (c *CoolChart) SetInterval(interval string) {
+	c.interval = interval
 }
 
 func (c *CoolChart) AddIndicator(indicator indicators.PlotIndicator) {
@@ -35,7 +53,7 @@ func (c *CoolChart) FetchData() error {
 		Start: time.Now().Add(-24 * time.Hour),
 		End:   time.Now(),
 	}
-	data, err := c.source.GetData(c.pair, c.interval, timeRange)
+	data, err := c.loadedSources["Coinbase"].GetData(c.selectedPairs[0], c.interval, timeRange)
 	if err != nil {
 		return err
 	}
