@@ -95,9 +95,11 @@ func (c *ChartProject) CalculateIndicators(chartConfig indicators.ChartConfig) m
 	plotData := make(map[string][]indicators.PlotPoint)
 
 	for i := range c.data {
+		multiSourceEntries := sources.NewMultiSourceEntries()
+		multiSourceEntries.AddEntries(c.selectedPairs[0], c.data[:i+1])
 		// Loop through indicators and get their plot points
 		for _, indicator := range c.indicators {
-			point, err := indicator.HandleEntry(plotData[indicator.GetName()], c.data[:i+1], chartConfig)
+			point, err := indicator.HandleEntry(plotData[indicator.GetName()], multiSourceEntries, chartConfig)
 			if err != nil {
 				point = indicators.GenerateInvalidPlotPoint()
 			}

@@ -16,5 +16,5 @@ func GenerateInvalidPlotPoint() PlotPoint {
 
 type PlotIndicator interface {
 	GetName() string
-	HandleEntry(points []PlotPoint, chartData []sources.ChartEntry, config ChartConfig) (PlotPoint, error)
+	HandleEntry(points []PlotPoint, chartsData *sources.MultiSourceEntries, config ChartConfig) (PlotPoint, error)
 }

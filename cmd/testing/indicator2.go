@@ -13,7 +13,7 @@ func (ti *TestIndicator2) GetName() string {
 	return ti.Name
 }
 
-func (ti *TestIndicator2) HandleEntry(plotPoints []indicators.PlotPoint, chartData []sources.ChartEntry, config indicators.ChartConfig) (indicators.PlotPoint, error) {
+func (ti *TestIndicator2) HandleEntry(plotPoints []indicators.PlotPoint, chartsData *sources.MultiSourceEntries, config indicators.ChartConfig) (indicators.PlotPoint, error) {
 	lastPoint := indicators.PlotPoint{}
 	if len(plotPoints) > 0 {
 		lastPoint = plotPoints[len(plotPoints)-1]
