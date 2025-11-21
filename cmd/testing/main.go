@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"testcharting/pkg/charting"
+	"testcharting/pkg/charting/chartproject"
 )
 
 func main() {
@@ -17,7 +17,7 @@ func main() {
 	indicator1 := CreateTestIndicator1()
 	indicator2 := CreateTestIndicator2()
 
-	chart := charting.NewCoolChart()
+	chart := chartproject.NewChartProject("First Chart Project")
 	chart.AddSource(source)
 	chart.AddTradingPair("Coinbase:BTC-USD")
 	chart.SetInterval("1h")

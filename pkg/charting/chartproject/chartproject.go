@@ -1,4 +1,4 @@
-package charting
+package chartproject
 
 import (
 	"fmt"
@@ -7,7 +7,8 @@ import (
 	"time"
 )
 
-type CoolChart struct {
+type ChartProject struct {
+	title string
 	// TODO - is map the best structure here?
 	loadedSources map[string]sources.Source // key is source name
 	selectedPairs []string                  // e.g., "Coinbase:BTC-USD"
@@ -18,18 +19,20 @@ type CoolChart struct {
 	data []sources.ChartEntry
 }
 
-func NewCoolChart() *CoolChart {
-	return &CoolChart{}
+func NewChartProject(title string) *ChartProject {
+	return &ChartProject{
+		title: title,
+	}
 }
 
-func (c *CoolChart) AddSource(source sources.Source) {
+func (c *ChartProject) AddSource(source sources.Source) {
 	if c.loadedSources == nil {
 		c.loadedSources = make(map[string]sources.Source)
 	}
 	c.loadedSources[source.GetName()] = source
 }
 
-func (c *CoolChart) AddTradingPair(pair string) {
+func (c *ChartProject) AddTradingPair(pair string) {
 	for _, p := range c.selectedPairs {
 		if p == pair {
 			return
@@ -39,15 +42,15 @@ func (c *CoolChart) AddTradingPair(pair string) {
 	c.selectedPairs = append(c.selectedPairs, pair)
 }
 
-func (c *CoolChart) SetInterval(interval string) {
+func (c *ChartProject) SetInterval(interval string) {
 	c.interval = interval
 }
 
-func (c *CoolChart) AddIndicator(indicator indicators.PlotIndicator) {
+func (c *ChartProject) AddIndicator(indicator indicators.PlotIndicator) {
 	c.indicators = append(c.indicators, indicator)
 }
 
-func (c *CoolChart) FetchData() error {
+func (c *ChartProject) FetchData() error {
 	// TODO - implement logic to select pair and actual time range
 	timeRange := sources.TimeRange{
 		Start: time.Now().Add(-24 * time.Hour),
@@ -62,13 +65,13 @@ func (c *CoolChart) FetchData() error {
 }
 
 // TODO - implement rendering logic
-func (c *CoolChart) Render() {
+func (c *ChartProject) Render() {
 	if len(c.data) == 0 {
 		fmt.Println("No data fetched yet, fetching now...")
 		c.FetchData()
 	}
 
-	fmt.Println("Rendering CoolChart with", len(c.indicators), "indicators and", len(c.data), "data points.")
+	fmt.Println("Rendering ChartProject with", len(c.indicators), "indicators and", len(c.data), "data points.")
 	// Implementation to render the chart
 
 	chartConfig := indicators.ChartConfig{
@@ -88,7 +91,7 @@ func (c *CoolChart) Render() {
 	// Final rendering logic
 }
 
-func (c *CoolChart) CalculateIndicators(chartConfig indicators.ChartConfig) map[string][]indicators.PlotPoint {
+func (c *ChartProject) CalculateIndicators(chartConfig indicators.ChartConfig) map[string][]indicators.PlotPoint {
 	plotData := make(map[string][]indicators.PlotPoint)
 
 	for i := range c.data {
