@@ -1,6 +1,6 @@
 package indicators
 
 type ChartConfig struct {
-	Interval string
+	Interval int // in seconds
 	// Other configuration fields can be added here
 }

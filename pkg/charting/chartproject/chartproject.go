@@ -26,7 +26,7 @@ func (c *ChartProject) AddSources(sources_ ...sources.Source) {
 	c.sourceManager.AddSources(sources_...)
 }
 
-func (c *ChartProject) AddTradingPairs(pairs ...string) {
+func (c *ChartProject) AddTradingPairs(pairs ...sources.SourcePairId) {
 	c.sourceManager.AddTradingPairs(pairs...)
 }
 
@@ -76,21 +76,24 @@ func (c *ChartProject) Render() {
 
 // TODO - fix to support multiple pairs and sources
 func (c *ChartProject) CalculateIndicators(chartConfig indicators.ChartConfig) map[string][]indicators.PlotPoint {
-	plotData := make(map[string][]indicators.PlotPoint)
+	/*
+		plotData := make(map[string][]indicators.PlotPoint)
 
-	for i := range c.sourceManager.fetchedData {
-		multiSourceEntries := sources.NewMultiSourceEntries()
-		multiSourceEntries.AddEntries(c.sourceManager.selectedPairs[0], c.sourceManager.fetchedData[:i+1])
-		// Loop through indicators and get their plot points
-		for _, indicator := range c.indicators {
-			point, err := indicator.HandleEntry(plotData[indicator.GetName()], multiSourceEntries, chartConfig)
-			if err != nil {
-				point = indicators.GenerateInvalidPlotPoint()
+		for i := range c.sourceManager.fetchedData {
+			multiSourceEntries := sources.NewMultiSourceEntries()
+			multiSourceEntries.AddEntries(c.sourceManager.selectedPairs[0], c.sourceManager.fetchedData[:i+1])
+			// Loop through indicators and get their plot points
+			for _, indicator := range c.indicators {
+				point, err := indicator.HandleEntry(plotData[indicator.GetName()], multiSourceEntries, chartConfig)
+				if err != nil {
+					point = indicators.GenerateInvalidPlotPoint()
+				}
+
+				plotData[indicator.GetName()] = append(plotData[indicator.GetName()], point)
 			}
-
-			plotData[indicator.GetName()] = append(plotData[indicator.GetName()], point)
 		}
-	}
 
-	return plotData
+		return plotData
+	*/
+	return nil
 }

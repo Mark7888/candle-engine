@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"testcharting/pkg/charting/chartproject"
+	"testcharting/pkg/charting/sources"
 )
 
 func customTest() {
@@ -16,7 +17,7 @@ func customTest() {
 
 	chart := chartproject.NewChartProject("First Chart Project")
 	chart.AddSources(source)
-	chart.AddTradingPairs("Coinbase:BTC-USD")
+	chart.AddTradingPairs(sources.SourcePairId{SourceName: "Coinbase", PairId: "BTC-USD"})
 	chart.SetInterval("1h")
 	chart.AddIndicator(indicator1)
 	chart.AddIndicator(indicator2)

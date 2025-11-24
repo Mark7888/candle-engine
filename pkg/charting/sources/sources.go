@@ -1,31 +1,5 @@
 package sources
 
-import "time"
-
-type TradingPair struct {
-	Id     string `json:"id"`
-	Name   string `json:"name"`
-	Base   string `json:"base"`
-	Quote  string `json:"quote"`
-	Status string `json:"status"`
-}
-
-type ChartEntry struct {
-	Timestamp time.Time `json:"timestamp"`
-
-	Open   float64 `json:"open"`
-	High   float64 `json:"high"`
-	Low    float64 `json:"low"`
-	Close  float64 `json:"close"`
-	Volume float64 `json:"volume"`
-}
-
-type TimeRange struct {
-	Start time.Time
-	End   time.Time
-}
-
-// TODO - Add extra methods and fields as needed to display the charts properly
 type Source interface {
 	GetName() string
 	GetTradingPairs() []TradingPair
