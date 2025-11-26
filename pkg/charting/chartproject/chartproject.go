@@ -8,7 +8,7 @@ import (
 type ChartProject struct {
 	title         string
 	sourceManager *ChartSourceManager
-	indicators    []indicators.PlotIndicator
+	indicators    []indicators.BaseIndicator
 
 	interval string
 }
@@ -17,7 +17,7 @@ func NewChartProject(title string) *ChartProject {
 	return &ChartProject{
 		title:         title,
 		sourceManager: NewChartSourceManager(),
-		indicators:    []indicators.PlotIndicator{},
+		indicators:    []indicators.BaseIndicator{},
 		interval:      "1d",
 	}
 }
@@ -34,7 +34,7 @@ func (c *ChartProject) SetInterval(interval string) {
 	c.interval = interval
 }
 
-func (c *ChartProject) AddIndicator(indicator indicators.PlotIndicator) {
+func (c *ChartProject) AddIndicator(indicator indicators.BaseIndicator) {
 	c.indicators = append(c.indicators, indicator)
 }
 

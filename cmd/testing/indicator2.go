@@ -13,10 +13,10 @@ func (ti *TestIndicator2) GetName() string {
 	return ti.Name
 }
 
-func (ti *TestIndicator2) HandleEntry(plotPoints []indicators.PlotPoint, chartsData *sources.MultiSourceEntries, config indicators.ChartConfig) (indicators.PlotPoint, error) {
+func (ti *TestIndicator2) HandleEntry(linePoints []indicators.PlotPoint, chartsData *sources.MultiSourceEntries, config indicators.ChartConfig) (indicators.PlotPoint, error) {
 	lastPoint := indicators.PlotPoint{}
-	if len(plotPoints) > 0 {
-		lastPoint = plotPoints[len(plotPoints)-1]
+	if len(linePoints) > 0 {
+		lastPoint = linePoints[len(linePoints)-1]
 	}
 
 	newPoint := indicators.PlotPoint{
@@ -31,6 +31,18 @@ func (ti *TestIndicator2) HandleEntry(plotPoints []indicators.PlotPoint, chartsD
 	return newPoint, nil
 }
 
-func CreateTestIndicator2() indicators.PlotIndicator {
+func (ti *TestIndicator2) GetType() indicators.IndicatorType {
+	return indicators.IndicatorTypeStepLine
+}
+
+func (ti *TestIndicator2) GetConfig() indicators.IndicatorConfig {
+	return indicators.IndicatorConfig{
+		StepLineIndicator: indicators.StepLineIndicatorConfig{
+			StepAlignment: 1,
+		},
+	}
+}
+
+func CreateTestIndicator2() indicators.BaseIndicator {
 	return &TestIndicator2{Name: "TestIndicator2"}
 }
