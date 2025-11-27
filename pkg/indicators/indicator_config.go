@@ -3,6 +3,8 @@ package indicators
 // ChartConfig holds general chart configuration applicable to all indicators
 type ChartConfig struct {
 	IntervalSeconds int // in seconds
+	ActivePair      string
+	LoadedPairs     []string
 }
 
 // IndicatorConfig holds type-specific configuration for different indicator types
