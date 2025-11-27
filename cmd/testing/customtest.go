@@ -22,5 +22,5 @@ func customTest() {
 	chart.AddIndicator(indicator1)
 	chart.AddIndicator(indicator2)
 
-	chart.Render()
+	chart.GetRender()
 }

@@ -38,15 +38,9 @@ func (c *ChartProject) AddIndicator(indicator indicators.BaseIndicator) {
 	c.indicators = append(c.indicators, indicator)
 }
 
-/* This method probably belongs in sourcemanager.go
-func (c *ChartProject) FetchData() error {
-	// TODO - implement logic to select pair and actual time range
-	return nil
-}
-*/
-
 // TODO - implement rendering logic
-func (c *ChartProject) Render() {
+// ! This will return an object with all the info needed to render the chart in the frontend
+func (c *ChartProject) GetRender() RenderableChartProject {
 	/*
 		if len(c.data) == 0 {
 			fmt.Println("No data fetched yet, fetching now...")
@@ -72,11 +66,12 @@ func (c *ChartProject) Render() {
 	*/
 
 	// Final rendering logic
+	return RenderableChartProject{}
 }
 
+/*
 // TODO - fix to support multiple pairs and sources
 func (c *ChartProject) CalculateIndicators(chartConfig indicators.ChartConfig) map[string][]indicators.PlotPoint {
-	/*
 		plotData := make(map[string][]indicators.PlotPoint)
 
 		for i := range c.sourceManager.fetchedData {
@@ -94,6 +89,5 @@ func (c *ChartProject) CalculateIndicators(chartConfig indicators.ChartConfig) m
 		}
 
 		return plotData
-	*/
-	return nil
-}
+	}
+*/
