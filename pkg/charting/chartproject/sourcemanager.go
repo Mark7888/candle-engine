@@ -51,6 +51,27 @@ func (c *ChartSourceManager) AddTradingPairs(pairs ...sources.SourcePairId) {
 	}
 }
 
+func (c *ChartSourceManager) GetLoadedPairs() []sources.SourcePairId {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	return c.selectedPairs
+}
+
+func (c *ChartSourceManager) GetTimeFrameSeconds(timeFrame string) int64 {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if len(c.loadedSources) > 0 {
+		// Just get the time frames from the first source
+		for _, source := range c.loadedSources {
+			return source.GetTimeFrameSeconds(timeFrame)
+		}
+	}
+
+	return 0
+}
+
 // FetchSources fetches data from multiple sources for the given pairs and time range,
 // then aligns the data across all sources to ensure consistent timestamps.
 // All source fetches are executed concurrently using goroutines.

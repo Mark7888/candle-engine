@@ -48,13 +48,13 @@ func (c *CoinbaseSource) GetValidTimeFrames() []string {
 	return slices.Collect(maps.Keys(timeFrameMap))
 }
 
-func (c *CoinbaseSource) GetTimeFrameSeconds(timeFrame string) []int64 {
+func (c *CoinbaseSource) GetTimeFrameSeconds(timeFrame string) int64 {
 	timeFrameMap := c.getValidTimeFrameMap()
 	granularity, ok := timeFrameMap[timeFrame]
 	if !ok {
-		return nil
+		return 0
 	}
-	return []int64{int64(granularity)}
+	return int64(granularity)
 }
 
 func (c *CoinbaseSource) GetData(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {

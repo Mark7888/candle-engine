@@ -22,20 +22,20 @@ func (s *MySource) GetValidTimeFrames() []string {
 	return []string{"1m", "5m", "15m", "1h", "1d"}
 }
 
-func (s *MySource) GetTimeFrameSeconds(timeFrame string) []int64 {
+func (s *MySource) GetTimeFrameSeconds(timeFrame string) int64 {
 	switch timeFrame {
 	case "1m":
-		return []int64{60}
+		return 60
 	case "5m":
-		return []int64{300}
+		return 300
 	case "15m":
-		return []int64{900}
+		return 900
 	case "1h":
-		return []int64{3600}
+		return 3600
 	case "1d":
-		return []int64{86400}
+		return 86400
 	default:
-		return []int64{}
+		return 0
 	}
 }
 
@@ -47,12 +47,11 @@ func (s *MySource) GetData(pairId string, timeFrame string, timeRange sources.Ti
 	var entries []sources.ChartEntry
 	current := timeRange.Start
 
-	timeFrameSecondsSlice := s.GetTimeFrameSeconds(timeFrame)
-	if len(timeFrameSecondsSlice) == 0 {
+	timeFrameSeconds := s.GetTimeFrameSeconds(timeFrame)
+	if timeFrameSeconds == 0 {
 		fmt.Printf("   → Invalid timeFrame, returning empty data\n")
 		return entries, nil
 	}
-	timeFrameSeconds := timeFrameSecondsSlice[0]
 
 	for !current.After(timeRange.End) {
 		entries = append(entries, sources.ChartEntry{

@@ -1,8 +1,10 @@
 package chartproject
 
 import (
+	"fmt"
 	"testcharting/pkg/charting/sources"
 	"testcharting/pkg/indicators"
+	"time"
 )
 
 type ChartProject struct {
@@ -10,7 +12,9 @@ type ChartProject struct {
 	sourceManager *ChartSourceManager
 	indicators    []indicators.BaseIndicator
 
-	timeFrame string
+	timeRange  sources.TimeRange
+	timeFrame  string
+	activePair sources.SourcePairId
 }
 
 func NewChartProject(title string) *ChartProject {
@@ -18,8 +22,38 @@ func NewChartProject(title string) *ChartProject {
 		title:         title,
 		sourceManager: NewChartSourceManager(),
 		indicators:    []indicators.BaseIndicator{},
-		timeFrame:     "1d",
+		timeRange: sources.TimeRange{
+			Start: time.Now().AddDate(0, 0, -14),
+			End:   time.Now(),
+		},
+		timeFrame: "1d",
 	}
+}
+
+func (c *ChartProject) SetTimeFrame(timeFrame string) {
+	c.timeFrame = timeFrame
+}
+
+func (c *ChartProject) GetTimeFrame() string {
+	return c.timeFrame
+}
+
+// TODO - somehow handle available time frames from sources (only list the ones that are common across all sources)
+
+func (c *ChartProject) SetTimeRange(timeRange sources.TimeRange) {
+	c.timeRange = timeRange
+}
+
+func (c *ChartProject) GetTimeRange() sources.TimeRange {
+	return c.timeRange
+}
+
+func (c *ChartProject) SetActivePair(pair sources.SourcePairId) {
+	c.activePair = pair
+}
+
+func (c *ChartProject) GetActivePair() sources.SourcePairId {
+	return c.activePair
 }
 
 func (c *ChartProject) AddSources(sources_ ...sources.Source) {
@@ -30,18 +64,43 @@ func (c *ChartProject) AddTradingPairs(pairs ...sources.SourcePairId) {
 	c.sourceManager.AddTradingPairs(pairs...)
 }
 
-func (c *ChartProject) SetTimeFrame(timeFrame string) {
-	c.timeFrame = timeFrame
-}
-
-func (c *ChartProject) AddIndicator(indicator indicators.BaseIndicator) {
-	c.indicators = append(c.indicators, indicator)
+func (c *ChartProject) AddIndicators(indicator ...indicators.BaseIndicator) {
+	c.indicators = append(c.indicators, indicator...)
 }
 
 // TODO - implement rendering logic
-// ! This will return an object with all the info needed to render the chart in the frontend
-func (c *ChartProject) GetRender() RenderableChartProject {
-	/*
+// * This will return an object with all the info needed to render the chart in the frontend
+// ! We should collect and handle the returned errors from the indicators' HandleEntry methods
+func (c *ChartProject) GetRender() (RenderableChartProject, error) {
+	entries, err := c.sourceManager.FetchSources(c.timeRange, c.sourceManager.selectedPairs, c.timeFrame)
+	if err != nil {
+		fmt.Println("Error fetching sources:", err)
+		return RenderableChartProject{}, err
+	}
+
+	chartConfig := c.assembleChartConfig()
+
+	_ = entries
+	_ = chartConfig
+
+	return RenderableChartProject{}, fmt.Errorf("GetRender not implemented yet")
+}
+
+func (c *ChartProject) assembleChartConfig() indicators.ChartConfig {
+	pairs := make([]string, 0, len(c.sourceManager.GetLoadedPairs()))
+	for _, pair := range c.sourceManager.GetLoadedPairs() {
+		pairs = append(pairs, pair.String())
+	}
+
+	return indicators.ChartConfig{
+		TimeFrameSeconds: c.sourceManager.GetTimeFrameSeconds(c.timeFrame),
+		ActivePair:       c.activePair.String(),
+		LoadedPairs:      pairs,
+	}
+}
+
+/*
+func (c *ChartProject) Render() {
 		if len(c.data) == 0 {
 			fmt.Println("No data fetched yet, fetching now...")
 			c.FetchData()
@@ -63,11 +122,8 @@ func (c *ChartProject) GetRender() RenderableChartProject {
 				fmt.Println(" Point", i, "Value:", point.Value, "Color:", point.Color)
 			}
 		}
-	*/
-
-	// Final rendering logic
-	return RenderableChartProject{}
-}
+	}
+*/
 
 /*
 // TODO - fix to support multiple pairs and sources

@@ -36,7 +36,7 @@ func (c *CachedSource) GetValidTimeFrames() []string {
 	return c.Source.GetValidTimeFrames()
 }
 
-func (c *CachedSource) GetTimeFrameSeconds(timeFrame string) []int64 {
+func (c *CachedSource) GetTimeFrameSeconds(timeFrame string) int64 {
 	return c.Source.GetTimeFrameSeconds(timeFrame)
 }
 

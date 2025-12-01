@@ -13,3 +13,6 @@ Try out golang plotting library: https://github.com/go-echarts/go-echarts
 - Kraken API: https://docs.kraken.com/api/docs/rest-api/get-ohlc-data
     - Note: Kraken only returns the last 720 candles per request, older data cannot be retrieved
     - Historical data can be downloaded: https://support.kraken.com/articles/360047124832-downloadable-historical-ohlcvt-open-high-low-close-volume-trades-data
+
+## TODO
+- Proper logging with log levels (logrus)

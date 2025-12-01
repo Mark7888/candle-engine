@@ -24,8 +24,8 @@ func (s *MockSource1) GetValidTimeFrames() []string {
 	return []string{"1h"}
 }
 
-func (s *MockSource1) GetTimeFrameSeconds(timeFrame string) []int64 {
-	return []int64{3600}
+func (s *MockSource1) GetTimeFrameSeconds(timeFrame string) int64 {
+	return 3600
 }
 
 func (s *MockSource1) GetData(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
@@ -68,8 +68,8 @@ func (s *MockSource2) GetValidTimeFrames() []string {
 	return []string{"1h"}
 }
 
-func (s *MockSource2) GetTimeFrameSeconds(timeFrame string) []int64 {
-	return []int64{3600}
+func (s *MockSource2) GetTimeFrameSeconds(timeFrame string) int64 {
+	return 3600
 }
 
 func (s *MockSource2) GetData(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {

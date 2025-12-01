@@ -19,8 +19,8 @@ func customTest() {
 	chart.AddSources(source)
 	chart.AddTradingPairs(sources.SourcePairId{SourceName: "Coinbase", PairId: "BTC-USD"})
 	chart.SetTimeFrame("1h")
-	chart.AddIndicator(indicator1)
-	chart.AddIndicator(indicator2)
+	chart.AddIndicators(indicator1)
+	chart.AddIndicators(indicator2)
 
 	chart.GetRender()
 }

@@ -2,7 +2,7 @@ package indicators
 
 // ChartConfig holds general chart configuration applicable to all indicators
 type ChartConfig struct {
-	TimeFrameSeconds int // in seconds
+	TimeFrameSeconds int64 // in seconds
 	ActivePair       string
 	LoadedPairs      []string
 }

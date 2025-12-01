@@ -51,13 +51,13 @@ func (c *BinanceSource) GetValidTimeFrames() []string {
 	return slices.Collect(maps.Keys(timeFrameMap))
 }
 
-func (c *BinanceSource) GetTimeFrameSeconds(timeFrame string) []int64 {
+func (c *BinanceSource) GetTimeFrameSeconds(timeFrame string) int64 {
 	timeFrameMap := c.getValidTimeFrameMap()
 	granularity, ok := timeFrameMap[timeFrame]
 	if !ok {
-		return nil
+		return 0
 	}
-	return []int64{int64(granularity)}
+	return int64(granularity)
 }
 
 func (c *BinanceSource) GetData(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
