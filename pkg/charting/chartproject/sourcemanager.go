@@ -54,7 +54,7 @@ func (c *ChartSourceManager) AddTradingPairs(pairs ...sources.SourcePairId) {
 // FetchSources fetches data from multiple sources for the given pairs and time range,
 // then aligns the data across all sources to ensure consistent timestamps.
 // All source fetches are executed concurrently using goroutines.
-func (c *ChartSourceManager) FetchSources(timeRange sources.TimeRange, pairIds []sources.SourcePairId, interval string) (map[sources.SourcePairId][]sources.ChartEntry, error) {
+func (c *ChartSourceManager) FetchSources(timeRange sources.TimeRange, pairIds []sources.SourcePairId, timeFrame string) (map[sources.SourcePairId][]sources.ChartEntry, error) {
 	rawData := make(map[sources.SourcePairId][]sources.ChartEntry)
 	var dataMu sync.Mutex
 	var wg sync.WaitGroup
@@ -74,7 +74,7 @@ func (c *ChartSourceManager) FetchSources(timeRange sources.TimeRange, pairIds [
 		go func(src sources.Source, pid sources.SourcePairId) {
 			defer wg.Done()
 
-			data, err := src.GetData(pid.PairId, interval, timeRange)
+			data, err := src.GetData(pid.PairId, timeFrame, timeRange)
 			if err != nil {
 				errChan <- err
 				return

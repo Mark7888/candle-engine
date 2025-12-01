@@ -43,25 +43,25 @@ func (c *CoinbaseSource) GetTradingPairs() []sources.TradingPair {
 	return pairs
 }
 
-func (c *CoinbaseSource) GetValidIntervals() []string {
-	intervalMap := c.getValidIntervalMap()
-	return slices.Collect(maps.Keys(intervalMap))
+func (c *CoinbaseSource) GetValidTimeFrames() []string {
+	timeFrameMap := c.getValidTimeFrameMap()
+	return slices.Collect(maps.Keys(timeFrameMap))
 }
 
-func (c *CoinbaseSource) GetIntervalSeconds(interval string) []int64 {
-	intervalMap := c.getValidIntervalMap()
-	granularity, ok := intervalMap[interval]
+func (c *CoinbaseSource) GetTimeFrameSeconds(timeFrame string) []int64 {
+	timeFrameMap := c.getValidTimeFrameMap()
+	granularity, ok := timeFrameMap[timeFrame]
 	if !ok {
 		return nil
 	}
 	return []int64{int64(granularity)}
 }
 
-func (c *CoinbaseSource) GetData(pairId string, interval string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
-	intervalMap := c.getValidIntervalMap()
-	granularity, ok := intervalMap[interval]
+func (c *CoinbaseSource) GetData(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
+	timeFrameMap := c.getValidTimeFrameMap()
+	granularity, ok := timeFrameMap[timeFrame]
 	if !ok {
-		return nil, errors.New("invalid interval")
+		return nil, errors.New("invalid timeFrame")
 	}
 
 	candles, err := c.fetchDataIfNeeded(pairId, granularity, timeRange)
@@ -72,8 +72,8 @@ func (c *CoinbaseSource) GetData(pairId string, interval string, timeRange sourc
 	return candles, nil
 }
 
-func (c *CoinbaseSource) getValidIntervalMap() map[string]int {
-	// Supported intervals by Coinbase API in seconds: {60, 300, 900, 3600, 21600, 86400}
+func (c *CoinbaseSource) getValidTimeFrameMap() map[string]int {
+	// Supported timeFrames by Coinbase API in seconds: {60, 300, 900, 3600, 21600, 86400}
 	return map[string]int{
 		"1m":  60,
 		"5m":  300,

@@ -10,7 +10,7 @@ type ChartProject struct {
 	sourceManager *ChartSourceManager
 	indicators    []indicators.BaseIndicator
 
-	interval string
+	timeFrame string
 }
 
 func NewChartProject(title string) *ChartProject {
@@ -18,7 +18,7 @@ func NewChartProject(title string) *ChartProject {
 		title:         title,
 		sourceManager: NewChartSourceManager(),
 		indicators:    []indicators.BaseIndicator{},
-		interval:      "1d",
+		timeFrame:     "1d",
 	}
 }
 
@@ -30,8 +30,8 @@ func (c *ChartProject) AddTradingPairs(pairs ...sources.SourcePairId) {
 	c.sourceManager.AddTradingPairs(pairs...)
 }
 
-func (c *ChartProject) SetInterval(interval string) {
-	c.interval = interval
+func (c *ChartProject) SetTimeFrame(timeFrame string) {
+	c.timeFrame = timeFrame
 }
 
 func (c *ChartProject) AddIndicator(indicator indicators.BaseIndicator) {
@@ -51,7 +51,7 @@ func (c *ChartProject) GetRender() RenderableChartProject {
 		// Implementation to render the chart
 
 		chartConfig := indicators.ChartConfig{
-			Interval: c.interval,
+			TimeFrame: c.timeFrame,
 		}
 
 		plotData := c.CalculateIndicators(chartConfig)

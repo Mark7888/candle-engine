@@ -19,7 +19,7 @@ type cachedData struct {
 
 type CachedSource struct {
 	Source   sources.Source
-	cache    map[string]map[string][]cachedData // pairId -> interval -> []cachedData
+	cache    map[string]map[string][]cachedData // pairId -> timeFrame -> []cachedData
 	mu       sync.RWMutex
 	filePath string // empty string disables file persistence
 }
@@ -32,41 +32,41 @@ func (c *CachedSource) GetTradingPairs() []sources.TradingPair {
 	return c.Source.GetTradingPairs()
 }
 
-func (c *CachedSource) GetValidIntervals() []string {
-	return c.Source.GetValidIntervals()
+func (c *CachedSource) GetValidTimeFrames() []string {
+	return c.Source.GetValidTimeFrames()
 }
 
-func (c *CachedSource) GetIntervalSeconds(interval string) []int64 {
-	return c.Source.GetIntervalSeconds(interval)
+func (c *CachedSource) GetTimeFrameSeconds(timeFrame string) []int64 {
+	return c.Source.GetTimeFrameSeconds(timeFrame)
 }
 
-func (c *CachedSource) GetData(pairId string, interval string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
+func (c *CachedSource) GetData(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
 	c.mu.RLock()
 	pairCache, pairExists := c.cache[pairId]
 	var cachedRanges []cachedData
 	var exists bool
 	if pairExists {
-		cachedRanges, exists = pairCache[interval]
+		cachedRanges, exists = pairCache[timeFrame]
 	}
 	c.mu.RUnlock()
 
 	if !exists {
-		// No cache for this pair/interval, fetch all data
-		return c.fetchAndCache(pairId, interval, timeRange)
+		// No cache for this pair/timeFrame, fetch all data
+		return c.fetchAndCache(pairId, timeFrame, timeRange)
 	}
 
 	// Find what ranges we need to fetch
 	missingRanges := c.findMissingRanges(cachedRanges, timeRange)
 	// Fetch missing ranges
 	for _, missingRange := range missingRanges {
-		_, err := c.fetchAndCache(pairId, interval, missingRange)
+		_, err := c.fetchAndCache(pairId, timeFrame, missingRange)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// Now collect all relevant cached data for the requested range
-	return c.getFromCache(pairId, interval, timeRange), nil
+	return c.getFromCache(pairId, timeFrame, timeRange), nil
 }
 
 // findMissingRanges determines which time ranges are not covered by the cache
@@ -115,8 +115,8 @@ func (c *CachedSource) findMissingRanges(cachedRanges []cachedData, timeRange so
 }
 
 // fetchAndCache fetches data from the source and adds it to the cache
-func (c *CachedSource) fetchAndCache(pairId string, interval string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
-	entries, err := c.Source.GetData(pairId, interval, timeRange)
+func (c *CachedSource) fetchAndCache(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
+	entries, err := c.Source.GetData(pairId, timeFrame, timeRange)
 	if err != nil {
 		return nil, err
 	}
@@ -139,10 +139,10 @@ func (c *CachedSource) fetchAndCache(pairId string, interval string, timeRange s
 	if c.cache[pairId] == nil {
 		c.cache[pairId] = make(map[string][]cachedData)
 	}
-	if c.cache[pairId][interval] == nil {
-		c.cache[pairId][interval] = []cachedData{}
+	if c.cache[pairId][timeFrame] == nil {
+		c.cache[pairId][timeFrame] = []cachedData{}
 	}
-	c.cache[pairId][interval] = append(c.cache[pairId][interval], newCache)
+	c.cache[pairId][timeFrame] = append(c.cache[pairId][timeFrame], newCache)
 
 	// Export to file if persistence is enabled
 	if c.filePath != "" {
@@ -156,11 +156,11 @@ func (c *CachedSource) fetchAndCache(pairId string, interval string, timeRange s
 }
 
 // getFromCache retrieves all cached entries within the specified time range
-func (c *CachedSource) getFromCache(pairId string, interval string, timeRange sources.TimeRange) []sources.ChartEntry {
+func (c *CachedSource) getFromCache(pairId string, timeFrame string, timeRange sources.TimeRange) []sources.ChartEntry {
 	c.mu.RLock()
 	var cachedRanges []cachedData
 	if pairCache, exists := c.cache[pairId]; exists {
-		cachedRanges = pairCache[interval]
+		cachedRanges = pairCache[timeFrame]
 	}
 	c.mu.RUnlock()
 

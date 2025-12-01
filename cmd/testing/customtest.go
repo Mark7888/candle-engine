@@ -18,7 +18,7 @@ func customTest() {
 	chart := chartproject.NewChartProject("First Chart Project")
 	chart.AddSources(source)
 	chart.AddTradingPairs(sources.SourcePairId{SourceName: "Coinbase", PairId: "BTC-USD"})
-	chart.SetInterval("1h")
+	chart.SetTimeFrame("1h")
 	chart.AddIndicator(indicator1)
 	chart.AddIndicator(indicator2)
 

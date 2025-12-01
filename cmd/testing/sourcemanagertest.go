@@ -20,17 +20,17 @@ func (s *MockSource1) GetTradingPairs() []sources.TradingPair {
 	return []sources.TradingPair{}
 }
 
-func (s *MockSource1) GetValidIntervals() []string {
+func (s *MockSource1) GetValidTimeFrames() []string {
 	return []string{"1h"}
 }
 
-func (s *MockSource1) GetIntervalSeconds(interval string) []int64 {
+func (s *MockSource1) GetTimeFrameSeconds(timeFrame string) []int64 {
 	return []int64{3600}
 }
 
-func (s *MockSource1) GetData(pairId string, interval string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
+func (s *MockSource1) GetData(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
 	fmt.Printf("  🔹 %s API CALL - GetData(%s, %s, %s to %s)\n",
-		s.Name, pairId, interval, timeRange.Start.Format("15:04"), timeRange.End.Format("15:04"))
+		s.Name, pairId, timeFrame, timeRange.Start.Format("15:04"), timeRange.End.Format("15:04"))
 
 	var entries []sources.ChartEntry
 	current := timeRange.Start
@@ -64,17 +64,17 @@ func (s *MockSource2) GetTradingPairs() []sources.TradingPair {
 	return []sources.TradingPair{}
 }
 
-func (s *MockSource2) GetValidIntervals() []string {
+func (s *MockSource2) GetValidTimeFrames() []string {
 	return []string{"1h"}
 }
 
-func (s *MockSource2) GetIntervalSeconds(interval string) []int64 {
+func (s *MockSource2) GetTimeFrameSeconds(timeFrame string) []int64 {
 	return []int64{3600}
 }
 
-func (s *MockSource2) GetData(pairId string, interval string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
+func (s *MockSource2) GetData(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
 	fmt.Printf("  🔹 %s API CALL - GetData(%s, %s, %s to %s)\n",
-		s.Name, pairId, interval, timeRange.Start.Format("15:04"), timeRange.End.Format("15:04"))
+		s.Name, pairId, timeFrame, timeRange.Start.Format("15:04"), timeRange.End.Format("15:04"))
 
 	var entries []sources.ChartEntry
 	current := timeRange.Start

@@ -72,8 +72,8 @@ func testCaching() {
 	}
 	fmt.Printf("✅ Received %d entries\n\n", len(data5))
 
-	// Test 6: Different interval - should make API call
-	fmt.Println("📋 Test 6: Request with different interval 5m (new cache key)")
+	// Test 6: Different timeFrame - should make API call
+	fmt.Println("📋 Test 6: Request with different timeFrame 5m (new cache key)")
 	data6, err := cachedSource.GetData("BTC-USD", "5m", timeRange1)
 	if err != nil {
 		panic(err)

@@ -18,12 +18,12 @@ func (s *MySource) GetTradingPairs() []sources.TradingPair {
 	return []sources.TradingPair{}
 }
 
-func (s *MySource) GetValidIntervals() []string {
+func (s *MySource) GetValidTimeFrames() []string {
 	return []string{"1m", "5m", "15m", "1h", "1d"}
 }
 
-func (s *MySource) GetIntervalSeconds(interval string) []int64 {
-	switch interval {
+func (s *MySource) GetTimeFrameSeconds(timeFrame string) []int64 {
+	switch timeFrame {
 	case "1m":
 		return []int64{60}
 	case "5m":
@@ -39,20 +39,20 @@ func (s *MySource) GetIntervalSeconds(interval string) []int64 {
 	}
 }
 
-func (s *MySource) GetData(pairId string, interval string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
+func (s *MySource) GetData(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
 	fmt.Printf("🔥 API CALL - GetData(%s, %s, %s, %s)\n",
-		pairId, interval, timeRange.Start.Format("2006-01-02 15:04"), timeRange.End.Format("2006-01-02 15:04"))
+		pairId, timeFrame, timeRange.Start.Format("2006-01-02 15:04"), timeRange.End.Format("2006-01-02 15:04"))
 
 	// Generate data for each hour between start and end
 	var entries []sources.ChartEntry
 	current := timeRange.Start
 
-	intervalSecondsSlice := s.GetIntervalSeconds(interval)
-	if len(intervalSecondsSlice) == 0 {
-		fmt.Printf("   → Invalid interval, returning empty data\n")
+	timeFrameSecondsSlice := s.GetTimeFrameSeconds(timeFrame)
+	if len(timeFrameSecondsSlice) == 0 {
+		fmt.Printf("   → Invalid timeFrame, returning empty data\n")
 		return entries, nil
 	}
-	intervalSeconds := intervalSecondsSlice[0]
+	timeFrameSeconds := timeFrameSecondsSlice[0]
 
 	for !current.After(timeRange.End) {
 		entries = append(entries, sources.ChartEntry{
@@ -63,7 +63,7 @@ func (s *MySource) GetData(pairId string, interval string, timeRange sources.Tim
 			Close:     102.0,
 			Volume:    1000.0,
 		})
-		current = current.Add(time.Duration(intervalSeconds) * time.Second)
+		current = current.Add(time.Duration(timeFrameSeconds) * time.Second)
 	}
 
 	fmt.Printf("   → Returned %d entries\n", len(entries))

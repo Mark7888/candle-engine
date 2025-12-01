@@ -11,7 +11,7 @@ import (
 
 // https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Exchange-Information
 // https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Kline-Candlestick-Data
-// https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDC&interval=1d
+// https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDC&timeFrame=1d
 
 func NewBinanceSource() sources.Source {
 	return &BinanceSource{
@@ -46,25 +46,25 @@ func (c *BinanceSource) GetTradingPairs() []sources.TradingPair {
 	return pairs
 }
 
-func (c *BinanceSource) GetValidIntervals() []string {
-	intervalMap := c.getValidIntervalMap()
-	return slices.Collect(maps.Keys(intervalMap))
+func (c *BinanceSource) GetValidTimeFrames() []string {
+	timeFrameMap := c.getValidTimeFrameMap()
+	return slices.Collect(maps.Keys(timeFrameMap))
 }
 
-func (c *BinanceSource) GetIntervalSeconds(interval string) []int64 {
-	intervalMap := c.getValidIntervalMap()
-	granularity, ok := intervalMap[interval]
+func (c *BinanceSource) GetTimeFrameSeconds(timeFrame string) []int64 {
+	timeFrameMap := c.getValidTimeFrameMap()
+	granularity, ok := timeFrameMap[timeFrame]
 	if !ok {
 		return nil
 	}
 	return []int64{int64(granularity)}
 }
 
-func (c *BinanceSource) GetData(pairId string, interval string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
-	intervalMap := c.getValidIntervalMap()
-	granularity, ok := intervalMap[interval]
+func (c *BinanceSource) GetData(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
+	timeFrameMap := c.getValidTimeFrameMap()
+	granularity, ok := timeFrameMap[timeFrame]
 	if !ok {
-		return nil, errors.New("invalid interval")
+		return nil, errors.New("invalid timeFrame")
 	}
 
 	candles, err := c.fetchDataIfNeeded(pairId, granularity, timeRange)
@@ -75,8 +75,8 @@ func (c *BinanceSource) GetData(pairId string, interval string, timeRange source
 	return candles, nil
 }
 
-func (c *BinanceSource) getValidIntervalMap() map[string]int {
-	// Supported intervals by Binance API
+func (c *BinanceSource) getValidTimeFrameMap() map[string]int {
+	// Supported timeFrames by Binance API
 	return map[string]int{
 		"1m":  60,
 		"3m":  180,
@@ -126,11 +126,11 @@ func (c *BinanceSource) fetchDataIfNeeded(pairId string, granularity int, timeRa
 
 	allCandles := make([]sources.ChartEntry, 0, candleCount)
 
-	// Convert granularity to Binance interval string
-	intervalStr := ""
-	for k, v := range c.getValidIntervalMap() {
+	// Convert granularity to Binance timeFrame string
+	timeFrameStr := ""
+	for k, v := range c.getValidTimeFrameMap() {
 		if v == granularity {
-			intervalStr = k
+			timeFrameStr = k
 			break
 		}
 	}
@@ -146,7 +146,7 @@ func (c *BinanceSource) fetchDataIfNeeded(pairId string, granularity int, timeRa
 
 		params := map[string]string{
 			"symbol":    pairId,
-			"interval":  intervalStr,
+			"timeFrame": timeFrameStr,
 			"startTime": strconv.FormatInt(segmentStart.UnixMilli(), 10),
 			"endTime":   strconv.FormatInt(segmentEnd.UnixMilli(), 10),
 			"limit":     strconv.Itoa(maxCandlesPerRequest),
