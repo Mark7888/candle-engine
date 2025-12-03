@@ -9,8 +9,9 @@ type ChartConfig struct {
 
 // IndicatorConfig holds type-specific configuration for different indicator types
 type IndicatorConfig struct {
-	LineIndicator     LineIndicatorConfig
-	StepLineIndicator StepLineIndicatorConfig
+	LineIndicator        LineIndicatorConfig
+	StepLineIndicator    StepLineIndicatorConfig
+	SingleValueIndicator SingleValueIndicatorConfig
 }
 
 type LineIndicatorConfig struct {
@@ -27,4 +28,9 @@ const (
 
 type StepLineIndicatorConfig struct {
 	StepAlignment StepAlignment
+}
+
+type SingleValueIndicatorConfig struct {
+	DisplayName   string
+	DisplayFormat string // e.g., "%.2f" // TODO - implement proper formatting
 }
