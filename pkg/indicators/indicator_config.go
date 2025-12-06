@@ -1,10 +1,12 @@
 package indicators
 
+import "testcharting/pkg/charting/sources"
+
 // ChartConfig holds general chart configuration applicable to all indicators
 type ChartConfig struct {
 	TimeFrameSeconds int64 // in seconds
-	ActivePair       string
-	LoadedPairs      []string
+	ActivePair       sources.SourcePairId
+	LoadedPairs      []sources.SourcePairId
 }
 
 // IndicatorConfig holds type-specific configuration for different indicator types

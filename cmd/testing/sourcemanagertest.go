@@ -131,7 +131,7 @@ func testSourceManager() {
 	// Test 3: Fetch data from multiple sources (concurrent)
 	fmt.Println("📋 Test 3: Fetching data from multiple sources concurrently")
 	fmt.Println("  Expected: Two API calls happening in parallel")
-	data, err := manager.FetchSources(timeRange, []sources.SourcePairId{pair1, pair2}, "1h")
+	data, _, err := manager.FetchSources(timeRange, []sources.SourcePairId{pair1, pair2}, "1h")
 	if err != nil {
 		panic(err)
 	}
@@ -198,7 +198,7 @@ func testSourceManager() {
 	// Test 6: Fetch with non-existent source
 	fmt.Println("📋 Test 6: Fetching with non-existent source (should return error)")
 	pair3 := sources.SourcePairId{SourceName: "NonExistent", PairId: "ETH-USD"}
-	data2, err := manager.FetchSources(timeRange, []sources.SourcePairId{pair1, pair3}, "1h")
+	data2, _, err := manager.FetchSources(timeRange, []sources.SourcePairId{pair1, pair3}, "1h")
 	if err != nil {
 		fmt.Printf("✅ Got expected error: %v\n\n", err)
 	} else {
@@ -224,7 +224,7 @@ func testSourceManager() {
 
 	// Concurrent fetch
 	go func() {
-		_, _ = manager.FetchSources(timeRange, []sources.SourcePairId{pair1}, "1h")
+		_, _, _ = manager.FetchSources(timeRange, []sources.SourcePairId{pair1}, "1h")
 		done <- true
 	}()
 

@@ -75,7 +75,7 @@ func (c *ChartSourceManager) GetTimeFrameSeconds(timeFrame string) int64 {
 // FetchSources fetches data from multiple sources for the given pairs and time range,
 // then aligns the data across all sources to ensure consistent timestamps.
 // All source fetches are executed concurrently using goroutines.
-func (c *ChartSourceManager) FetchSources(timeRange sources.TimeRange, pairIds []sources.SourcePairId, timeFrame string) (map[sources.SourcePairId][]sources.ChartEntry, error) {
+func (c *ChartSourceManager) FetchSources(timeRange sources.TimeRange, pairIds []sources.SourcePairId, timeFrame string) (entries map[sources.SourcePairId][]sources.ChartEntry, width int, err error) {
 	rawData := make(map[sources.SourcePairId][]sources.ChartEntry)
 	var dataMu sync.Mutex
 	var wg sync.WaitGroup
@@ -88,7 +88,7 @@ func (c *ChartSourceManager) FetchSources(timeRange sources.TimeRange, pairIds [
 		c.mu.RUnlock()
 
 		if !exists {
-			return nil, fmt.Errorf("source '%s' not found in loaded sources", pairId.SourceName)
+			return nil, 0, fmt.Errorf("source '%s' not found in loaded sources", pairId.SourceName)
 		}
 
 		wg.Add(1)
@@ -113,16 +113,23 @@ func (c *ChartSourceManager) FetchSources(timeRange sources.TimeRange, pairIds [
 
 	// Check for errors
 	if err := <-errChan; err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	// Align data across all sources to have consistent timestamps
 	alignedData, err := c.alignChartData(rawData)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return alignedData, nil
+	// Calculate width (number of aligned timestamps)
+	dataWidth := 0
+	for _, entries := range alignedData {
+		dataWidth = len(entries)
+		break // All entries have same length after alignment
+	}
+
+	return alignedData, dataWidth, nil
 }
 
 // alignChartData ensures all sources have data points at the same timestamps,

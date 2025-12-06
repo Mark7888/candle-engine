@@ -9,6 +9,7 @@ const (
 	IndicatorTypeStepLine
 )
 
+// TODO - change PlotPoint to support multiple values (e.g., for pie charts, histograms, etc.)
 type PlotPoint struct {
 	Value float64
 	Color string

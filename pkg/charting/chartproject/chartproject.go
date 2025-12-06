@@ -72,7 +72,7 @@ func (c *ChartProject) AddIndicators(indicator ...indicators.BaseIndicator) {
 // * This will return an object with all the info needed to render the chart in the frontend
 // ! We should collect and handle the returned errors from the indicators' HandleEntry methods
 func (c *ChartProject) GetRender() (RenderableChartProject, error) {
-	entries, err := c.sourceManager.FetchSources(c.timeRange, c.sourceManager.selectedPairs, c.timeFrame)
+	entries, width, err := c.sourceManager.FetchSources(c.timeRange, c.sourceManager.selectedPairs, c.timeFrame)
 	if err != nil {
 		fmt.Println("Error fetching sources:", err)
 		return RenderableChartProject{}, err
@@ -80,23 +80,61 @@ func (c *ChartProject) GetRender() (RenderableChartProject, error) {
 
 	chartConfig := c.assembleChartConfig()
 
-	_ = entries
-	_ = chartConfig
+	var historyEntries map[sources.SourcePairId][]sources.ChartEntry = make(map[sources.SourcePairId][]sources.ChartEntry)
+	var currentMultiSourceEntries *sources.MultiSourceEntries
+
+	var indicatorPlotData map[string][]indicators.PlotPoint = make(map[string][]indicators.PlotPoint)
+	var indicatorErrors map[string]error // TODO - rethink how to handle indicator errors properly
+
+	for i := 0; i < width; i++ {
+		for pairId, pairEntries := range entries {
+			historyEntries[pairId] = append(historyEntries[pairId], pairEntries[i])
+		}
+
+		currentMultiSourceEntries = sources.NewMultiSourceEntries()
+		currentMultiSourceEntries.ParseEntriesMap(historyEntries)
+
+		indicatorPlotData, indicatorErrors = c.calculateIndicators(&indicatorPlotData, currentMultiSourceEntries, chartConfig)
+
+		_ = indicatorErrors // TODO - remove after implementing
+	}
+
+	// TODO - Assemble and return the final RenderableChartProject object from the collected data
+	// RenderableChartProject should include:
+	// - Chart title
+	// - Time frame and range
+	// - Active pair
+	// - Fetched entries for each source pair
+	// - Calculated plot points for each indicator
+	// - Indicator configurations
+	// - Any errors encountered during indicator calculations
 
 	return RenderableChartProject{}, fmt.Errorf("GetRender not implemented yet")
 }
 
 func (c *ChartProject) assembleChartConfig() indicators.ChartConfig {
-	pairs := make([]string, 0, len(c.sourceManager.GetLoadedPairs()))
-	for _, pair := range c.sourceManager.GetLoadedPairs() {
-		pairs = append(pairs, pair.String())
-	}
-
 	return indicators.ChartConfig{
 		TimeFrameSeconds: c.sourceManager.GetTimeFrameSeconds(c.timeFrame),
-		ActivePair:       c.activePair.String(),
-		LoadedPairs:      pairs,
+		ActivePair:       c.activePair,
+		LoadedPairs:      c.sourceManager.GetLoadedPairs(),
 	}
+}
+
+func (c *ChartProject) calculateIndicators(previousPlotData *map[string][]indicators.PlotPoint, entries *sources.MultiSourceEntries, chartConfig indicators.ChartConfig) (plotData map[string][]indicators.PlotPoint, indicatorErrors map[string]error) {
+	indicatorErrors = make(map[string]error)
+
+	// Loop through indicators and get their plot points
+	for _, indicator := range c.indicators {
+		point, err := indicator.HandleEntry((*previousPlotData)[indicator.GetName()], entries, chartConfig)
+		if err != nil {
+			indicatorErrors[indicator.GetName()] = err
+			point = indicators.GenerateInvalidPlotPoint()
+		}
+
+		(*previousPlotData)[indicator.GetName()] = append((*previousPlotData)[indicator.GetName()], point)
+	}
+
+	return *previousPlotData, indicatorErrors
 }
 
 /*
