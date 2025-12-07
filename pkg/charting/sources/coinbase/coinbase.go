@@ -57,6 +57,16 @@ func (c *CoinbaseSource) GetTimeFrameSeconds(timeFrame string) int64 {
 	return int64(granularity)
 }
 
+func (c *CoinbaseSource) GetTimeFrameString(timeFrameSeconds int64) string {
+	timeFrameMap := c.getValidTimeFrameMap()
+	for k, v := range timeFrameMap {
+		if int64(v) == timeFrameSeconds {
+			return k
+		}
+	}
+	return ""
+}
+
 func (c *CoinbaseSource) GetData(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
 	timeFrameMap := c.getValidTimeFrameMap()
 	granularity, ok := timeFrameMap[timeFrame]

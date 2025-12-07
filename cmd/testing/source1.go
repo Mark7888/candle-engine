@@ -39,6 +39,23 @@ func (s *MySource) GetTimeFrameSeconds(timeFrame string) int64 {
 	}
 }
 
+func (s *MySource) GetTimeFrameString(timeFrameSeconds int64) string {
+	switch timeFrameSeconds {
+	case 60:
+		return "1m"
+	case 300:
+		return "5m"
+	case 900:
+		return "15m"
+	case 3600:
+		return "1h"
+	case 86400:
+		return "1d"
+	default:
+		return ""
+	}
+}
+
 func (s *MySource) GetData(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
 	fmt.Printf("🔥 API CALL - GetData(%s, %s, %s, %s)\n",
 		pairId, timeFrame, timeRange.Start.Format("2006-01-02 15:04"), timeRange.End.Format("2006-01-02 15:04"))

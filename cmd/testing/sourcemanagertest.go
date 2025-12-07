@@ -28,6 +28,10 @@ func (s *MockSource1) GetTimeFrameSeconds(timeFrame string) int64 {
 	return 3600
 }
 
+func (s *MockSource1) GetTimeFrameString(timeFrameSeconds int64) string {
+	return "1h"
+}
+
 func (s *MockSource1) GetData(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
 	fmt.Printf("  🔹 %s API CALL - GetData(%s, %s, %s to %s)\n",
 		s.Name, pairId, timeFrame, timeRange.Start.Format("15:04"), timeRange.End.Format("15:04"))
@@ -70,6 +74,10 @@ func (s *MockSource2) GetValidTimeFrames() []string {
 
 func (s *MockSource2) GetTimeFrameSeconds(timeFrame string) int64 {
 	return 3600
+}
+
+func (s *MockSource2) GetTimeFrameString(timeFrameSeconds int64) string {
+	return "1h"
 }
 
 func (s *MockSource2) GetData(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {

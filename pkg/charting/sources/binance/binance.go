@@ -60,6 +60,16 @@ func (c *BinanceSource) GetTimeFrameSeconds(timeFrame string) int64 {
 	return int64(granularity)
 }
 
+func (c *BinanceSource) GetTimeFrameString(timeFrameSeconds int64) string {
+	timeFrameMap := c.getValidTimeFrameMap()
+	for k, v := range timeFrameMap {
+		if int64(v) == timeFrameSeconds {
+			return k
+		}
+	}
+	return ""
+}
+
 func (c *BinanceSource) GetData(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
 	timeFrameMap := c.getValidTimeFrameMap()
 	granularity, ok := timeFrameMap[timeFrame]

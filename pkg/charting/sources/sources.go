@@ -5,5 +5,6 @@ type Source interface {
 	GetTradingPairs() []TradingPair
 	GetValidTimeFrames() []string
 	GetTimeFrameSeconds(timeFrame string) int64 // Required to calculate time ranges for each source correctly
+	GetTimeFrameString(timeFrameSeconds int64) string
 	GetData(pairId string, timeFrame string, timeRange TimeRange) ([]ChartEntry, error)
 }

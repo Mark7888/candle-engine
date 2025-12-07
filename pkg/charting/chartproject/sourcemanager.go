@@ -72,6 +72,67 @@ func (c *ChartSourceManager) GetTimeFrameSeconds(timeFrame string) int64 {
 	return 0
 }
 
+func (c *ChartSourceManager) GetCommonTimeFrames() []string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if len(c.loadedSources) == 0 {
+		return []string{}
+	}
+
+	// Get the first source as reference
+	var firstSource sources.Source
+	for _, source := range c.loadedSources {
+		firstSource = source
+		break
+	}
+
+	// Build initial set from first source
+	commonSeconds := c.buildTimeFrameSecondsSet(firstSource)
+
+	// Intersect with remaining sources
+	for _, source := range c.loadedSources {
+		if source == firstSource {
+			continue
+		}
+		c.intersectTimeFrameSeconds(commonSeconds, source)
+	}
+
+	// Convert seconds back to string format
+	return c.convertSecondsToStrings(firstSource, commonSeconds)
+}
+
+func (c *ChartSourceManager) buildTimeFrameSecondsSet(source sources.Source) map[int64]bool {
+	timeFrames := source.GetValidTimeFrames()
+	seconds := make(map[int64]bool, len(timeFrames))
+
+	for _, tf := range timeFrames {
+		seconds[source.GetTimeFrameSeconds(tf)] = true
+	}
+
+	return seconds
+}
+
+func (c *ChartSourceManager) intersectTimeFrameSeconds(commonSeconds map[int64]bool, source sources.Source) {
+	sourceSeconds := c.buildTimeFrameSecondsSet(source)
+
+	for seconds := range commonSeconds {
+		if !sourceSeconds[seconds] {
+			delete(commonSeconds, seconds)
+		}
+	}
+}
+
+func (c *ChartSourceManager) convertSecondsToStrings(source sources.Source, seconds map[int64]bool) []string {
+	result := make([]string, 0, len(seconds))
+
+	for sec := range seconds {
+		result = append(result, source.GetTimeFrameString(sec))
+	}
+
+	return result
+}
+
 // FetchSources fetches data from multiple sources for the given pairs and time range,
 // then aligns the data across all sources to ensure consistent timestamps.
 // All source fetches are executed concurrently using goroutines.

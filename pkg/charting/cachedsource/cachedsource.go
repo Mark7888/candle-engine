@@ -40,6 +40,10 @@ func (c *CachedSource) GetTimeFrameSeconds(timeFrame string) int64 {
 	return c.Source.GetTimeFrameSeconds(timeFrame)
 }
 
+func (c *CachedSource) GetTimeFrameString(timeFrameSeconds int64) string {
+	return c.Source.GetTimeFrameString(timeFrameSeconds)
+}
+
 func (c *CachedSource) GetData(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
 	c.mu.RLock()
 	pairCache, pairExists := c.cache[pairId]
