@@ -13,7 +13,7 @@ func testCaching() {
 
 	// Create a basic source and wrap it with caching
 	basicSource := CreateMySource()
-	cachedSource := cachedsource.NewCachedSource(basicSource, "./cache.json")
+	cachedSource := cachedsource.NewCachedSource(basicSource, "./tmp/cache.json")
 
 	// Define time ranges
 	start1 := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"sync"
 	"testcharting/pkg/charting/sources"
@@ -203,6 +204,14 @@ func (c *CachedSource) exportCacheToFile() error {
 		fmt.Printf("❌ [CachedSource] Failed to marshal cache data: %v\n", err)
 		return err
 	}
+
+	// Create directory structure if it doesn't exist
+	dir := filepath.Dir(c.filePath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		fmt.Printf("❌ [CachedSource] Failed to create directory '%s': %v\n", dir, err)
+		return err
+	}
+
 	err = os.WriteFile(c.filePath, data, 0644)
 	if err != nil {
 		fmt.Printf("❌ [CachedSource] Failed to write cache file '%s': %v\n", c.filePath, err)
