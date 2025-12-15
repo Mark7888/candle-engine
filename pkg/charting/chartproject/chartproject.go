@@ -83,20 +83,23 @@ func (c *ChartProject) GetRender() (RenderableChartProject, error) {
 	chartConfig := c.assembleChartConfig()
 
 	var historyEntries map[sources.SourcePairId][]sources.ChartEntry = make(map[sources.SourcePairId][]sources.ChartEntry)
-	var currentMultiSourceEntries *sources.MultiSourceEntries
+	var currentMultiSourceEntries sources.MultiSourceEntries
+	var currentEntryTime time.Time
 
-	var indicatorPlotData map[string][]indicators.PlotPoint = make(map[string][]indicators.PlotPoint)
+	var indicatorPlotData map[string][]indicators.PlotPointCollection = make(map[string][]indicators.PlotPointCollection)
+	var indicatorLogs map[string][]indicators.IndicatorLog
 	var indicatorErrors map[string][]error
 
 	for i := 0; i < width; i++ {
 		for pairId, pairEntries := range entries {
 			historyEntries[pairId] = append(historyEntries[pairId], pairEntries[i])
+			currentEntryTime = pairEntries[i].Timestamp
 		}
 
 		currentMultiSourceEntries = sources.NewMultiSourceEntries()
 		currentMultiSourceEntries.ParseEntriesMap(historyEntries)
 
-		indicatorPlotData, indicatorErrors = c.calculateIndicators(&indicatorPlotData, currentMultiSourceEntries, chartConfig, indicatorErrors)
+		indicatorPlotData, indicatorLogs, indicatorErrors = c.calculateIndicators(currentEntryTime, &indicatorPlotData, currentMultiSourceEntries, chartConfig, indicatorLogs, indicatorErrors)
 	}
 
 	renderableChartProject := NewRenderableChartProject()
@@ -110,13 +113,17 @@ func (c *ChartProject) GetRender() (RenderableChartProject, error) {
 	renderableChartProject.CandleData = entries
 
 	for _, indicator := range c.indicators {
+		isDataInconsistent := c.checkIndicatorDataConsistency(indicatorPlotData[indicator.GetName()])
+
 		renderableIndicator := RenderableIndicator{
 			Name:            indicator.GetName(),
 			Type:            indicator.GetType(),
 			IndicatorConfig: indicator.GetConfig(),
 			PlotPoints:      indicatorPlotData[indicator.GetName()],
 
+			DataError:       isDataInconsistent,
 			RenderingErrors: indicatorErrors[indicator.GetName()],
+			Logs:            indicatorLogs[indicator.GetName()],
 		}
 
 		renderableChartProject.Indicators = append(renderableChartProject.Indicators, renderableIndicator)
@@ -133,68 +140,34 @@ func (c *ChartProject) assembleChartConfig() indicators.ChartConfig {
 	}
 }
 
-func (c *ChartProject) calculateIndicators(previousPlotData *map[string][]indicators.PlotPoint, entries *sources.MultiSourceEntries, chartConfig indicators.ChartConfig, previousErrors map[string][]error) (plotData map[string][]indicators.PlotPoint, indicatorErrors map[string][]error) {
-	indicatorErrors = make(map[string][]error)
-
-	// Loop through indicators and get their plot points
+func (c *ChartProject) calculateIndicators(timestamp time.Time, previousPlotData *map[string][]indicators.PlotPointCollection, entries sources.MultiSourceEntries, chartConfig indicators.ChartConfig, previousLogs map[string][]indicators.IndicatorLog, previousErrors map[string][]error) (plotData map[string][]indicators.PlotPointCollection, indicatorLogs map[string][]indicators.IndicatorLog, indicatorErrors map[string][]error) {
 	for _, indicator := range c.indicators {
-		point, err := indicator.HandleEntry((*previousPlotData)[indicator.GetName()], entries, chartConfig)
+		outputHandler := indicators.NewIndicatorOutputHandler(timestamp)
+		outputHandler, err := indicator.HandleEntry((*previousPlotData)[indicator.GetName()], entries, chartConfig, outputHandler)
 		if err != nil {
-			point = indicators.GenerateInvalidPlotPoint()
-			indicatorErrors[indicator.GetName()] = append(indicatorErrors[indicator.GetName()], err)
+			outputHandler.SetOutput(indicators.NewInvalidPlotPointCollection())
+			previousErrors[indicator.GetName()] = append(previousErrors[indicator.GetName()], err)
 		}
 
-		(*previousPlotData)[indicator.GetName()] = append((*previousPlotData)[indicator.GetName()], point)
+		(*previousPlotData)[indicator.GetName()] = append((*previousPlotData)[indicator.GetName()], outputHandler.GetOutput())
+		previousLogs[indicator.GetName()] = append(previousLogs[indicator.GetName()], outputHandler.GetLogs()...)
 	}
 
-	return *previousPlotData, indicatorErrors
+	return *previousPlotData, previousLogs, previousErrors
 }
 
-/*
-func (c *ChartProject) Render() {
-		if len(c.data) == 0 {
-			fmt.Println("No data fetched yet, fetching now...")
-			c.FetchData()
+func (c *ChartProject) checkIndicatorDataConsistency(plotPoints []indicators.PlotPointCollection) bool {
+	pointLength := -1
+
+	for _, p := range plotPoints {
+		if pointLength == -1 {
+			pointLength = p.Length()
 		}
 
-		fmt.Println("Rendering ChartProject with", len(c.indicators), "indicators and", len(c.data), "data points.")
-		// Implementation to render the chart
-
-		chartConfig := indicators.ChartConfig{
-			TimeFrame: c.timeFrame,
-		}
-
-		plotData := c.CalculateIndicators(chartConfig)
-
-		// TODO - this is just temporary to show the calculated plot data
-		for name, points := range plotData {
-			fmt.Println("Indicator:", name)
-			for i, point := range points {
-				fmt.Println(" Point", i, "Value:", point.Value, "Color:", point.Color)
-			}
+		if p.Length() != pointLength {
+			return true
 		}
 	}
-*/
 
-/*
-// TODO - fix to support multiple pairs and sources
-func (c *ChartProject) CalculateIndicators(chartConfig indicators.ChartConfig) map[string][]indicators.PlotPoint {
-		plotData := make(map[string][]indicators.PlotPoint)
-
-		for i := range c.sourceManager.fetchedData {
-			multiSourceEntries := sources.NewMultiSourceEntries()
-			multiSourceEntries.AddEntries(c.sourceManager.selectedPairs[0], c.sourceManager.fetchedData[:i+1])
-			// Loop through indicators and get their plot points
-			for _, indicator := range c.indicators {
-				point, err := indicator.HandleEntry(plotData[indicator.GetName()], multiSourceEntries, chartConfig)
-				if err != nil {
-					point = indicators.GenerateInvalidPlotPoint()
-				}
-
-				plotData[indicator.GetName()] = append(plotData[indicator.GetName()], point)
-			}
-		}
-
-		return plotData
-	}
-*/
+	return false
+}

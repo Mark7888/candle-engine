@@ -9,7 +9,6 @@ const (
 	IndicatorTypeStepLine
 )
 
-// TODO - change PlotPoint to support multiple values (e.g., for pie charts, histograms, etc.)
 type PlotPoint struct {
 	Value float64
 	Color string
@@ -26,5 +25,5 @@ type BaseIndicator interface {
 	GetName() string
 	GetType() IndicatorType
 	GetConfig() IndicatorConfig
-	HandleEntry(points []PlotPoint, chartsData *sources.MultiSourceEntries, config ChartConfig) (PlotPoint, error)
+	HandleEntry(points []PlotPointCollection, chartsData sources.MultiSourceEntries, config ChartConfig, handler IndicatorOutputHandler) (IndicatorOutputHandler, error)
 }

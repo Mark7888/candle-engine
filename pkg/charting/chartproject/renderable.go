@@ -29,7 +29,9 @@ type RenderableIndicator struct {
 	Name            string
 	Type            indicators.IndicatorType
 	IndicatorConfig indicators.IndicatorConfig
-	PlotPoints      []indicators.PlotPoint
+	PlotPoints      []indicators.PlotPointCollection
 
+	DataError       bool // if true, indicates that there was an error in data rendering (e.g., inconsistent data lengths)
 	RenderingErrors []error
+	Logs            []indicators.IndicatorLog
 }
