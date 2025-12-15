@@ -31,5 +31,9 @@ go.work.sum
 # .idea/
 # .vscode/
 
+# a-h/Templ
+*_templ.go
+
+# Other
 tmp/
 *.log

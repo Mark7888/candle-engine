@@ -1,0 +1,25 @@
+package templates
+
+templ AppHead() {
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		<title>Chart Testing App</title>
+		<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+		<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js"></script>
+	</head>
+}
+
+templ MainApp() {
+	<!DOCTYPE html>
+	<html>
+		@AppHead()
+		<body class="p-6">
+			<h1 class="text-3xl font-bold underline">Welcome to the Chart Testing Application</h1>
+			<div class="mt-6">
+				@FirstChart()
+			</div>
+		</body>
+	</html>
+}
