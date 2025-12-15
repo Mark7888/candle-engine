@@ -10,8 +10,6 @@ type ChartConfig struct {
 }
 
 // IndicatorConfig holds type-specific configuration for different indicator types
-// TODO - we need to handle single value indicators, so they can display multiple of them if the output contains more than one value
-// !	- we have to handle the formatting specs (for example for line indicator, the name for each line) in the config
 type IndicatorConfig struct {
 	LineIndicator      LineIndicatorConfig
 	StepLineIndicator  StepLineIndicatorConfig
