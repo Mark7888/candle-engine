@@ -9,8 +9,21 @@ type ChartConfig struct {
 	LoadedPairs      []sources.SourcePairId
 }
 
+// IndicatorType represents the type of indicator
+type IndicatorType int
+
+const (
+	IndicatorTypeLine IndicatorType = iota
+	IndicatorTypeStepLine
+	IndicatorTypeTable
+	IndicatorTypeHistogram
+)
+
 // IndicatorConfig holds type-specific configuration for different indicator types
 type IndicatorConfig struct {
+	Type        IndicatorType
+	TargetChart string
+
 	LineIndicator      LineIndicatorConfig
 	StepLineIndicator  StepLineIndicatorConfig
 	TableIndicator     TableIndicatorConfig

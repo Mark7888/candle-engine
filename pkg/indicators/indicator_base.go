@@ -2,13 +2,6 @@ package indicators
 
 import "testcharting/pkg/charting/sources"
 
-type IndicatorType int
-
-const (
-	IndicatorTypeLine IndicatorType = iota
-	IndicatorTypeStepLine
-)
-
 type PlotPoint struct {
 	Value float64
 	Color string
