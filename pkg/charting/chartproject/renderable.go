@@ -16,7 +16,7 @@ type RenderableChartProject struct {
 
 	CandleData map[sources.SourcePairId][]sources.ChartEntry
 
-	Indicators []RenderableIndicator
+	IndicatorCharts map[string][]RenderableIndicator
 
 	// Other metadata
 }

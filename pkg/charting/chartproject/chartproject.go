@@ -114,7 +114,7 @@ func (c *ChartProject) GetRender() (RenderableChartProject, error) {
 
 	for _, indicator := range c.indicators {
 		isDataInconsistent := c.checkIndicatorDataConsistency(indicatorPlotData[indicator.GetName()])
-		// TODO - that would be also hempful to check if the number of points and the number of titles in the config match
+		// TODO - that would be also helpful to check if the number of points and the number of titles in the config match
 
 		renderableIndicator := RenderableIndicator{
 			Name:            indicator.GetName(),
@@ -127,7 +127,7 @@ func (c *ChartProject) GetRender() (RenderableChartProject, error) {
 			Logs:            indicatorLogs[indicator.GetName()],
 		}
 
-		renderableChartProject.Indicators = append(renderableChartProject.Indicators, renderableIndicator)
+		renderableChartProject.IndicatorCharts[indicator.GetConfig().TargetChart] = append(renderableChartProject.IndicatorCharts[indicator.GetConfig().TargetChart], renderableIndicator)
 	}
 
 	return renderableChartProject, nil

@@ -21,7 +21,6 @@ const (
 
 // IndicatorConfig holds type-specific configuration for different indicator types
 type IndicatorConfig struct {
-	Type        IndicatorType
 	TargetChart string
 
 	LineIndicator      LineIndicatorConfig
