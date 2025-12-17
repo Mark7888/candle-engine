@@ -65,6 +65,10 @@ func (ioh *IndicatorOutputHandler) SetOutput(data PlotPointCollection) {
 	ioh.Data = data
 }
 
+func (ioh *IndicatorOutputHandler) SetSingleOutput(point PlotPoint) {
+	ioh.Data = NewPlotPointCollection([]PlotPoint{point})
+}
+
 func (ioh *IndicatorOutputHandler) GetOutput() PlotPointCollection {
 	return ioh.Data
 }
