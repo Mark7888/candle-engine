@@ -2,7 +2,6 @@ package coinbase
 
 import (
 	"errors"
-	"fmt"
 	"maps"
 	"slices"
 	"strconv"
@@ -127,7 +126,7 @@ func (c *CoinbaseSource) fetchDataIfNeeded(pairId string, granularity int, timeR
 
 	// Fetch data in segments if needed
 	for i := 0; i < requestCount; i++ {
-		fmt.Println("Fetching segment", i+1, "of", requestCount)
+		// fmt.Println("Fetching segment", i+1, "of", requestCount, " for Coinbase:", pairId)
 
 		segmentStart := timeRange.Start.Add(time.Duration(i*maxCandlesPerRequest*granularity) * time.Second)
 		segmentEnd := segmentStart.Add(time.Duration(maxCandlesPerRequest*granularity) * time.Second)
@@ -136,8 +135,8 @@ func (c *CoinbaseSource) fetchDataIfNeeded(pairId string, granularity int, timeR
 			segmentEnd = timeRange.End
 		}
 		params := map[string]string{
-			"start":       segmentStart.UTC().Format(time.RFC3339),
-			"end":         segmentEnd.UTC().Format(time.RFC3339),
+			"start":       segmentStart.UTC().Format("2006-01-02T15:04:05Z"),
+			"end":         segmentEnd.UTC().Format("2006-01-02T15:04:05Z"),
 			"granularity": strconv.Itoa(granularity),
 		}
 
