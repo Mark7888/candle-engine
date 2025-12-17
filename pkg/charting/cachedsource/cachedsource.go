@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// TODO - there is an anomaly, where if i cache data for 2 pairs at the same time, only one pair gets cached properly. Need to investigate.
 // cachedData stores chart entries with their time range
 type cachedData struct {
 	Entries []sources.ChartEntry `json:"entries"`

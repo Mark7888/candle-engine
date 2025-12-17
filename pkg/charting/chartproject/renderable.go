@@ -5,6 +5,17 @@ import (
 	"testcharting/pkg/indicators"
 )
 
+type RenderableIndicator struct {
+	Name            string
+	Type            indicators.IndicatorType
+	IndicatorConfig indicators.IndicatorConfig
+	PlotPoints      []indicators.PlotPointCollection
+
+	DataError       bool // if true, indicates that there was an error in data rendering (e.g., inconsistent data lengths)
+	RenderingErrors []error
+	Logs            []indicators.IndicatorLog
+}
+
 // This will contain all the data needed to render the chart and indicators in the frontend
 type RenderableChartProject struct {
 	Title               string
@@ -25,13 +36,4 @@ func NewRenderableChartProject() RenderableChartProject {
 	return RenderableChartProject{}
 }
 
-type RenderableIndicator struct {
-	Name            string
-	Type            indicators.IndicatorType
-	IndicatorConfig indicators.IndicatorConfig
-	PlotPoints      []indicators.PlotPointCollection
-
-	DataError       bool // if true, indicates that there was an error in data rendering (e.g., inconsistent data lengths)
-	RenderingErrors []error
-	Logs            []indicators.IndicatorLog
-}
+// TODO - add methods to RenderableChartProject struct

@@ -3,11 +3,29 @@ package webserver
 import (
 	"fmt"
 	"net/http"
+	"sync"
 
+	"testcharting/internal/webserver/chartmanager"
 	"testcharting/internal/webserver/routes"
+	"testcharting/pkg/charting/chartproject"
 )
 
-func StartWebserver() {
+var chartManager *chartmanager.ChartManager
+var chartManagerMutex sync.RWMutex
+
+func GetChartManager() *chartmanager.ChartManager {
+	chartManagerMutex.Lock()
+	defer chartManagerMutex.Unlock()
+
+	if chartManager == nil {
+		chartManager = chartmanager.NewChartManager()
+	}
+	return chartManager
+}
+
+func InitServer(chartProjects ...*chartproject.ChartProject) {
+	GetChartManager().AddChartProjects(chartProjects...)
+
 	routes.LoadRoutes()
 
 	// render static content from assets folder
