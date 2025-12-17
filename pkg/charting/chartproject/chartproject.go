@@ -87,8 +87,8 @@ func (c *ChartProject) GetRender() (RenderableChartProject, error) {
 	var currentEntryTime time.Time
 
 	var indicatorPlotData map[string][]indicators.PlotPointCollection = make(map[string][]indicators.PlotPointCollection)
-	var indicatorLogs map[string][]indicators.IndicatorLog
-	var indicatorErrors map[string][]error
+	var indicatorLogs map[string][]indicators.IndicatorLog = make(map[string][]indicators.IndicatorLog)
+	var indicatorErrors map[string][]error = make(map[string][]error)
 
 	for i := 0; i < width; i++ {
 		for pairId, pairEntries := range entries {
@@ -111,6 +111,7 @@ func (c *ChartProject) GetRender() (RenderableChartProject, error) {
 	renderableChartProject.ActivePair = c.activePair
 
 	renderableChartProject.CandleData = entries
+	renderableChartProject.IndicatorCharts = make(map[string][]RenderableIndicator)
 
 	for _, indicator := range c.indicators {
 		isDataInconsistent := c.checkIndicatorDataConsistency(indicatorPlotData[indicator.GetName()])
