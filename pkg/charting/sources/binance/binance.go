@@ -156,7 +156,7 @@ func (c *BinanceSource) fetchDataIfNeeded(pairId string, granularity int, timeRa
 
 		params := map[string]string{
 			"symbol":    pairId,
-			"timeFrame": timeFrameStr,
+			"interval":  timeFrameStr,
 			"startTime": strconv.FormatInt(segmentStart.UnixMilli(), 10),
 			"endTime":   strconv.FormatInt(segmentEnd.UnixMilli(), 10),
 			"limit":     strconv.Itoa(maxCandlesPerRequest),
