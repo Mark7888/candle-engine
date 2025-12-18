@@ -21,12 +21,12 @@ func GetSampleChartProject() *chartproject.ChartProject {
 		cachedSourceBinance,
 	}
 	activePair := sources.SourcePairId{
-		SourceName: "Binance",
-		PairId:     "BTCUSDC",
+		SourceName: "Coinbase",
+		PairId:     "BTC-USDT",
 	}
 	allPairsToAdd := []sources.SourcePairId{
-		{SourceName: "Coinbase", PairId: "BTC-USD"},
-		{SourceName: "Coinbase", PairId: "ETH-USD"},
+		{SourceName: "Coinbase", PairId: "BTC-USDT"},
+		{SourceName: "Coinbase", PairId: "ETH-USDT"},
 		{SourceName: "Binance", PairId: "BTCUSDC"},
 		{SourceName: "Binance", PairId: "ETHUSDC"},
 	}
