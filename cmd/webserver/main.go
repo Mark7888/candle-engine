@@ -14,7 +14,8 @@ func main() {
 		return
 	}
 
-	fmt.Printf("Renderable Chart Project: %+v\n", render)
+	_ = render
+	// fmt.Printf("Renderable Chart Project: %+v\n", render)
 
 	// webserver.InitServer(chartProject)
 }

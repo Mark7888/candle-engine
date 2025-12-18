@@ -52,8 +52,21 @@ func (c *ChartProject) GetTimeRange() sources.TimeRange {
 	return c.timeRange
 }
 
-func (c *ChartProject) SetActivePair(pair sources.SourcePairId) {
-	c.activePair = pair
+func (c *ChartProject) SetActivePair(pair sources.SourcePairId) error {
+	loadedPairs := c.sourceManager.GetLoadedPairs()
+
+	for _, loadedPair := range loadedPairs {
+		if c.activePair == (sources.SourcePairId{}) {
+			c.activePair = loadedPair
+		}
+
+		if loadedPair == pair {
+			c.activePair = pair
+			return nil
+		}
+	}
+
+	return fmt.Errorf("pair %v is not loaded", pair)
 }
 
 func (c *ChartProject) GetActivePair() sources.SourcePairId {
