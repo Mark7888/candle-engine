@@ -30,6 +30,10 @@ func NewChartProject(title string) *ChartProject {
 	}
 }
 
+func (c *ChartProject) GetTitle() string {
+	return c.title
+}
+
 func (c *ChartProject) SetTimeFrame(timeFrame string) {
 	c.timeFrame = timeFrame
 }

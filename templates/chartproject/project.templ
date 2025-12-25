@@ -1,0 +1,10 @@
+package templates_chartproject
+
+import (
+    "testcharting/pkg/charting/chartproject"
+)
+
+templ ChartProject(projectRender chartproject.RenderableChartProject) {
+    <!-- Render the chart project using the provided renderable object and it's methods -->
+	<span>{ projectRender.Title }</span>
+}

@@ -16,6 +16,8 @@ type RenderableIndicator struct {
 	Logs            []indicators.IndicatorLog
 }
 
+// TODO - add methods to RenderableIndicator struct
+
 // This will contain all the data needed to render the chart and indicators in the frontend
 type RenderableChartProject struct {
 	Title               string

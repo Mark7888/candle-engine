@@ -1,0 +1,50 @@
+package templates_chartproject
+
+import (
+    "testcharting/pkg/charting/chartproject"
+    "fmt"
+)
+
+script switchTabScript(index int) {
+	document.querySelectorAll('[id^="tab-"]').forEach((el, i) => {
+		el.classList.toggle('hidden', i !== index);
+	});
+	document.querySelectorAll('nav button').forEach((btn, i) => {
+		if (i === index) {
+			btn.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+			btn.classList.add('border-indigo-500', 'text-indigo-600');
+		} else {
+			btn.classList.remove('border-indigo-500', 'text-indigo-600');
+			btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+		}
+	});
+}
+
+templ ChartProjectCollection(projects []*chartproject.ChartProject) {
+	<div class="w-full">
+		<div class="border-b border-gray-200">
+			<nav class="-mb-px flex space-x-8" aria-label="Tabs">
+				for i, project := range projects {
+					<button
+						class={ "whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm", templ.KV("border-indigo-500 text-indigo-600", i == 0), templ.KV("border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300", i != 0) }
+						onclick={ switchTabScript(i) }
+					>
+						{ project.GetTitle() }
+					</button>
+				}
+			</nav>
+		</div>
+		<div class="mt-4">
+			for i, project := range projects {
+				<div class={ "space-y-8", templ.KV("hidden", i != 0) } id={ templ.JSONString("tab-" + fmt.Sprint(i)) }>
+					{{ projectRender, err := project.GetRender() }}
+					if err != nil {
+						@ChartProjectError(err)
+						{{ continue }}
+					}
+					@ChartProject(projectRender)
+				</div>
+			}
+		</div>
+	</div>
+}

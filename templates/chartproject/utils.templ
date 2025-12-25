@@ -1,0 +1,5 @@
+package templates_chartproject
+
+templ ChartProjectError(err error) {
+	<div class="text-red-500">Error rendering project: { err.Error() }</div>
+}

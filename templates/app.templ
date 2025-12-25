@@ -15,10 +15,11 @@ templ MainApp() {
 	<!DOCTYPE html>
 	<html>
 		@AppHead()
+
 		<body class="p-6">
 			<h1 class="text-3xl font-bold underline">Welcome to the Chart Testing Application</h1>
-			<div class="mt-6">
-				@FirstChart()
+			<div hx-get="/projects" hx-target="this" hx-swap="outerHTML" hx-trigger="load">
+				@LoadingSpinner("Loading chart projects...")
 			</div>
 		</body>
 	</html>
