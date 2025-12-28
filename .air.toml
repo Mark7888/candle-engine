@@ -15,7 +15,7 @@ tmp_dir = "tmp"
   include_dir = []
   log = "air.log"
   rerun = true
-  rerun_delay = 50
+  rerun_delay = 0
   stop_on_error = false
 
 [log]
