@@ -9,6 +9,7 @@ import (
 
 type ChartProject struct {
 	title         string
+	colors        sources.CandleColorConfig
 	sourceManager *ChartSourceManager
 	indicators    []indicators.BaseIndicator
 
@@ -20,6 +21,7 @@ type ChartProject struct {
 func NewChartProject(title string) *ChartProject {
 	return &ChartProject{
 		title:         title,
+		colors:        sources.CandleColorConfig{BullishColor: "#ff0000ff", BearishColor: "#00ff00ff"},
 		sourceManager: NewChartSourceManager(),
 		indicators:    []indicators.BaseIndicator{},
 		timeRange: sources.TimeRange{
@@ -40,6 +42,10 @@ func (c *ChartProject) SetTimeFrame(timeFrame string) {
 
 func (c *ChartProject) GetTimeFrame() string {
 	return c.timeFrame
+}
+
+func (c *ChartProject) SetCandleColors(colors sources.CandleColorConfig) {
+	c.colors = colors
 }
 
 func (c *ChartProject) GetAvailableTimeFrames() []string {

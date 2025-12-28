@@ -48,3 +48,8 @@ type SourcePairId struct {
 func (s SourcePairId) String() string {
 	return s.SourceName + ":" + s.PairId
 }
+
+type CandleColorConfig struct {
+	BullishColor string
+	BearishColor string
+}

@@ -51,6 +51,7 @@ func GetSampleChartProject() *chartproject.ChartProject {
 	}
 
 	chartProject1 := chartproject.NewChartProject("Sample Project")
+	chartProject1.SetCandleColors(sources.CandleColorConfig{BullishColor: "#ffffffff", BearishColor: "#00c8ffff"})
 	chartProject1.AddSources(sourcesToAdd...)
 	chartProject1.AddTradingPairs(allPairsToAdd...)
 	chartProject1.SetActivePair(activePair)

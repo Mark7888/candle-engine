@@ -27,7 +27,8 @@ type RenderableChartProject struct {
 	LoadedPairs         []sources.SourcePairId
 	ActivePair          sources.SourcePairId
 
-	CandleData map[sources.SourcePairId][]sources.ChartEntry
+	CandleData   map[sources.SourcePairId][]sources.ChartEntry
+	CandleColors sources.CandleColorConfig
 
 	IndicatorCharts map[string][]RenderableIndicator
 
