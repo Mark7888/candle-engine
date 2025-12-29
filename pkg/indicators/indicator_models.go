@@ -2,6 +2,18 @@ package indicators
 
 import "time"
 
+type PlotPoint struct {
+	Value float64
+	Color string
+}
+
+func GenerateInvalidPlotPoint() PlotPoint {
+	return PlotPoint{
+		Value: -999,
+		Color: "red",
+	}
+}
+
 type PlotPointCollection struct {
 	Points  []PlotPoint
 	Invalid bool

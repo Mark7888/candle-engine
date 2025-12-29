@@ -2,18 +2,6 @@ package indicators
 
 import "testcharting/pkg/charting/sources"
 
-type PlotPoint struct {
-	Value float64
-	Color string
-}
-
-func GenerateInvalidPlotPoint() PlotPoint {
-	return PlotPoint{
-		Value: -999,
-		Color: "red",
-	}
-}
-
 type BaseIndicator interface {
 	GetName() string
 	GetType() IndicatorType
