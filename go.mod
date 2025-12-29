@@ -5,6 +5,7 @@ go 1.25
 require (
 	github.com/a-h/templ v0.3.960
 	github.com/go-echarts/go-echarts/v2 v2.6.5
+	github.com/google/uuid v1.6.0
 	github.com/r3labs/sse/v2 v2.10.0
 )
 

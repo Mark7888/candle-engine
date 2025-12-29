@@ -5,9 +5,16 @@ templ AppHead() {
 		<meta charset="UTF-8"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 		<title>Chart Testing App</title>
-		<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+		// CDN Links
+		<script src="https://cdn.tailwindcss.com"></script>
 		<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js"></script>
+		// Configurations
+		<script>
+			tailwind.config = {
+				darkMode: 'class',
+			}
+		</script>
 	</head>
 }
 
@@ -15,9 +22,7 @@ templ MainApp() {
 	<!DOCTYPE html>
 	<html>
 		@AppHead()
-
-		<body class="p-6">
-			<h1 class="text-3xl font-bold underline">Welcome to the Chart Testing Application</h1>
+		<body class="p-6 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 			<div hx-get="/projects" hx-target="this" hx-swap="outerHTML" hx-trigger="load">
 				@LoadingSpinner("Loading chart projects...")
 			</div>

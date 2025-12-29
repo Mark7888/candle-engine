@@ -1,10 +1,73 @@
 package templates_chartproject
 
 import (
-    "testcharting/pkg/charting/chartproject"
+	"testcharting/pkg/charting/chartproject"
+	"github.com/google/uuid"
 )
 
+script switchPairTabScript(containerId string, index int) {
+	const container = document.getElementById(containerId);
+	container.querySelectorAll('[data-pair-content]').forEach((el, i) => {
+		el.classList.toggle('hidden', i !== index);
+	});
+	container.querySelectorAll('[data-pair-tab]').forEach((btn, i) => {
+		if (i === index) {
+			btn.classList.remove('bg-transparent', 'text-gray-600', 'hover:bg-gray-100', 'dark:text-gray-400', 'dark:hover:bg-gray-700');
+			btn.classList.add('bg-indigo-100', 'text-indigo-700', 'dark:bg-indigo-900', 'dark:text-indigo-300');
+		} else {
+			btn.classList.remove('bg-indigo-100', 'text-indigo-700', 'dark:bg-indigo-900', 'dark:text-indigo-300');
+			btn.classList.add('bg-transparent', 'text-gray-600', 'hover:bg-gray-100', 'dark:text-gray-400', 'dark:hover:bg-gray-700');
+		}
+	});
+}
+
 templ ChartProject(projectRender chartproject.RenderableChartProject) {
-    <!-- Render the chart project using the provided renderable object and it's methods -->
-	<span>{ projectRender.Title }</span>
+    @ProjectPairTabs([][]string{
+        []string{"BTC-USD", "Coinbase"},
+        []string{"ETH-USD", "Binance"},
+        []string{"LTC-USD", "Kraken"},
+    }, []string{
+        "Bitcoin data content here",
+        "Ethereum data content here",
+        "Litecoin data content here",
+    })
+}
+
+templ ProjectPairTabs(pairIds [][]string, pairContent []string) {
+	{{ containerId := uuid.New().String() }}
+	
+    <div class="flex gap-4" id={ containerId }>
+		<!-- Left side tabs -->
+		<div class="flex flex-col space-y-2 min-w-[150px]">
+			{{ i := 0 }}
+			for _, pair := range pairIds {
+				<button
+					data-pair-tab
+					class={ "px-4 py-2 text-left rounded-lg transition-colors", templ.KV("bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300", i == 0), templ.KV("bg-transparent text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700", i != 0) }
+					onclick={ switchPairTabScript(containerId, i) }
+				>
+					{ pair[0] }
+                    <br/>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">{ pair[1] }</span>
+				</button>
+				{{ i++ }}
+			}
+		</div>
+		<!-- Right side content -->
+		<div class="flex-1">
+			{{ j := 0 }}
+			for _, data := range pairContent {
+				<div data-pair-content class={ templ.KV("hidden", j != 0) }>
+					@PairContent(data)
+				</div>
+				{{ j++ }}
+			}
+		</div>
+	</div>
+}
+
+templ PairContent(tempData string) {
+	<div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+		{ tempData }
+	</div>
 }
