@@ -30,7 +30,7 @@ func (r *RSIIndicator) GetConfig() indicators.IndicatorConfig {
 	}
 }
 
-func (r *RSIIndicator) HandleEntry(points []indicators.PlotPointCollection, chartsData sources.MultiSourceEntries, config indicators.ChartConfig, handler indicators.IndicatorOutputHandler) (indicators.IndicatorOutputHandler, error) {
+func (r *RSIIndicator) HandleEntry(points indicators.PlotPointCollectionHistory, chartsData sources.MultiSourceEntries, config indicators.ChartConfig, handler indicators.IndicatorOutputHandler) (indicators.IndicatorOutputHandler, error) {
 	// RSI calculation requires 14 periods of data
 	period := 14
 	if chartsData.GetEntryCount(config.ActivePair) < period+1 {

@@ -43,6 +43,36 @@ func (ppc *PlotPointCollection) Length() int {
 	return len(ppc.Points)
 }
 
+type PlotPointCollectionHistory struct {
+	Collections []PlotPointCollection
+}
+
+func NewPlotPointCollectionHistory(collections []PlotPointCollection) PlotPointCollectionHistory {
+	return PlotPointCollectionHistory{
+		Collections: collections,
+	}
+}
+
+func (pcch *PlotPointCollectionHistory) AddCollection(collection PlotPointCollection) {
+	pcch.Collections = append(pcch.Collections, collection)
+}
+
+func (pcch *PlotPointCollectionHistory) Length() int {
+	return len(pcch.Collections)
+}
+
+func (pcch *PlotPointCollectionHistory) GetCollection(index int) *PlotPointCollection {
+	if index < 0 || index >= len(pcch.Collections) {
+		return nil
+	}
+	reversedIndex := len(pcch.Collections) - 1 - index
+	return &pcch.Collections[reversedIndex]
+}
+
+func (pcch *PlotPointCollectionHistory) GetAllCollections() []PlotPointCollection {
+	return pcch.Collections
+}
+
 type IndicatorLogLevel int
 
 const (

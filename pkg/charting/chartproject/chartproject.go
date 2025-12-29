@@ -168,7 +168,7 @@ func (c *ChartProject) assembleChartConfig() indicators.ChartConfig {
 func (c *ChartProject) calculateIndicators(timestamp time.Time, previousPlotData *map[string][]indicators.PlotPointCollection, entries sources.MultiSourceEntries, chartConfig indicators.ChartConfig, previousLogs map[string][]indicators.IndicatorLog, previousErrors map[string][]error) (plotData map[string][]indicators.PlotPointCollection, indicatorLogs map[string][]indicators.IndicatorLog, indicatorErrors map[string][]error) {
 	for _, indicator := range c.indicators {
 		outputHandler := indicators.NewIndicatorOutputHandler(timestamp)
-		outputHandler, err := indicator.HandleEntry((*previousPlotData)[indicator.GetName()], entries, chartConfig, outputHandler)
+		outputHandler, err := indicator.HandleEntry(indicators.NewPlotPointCollectionHistory((*previousPlotData)[indicator.GetName()]), entries, chartConfig, outputHandler)
 		if err != nil {
 			outputHandler.SetOutput(indicators.NewInvalidPlotPointCollection())
 			previousErrors[indicator.GetName()] = append(previousErrors[indicator.GetName()], err)

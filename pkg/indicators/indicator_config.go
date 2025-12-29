@@ -21,6 +21,7 @@ const (
 
 // IndicatorConfig holds type-specific configuration for different indicator types
 type IndicatorConfig struct {
+	// Empty string for main chart, any other string for custom sub-charts
 	TargetChart string
 
 	LineIndicator      LineIndicatorConfig
