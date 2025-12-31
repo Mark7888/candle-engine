@@ -83,6 +83,10 @@ func (c *ChartProject) GetActivePair() sources.SourcePairId {
 	return c.activePair
 }
 
+func (c *ChartProject) GetLoadedPairs() []sources.SourcePairId {
+	return c.sourceManager.GetLoadedPairs()
+}
+
 func (c *ChartProject) AddSources(sources_ ...sources.Source) {
 	c.sourceManager.AddSources(sources_...)
 }

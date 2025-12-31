@@ -1,5 +1,9 @@
 package templates
 
+import (
+	"testcharting/templates/utils"
+)
+
 templ AppHead() {
 	<head>
 		<meta charset="UTF-8"/>
@@ -24,7 +28,7 @@ templ MainApp() {
 		@AppHead()
 		<body class="p-6 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 			<div hx-get="/projects" hx-target="this" hx-swap="outerHTML" hx-trigger="load">
-				@LoadingSpinner("Loading chart projects...")
+				@templates_utils.LoadingSpinner("Loading chart projects...")
 			</div>
 		</body>
 	</html>

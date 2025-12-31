@@ -29,6 +29,16 @@ func (cm *ChartManager) GetChartProjects() []*chartproject.ChartProject {
 	return projects
 }
 
+func (cm *ChartManager) GetChartProjectsList() (titles []string) {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+
+	for _, project := range cm.chartProjects {
+		titles = append(titles, project.GetTitle())
+	}
+	return titles
+}
+
 // GetChartProject returns a copy of a chart project by index
 func (cm *ChartManager) GetChartProject(index int) (*chartproject.ChartProject, bool) {
 	cm.mu.RLock()

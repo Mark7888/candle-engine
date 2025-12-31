@@ -1,8 +1,9 @@
 package templates_chartproject
 
 import (
-	"testcharting/pkg/charting/chartproject"
+	"fmt"
 	"github.com/google/uuid"
+	"testcharting/templates/utils"
 )
 
 script switchPairTabScript(containerId string, index int) {
@@ -21,34 +22,65 @@ script switchPairTabScript(containerId string, index int) {
 	});
 }
 
-templ ChartProject(projectRender chartproject.RenderableChartProject) {
-    @ProjectPairTabs([][]string{
-        []string{"BTC-USD", "Coinbase"},
-        []string{"ETH-USD", "Binance"},
-        []string{"LTC-USD", "Kraken"},
-    }, []string{
-        "Bitcoin data content here",
-        "Ethereum data content here",
-        "Litecoin data content here",
-    })
+templ ChartProjectLoader(index int) {
+	<div hx-get={ "/project/" + fmt.Sprint(index) } hx-target="this" hx-swap="outerHTML" hx-trigger="load">
+		@templates_utils.LoadingSpinner("Loading chart project...")
+	</div>
 }
 
-templ ProjectPairTabs(pairIds [][]string, pairContent []string) {
+templ TempElement(index string) {
+	<div>{ index }</div>
+}
+
+type ProjectRenderData struct {
+	ProjectIndex int
+	Source       string
+	TradingPair  string
+	// Some more stuff, like current settings
+}
+
+templ ChartProject(renderData []ProjectRenderData) {
+	@ProjectSettingsBar()
+	@ProjectPairTabs(renderData)
+}
+
+templ ProjectSettingsBar() {
+	<div class="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700 pl-6">
+		<div class="flex items-center gap-4">
+			<span class="text-gray-500 dark:text-gray-400 font-medium">Chart Settings:</span>
+			<!-- Button -->
+			<button
+				class="px-4 py-2 text-sm font-medium border-2 border-transparent text-indigo-600 hover:text-indigo-700 hover:border-indigo-300 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:border-indigo-600 rounded-md transition-colors"
+			>
+				Apply Settings
+			</button>
+			<!-- Dropdown -->
+			<select
+				class="px-4 py-2 text-sm font-medium border-2 border-gray-200 dark:border-gray-700 text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600 bg-transparent transition-colors"
+			>
+				<option>Option 1</option>
+				<option>Option 2</option>
+				<option>Option 3</option>
+			</select>
+		</div>
+	</div>
+}
+
+templ ProjectPairTabs(renderData []ProjectRenderData) {
 	{{ containerId := uuid.New().String() }}
-	
-    <div class="flex gap-4" id={ containerId }>
+	<div class="flex gap-4" id={ containerId }>
 		<!-- Left side tabs -->
 		<div class="flex flex-col space-y-2 min-w-[150px]">
 			{{ i := 0 }}
-			for _, pair := range pairIds {
+			for _, data := range renderData {
 				<button
 					data-pair-tab
 					class={ "px-4 py-2 text-left rounded-lg transition-colors", templ.KV("bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300", i == 0), templ.KV("bg-transparent text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700", i != 0) }
 					onclick={ switchPairTabScript(containerId, i) }
 				>
-					{ pair[0] }
-                    <br/>
-                    <span class="text-sm text-gray-500 dark:text-gray-400">{ pair[1] }</span>
+					{ data.TradingPair }
+					<br/>
+					<span class="text-sm text-gray-500 dark:text-gray-400">{ data.Source }</span>
 				</button>
 				{{ i++ }}
 			}
@@ -56,9 +88,9 @@ templ ProjectPairTabs(pairIds [][]string, pairContent []string) {
 		<!-- Right side content -->
 		<div class="flex-1">
 			{{ j := 0 }}
-			for _, data := range pairContent {
+			for _, data := range renderData {
 				<div data-pair-content class={ templ.KV("hidden", j != 0) }>
-					@PairContent(data)
+					@ProjectPairRender(data)
 				</div>
 				{{ j++ }}
 			}
@@ -66,8 +98,15 @@ templ ProjectPairTabs(pairIds [][]string, pairContent []string) {
 	</div>
 }
 
-templ PairContent(tempData string) {
-	<div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-		{ tempData }
+templ ProjectPairRender(data ProjectRenderData) {
+	<div
+		class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+		hx-get={ "/project/" + fmt.Sprint(data.ProjectIndex) + "/render?source=" + data.Source + "&pair=" + data.TradingPair }
+		hx-target="this"
+		hx-swap="outerHTML"
+		hx-trigger="intersect"
+	>
+		// TODO - url assembly is not safe, needs proper encoding
+		@templates_utils.LoadingSpinner("Loading chart for " + data.TradingPair + " from " + data.Source + "...")
 	</div>
 }
