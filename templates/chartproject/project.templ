@@ -96,6 +96,7 @@ templ ProjectPairRenderLoader(data ProjectRenderData) {
 templ ProjectPairRender(temp string) {
 	{{ panelId := uuid.New().String() }}
 	<div id={ panelId } class="flex gap-2 w-full min-h-[calc(100vh-16rem)] mb-8">
+		@syncLogsPanelState()
 		<!-- Main Content Area (2/3) -->
 		<div data-main-content class="w-full lg:w-full transition-all duration-300 flex flex-col">
 			<div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 flex-1 overflow-y-auto">
@@ -106,7 +107,7 @@ templ ProjectPairRender(temp string) {
 		<div
 			data-collapsed-bar
 			class="w-12 min-h-full bg-gradient-to-b from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center group"
-			onclick={ toggleLogsPanelScript(panelId) }
+			onclick={ toggleLogsPanelScript() }
 			title="Open logs panel"
 		>
 			<svg class="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,7 +121,7 @@ templ ProjectPairRender(temp string) {
 				<div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
 					<h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Logs</h3>
 					<button
-						onclick={ toggleLogsPanelScript(panelId) }
+						onclick={ toggleLogsPanelScript() }
 						class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
 						title="Close logs panel"
 					>

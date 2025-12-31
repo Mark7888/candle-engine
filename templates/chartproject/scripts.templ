@@ -45,23 +45,70 @@ script switchPairTabScript(containerId string, index int) {
 	});
 }
 
-script toggleLogsPanelScript(containerId string) {
-	const container = document.getElementById(containerId);
-	const logsPanel = container.querySelector('[data-logs-panel]');
-	const collapsedBar = container.querySelector('[data-collapsed-bar]');
-	const mainContent = container.querySelector('[data-main-content]');
+script toggleLogsPanelScript() {
+	// Get all panels to check current state
+	const logsPanels = document.querySelectorAll('[data-logs-panel]');
+	const collapsedBars = document.querySelectorAll('[data-collapsed-bar]');
+	const mainContents = document.querySelectorAll('[data-main-content]');
 	
-	if (logsPanel.classList.contains('hidden')) {
-		// Open logs panel
-		logsPanel.classList.remove('hidden');
-		collapsedBar.classList.add('hidden');
-		mainContent.classList.remove('lg:w-full');
-		mainContent.classList.add('lg:w-2/3');
+	// Check if any panel is currently hidden (closed state)
+	const isAnyClosed = Array.from(logsPanels).some(panel => panel.classList.contains('hidden'));
+	
+	if (isAnyClosed) {
+		// Open all logs panels
+		logsPanels.forEach(panel => panel.classList.remove('hidden'));
+		collapsedBars.forEach(bar => bar.classList.add('hidden'));
+		mainContents.forEach(content => {
+			content.classList.remove('lg:w-full');
+			content.classList.add('lg:w-2/3');
+		});
 	} else {
-		// Close logs panel
-		logsPanel.classList.add('hidden');
-		collapsedBar.classList.remove('hidden');
-		mainContent.classList.remove('lg:w-2/3');
-		mainContent.classList.add('lg:w-full');
+		// Close all logs panels
+		logsPanels.forEach(panel => panel.classList.add('hidden'));
+		collapsedBars.forEach(bar => bar.classList.remove('hidden'));
+		mainContents.forEach(content => {
+			content.classList.remove('lg:w-2/3');
+			content.classList.add('lg:w-full');
+		});
 	}
+}
+
+script syncLogsPanelState() {
+	// Find any existing panel to check the current state
+	const existingPanels = document.querySelectorAll('[data-logs-panel]');
+	if (existingPanels.length === 0) return;
+	
+	// Get the state from the first existing panel
+	const isPanelHidden = existingPanels[0].classList.contains('hidden');
+	
+	// Apply this state to all panels
+	const allLogsPanels = document.querySelectorAll('[data-logs-panel]');
+	const allCollapsedBars = document.querySelectorAll('[data-collapsed-bar]');
+	const allMainContents = document.querySelectorAll('[data-main-content]');
+	
+	allLogsPanels.forEach(panel => {
+		if (isPanelHidden) {
+			panel.classList.add('hidden');
+		} else {
+			panel.classList.remove('hidden');
+		}
+	});
+	
+	allCollapsedBars.forEach(bar => {
+		if (isPanelHidden) {
+			bar.classList.remove('hidden');
+		} else {
+			bar.classList.add('hidden');
+		}
+	});
+	
+	allMainContents.forEach(content => {
+		if (isPanelHidden) {
+			content.classList.remove('lg:w-2/3');
+			content.classList.add('lg:w-full');
+		} else {
+			content.classList.remove('lg:w-full');
+			content.classList.add('lg:w-2/3');
+		}
+	});
 }
