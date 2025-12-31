@@ -6,37 +6,17 @@ import (
 	"testcharting/templates/utils"
 )
 
-script switchPairTabScript(containerId string, index int) {
-	const container = document.getElementById(containerId);
-	container.querySelectorAll('[data-pair-content]').forEach((el, i) => {
-		el.classList.toggle('hidden', i !== index);
-	});
-	container.querySelectorAll('[data-pair-tab]').forEach((btn, i) => {
-		if (i === index) {
-			btn.classList.remove('bg-transparent', 'text-gray-600', 'hover:bg-gray-100', 'dark:text-gray-400', 'dark:hover:bg-gray-700');
-			btn.classList.add('bg-indigo-100', 'text-indigo-700', 'dark:bg-indigo-900', 'dark:text-indigo-300');
-		} else {
-			btn.classList.remove('bg-indigo-100', 'text-indigo-700', 'dark:bg-indigo-900', 'dark:text-indigo-300');
-			btn.classList.add('bg-transparent', 'text-gray-600', 'hover:bg-gray-100', 'dark:text-gray-400', 'dark:hover:bg-gray-700');
-		}
-	});
+type ProjectRenderData struct {
+	ProjectIndex int
+	Source       string
+	TradingPair  string
+	// Some more stuff, like current settings
 }
 
 templ ChartProjectLoader(index int) {
 	<div hx-get={ "/project/" + fmt.Sprint(index) } hx-target="this" hx-swap="outerHTML" hx-trigger="load">
 		@templates_utils.LoadingSpinner("Loading chart project...")
 	</div>
-}
-
-templ TempElement(index string) {
-	<div>{ index }</div>
-}
-
-type ProjectRenderData struct {
-	ProjectIndex int
-	Source       string
-	TradingPair  string
-	// Some more stuff, like current settings
 }
 
 templ ChartProject(renderData []ProjectRenderData) {
@@ -47,6 +27,7 @@ templ ChartProject(renderData []ProjectRenderData) {
 templ ProjectSettingsBar() {
 	<div class="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700 pl-6">
 		<div class="flex items-center gap-4">
+			<span class="text-gray-500 dark:text-gray-400 font-bold">This bar is a placeholder!</span>
 			<span class="text-gray-500 dark:text-gray-400 font-medium">Chart Settings:</span>
 			<!-- Button -->
 			<button
@@ -62,6 +43,7 @@ templ ProjectSettingsBar() {
 				<option>Option 2</option>
 				<option>Option 3</option>
 			</select>
+			<span class="text-gray-500 dark:text-gray-400 font-bold">This bar is a placeholder!</span>
 		</div>
 	</div>
 }
@@ -90,7 +72,7 @@ templ ProjectPairTabs(renderData []ProjectRenderData) {
 			{{ j := 0 }}
 			for _, data := range renderData {
 				<div data-pair-content class={ templ.KV("hidden", j != 0) }>
-					@ProjectPairRender(data)
+					@ProjectPairRenderLoader(data)
 				</div>
 				{{ j++ }}
 			}
@@ -98,7 +80,7 @@ templ ProjectPairTabs(renderData []ProjectRenderData) {
 	</div>
 }
 
-templ ProjectPairRender(data ProjectRenderData) {
+templ ProjectPairRenderLoader(data ProjectRenderData) {
 	<div
 		class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
 		hx-get={ "/project/" + fmt.Sprint(data.ProjectIndex) + "/render?source=" + data.Source + "&pair=" + data.TradingPair }
@@ -108,5 +90,66 @@ templ ProjectPairRender(data ProjectRenderData) {
 	>
 		// TODO - url assembly is not safe, needs proper encoding
 		@templates_utils.LoadingSpinner("Loading chart for " + data.TradingPair + " from " + data.Source + "...")
+	</div>
+}
+
+templ ProjectPairRender(temp string) {
+	{{ panelId := uuid.New().String() }}
+	<div id={ panelId } class="flex gap-2 w-full min-h-[calc(100vh-16rem)] mb-8">
+		<!-- Main Content Area (2/3) -->
+		<div data-main-content class="w-full lg:w-full transition-all duration-300 flex flex-col">
+			<div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 flex-1 overflow-y-auto">
+				@ChartContent(temp)
+			</div>
+		</div>
+		<!-- Collapsed Logs Bar (shown by default) -->
+		<div
+			data-collapsed-bar
+			class="w-12 min-h-full bg-gradient-to-b from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center group"
+			onclick={ toggleLogsPanelScript(panelId) }
+			title="Open logs panel"
+		>
+			<svg class="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+			</svg>
+		</div>
+		<!-- Logs Panel (1/3, hidden by default) -->
+		<div data-logs-panel class="hidden lg:w-1/3 w-full transition-all duration-300 flex flex-col">
+			<div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 flex-1 flex flex-col">
+				<!-- Header with close button -->
+				<div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+					<h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Logs</h3>
+					<button
+						onclick={ toggleLogsPanelScript(panelId) }
+						class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+						title="Close logs panel"
+					>
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+						</svg>
+					</button>
+				</div>
+				<!-- Logs content -->
+				<div class="flex-1 overflow-y-auto min-h-0">
+					<div class="space-y-2 text-sm font-mono">
+						@LogContent("Debug", "12:34:56", "System initialized")
+						@LogContent("INFO", "12:35:01", "Loading data...")
+						@LogContent("WARN", "12:36:10", "Data source response time is slow")
+						@LogContent("ERROR", "12:37:22", "Failed to fetch data from source")
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+templ ChartContent(temp string) {
+	// TODO - this is a temporary placeholder
+	{ temp }
+}
+
+templ LogContent(logLevel string, timestamp string, message string) {
+	<div class={ "text-sm font-mono", templ.KV("text-red-600 dark:text-red-400", logLevel == "ERROR"), templ.KV("text-yellow-600 dark:text-yellow-400", logLevel == "WARN"), templ.KV("text-green-600 dark:text-green-400", logLevel == "INFO"), templ.KV("text-gray-600 dark:text-gray-400", logLevel != "ERROR" && logLevel != "WARN" && logLevel != "INFO") }>
+		<span class="text-gray-500 dark:text-gray-500">[{ timestamp }]</span> { message }
 	</div>
 }

@@ -46,7 +46,7 @@ func LoadRoutes() {
 		index := r.PathValue("index")
 		source := r.URL.Query().Get("source")
 		pair := r.URL.Query().Get("pair")
-		templates_chartproject.TempElement(index+" "+source+" "+pair).Render(r.Context(), w)
+		templates_chartproject.ProjectPairRender(index+" "+source+" "+pair).Render(r.Context(), w)
 	})
 
 	/*

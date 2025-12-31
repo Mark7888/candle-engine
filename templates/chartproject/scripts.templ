@@ -1,0 +1,67 @@
+package templates_chartproject
+
+// Collection scripts
+
+script switchTabScript(index int) {
+	document.querySelectorAll('[id^="tab-"]').forEach((el, i) => {
+		el.classList.toggle('hidden', i !== index);
+	});
+	document.querySelectorAll('nav button').forEach((btn, i) => {
+		if (i === index) {
+			btn.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'dark:text-gray-400', 'dark:hover:text-gray-300', 'dark:hover:border-gray-600');
+			btn.classList.add('border-indigo-500', 'text-indigo-600', 'dark:border-indigo-400', 'dark:text-indigo-400');
+		} else {
+			btn.classList.remove('border-indigo-500', 'text-indigo-600', 'dark:border-indigo-400', 'dark:text-indigo-400');
+			btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'dark:text-gray-400', 'dark:hover:text-gray-300', 'dark:hover:border-gray-600');
+		}
+	});
+}
+
+script onDarkModeButtonClick() {
+	document.documentElement.classList.toggle('dark');
+	const moonIcon = document.getElementById('moon-icon');
+	const sunIcon = document.getElementById('sun-icon');
+	if (moonIcon && sunIcon) {
+		moonIcon.classList.toggle('hidden');
+		sunIcon.classList.toggle('hidden');
+	}
+}
+
+// Project scripts
+
+script switchPairTabScript(containerId string, index int) {
+	const container = document.getElementById(containerId);
+	container.querySelectorAll('[data-pair-content]').forEach((el, i) => {
+		el.classList.toggle('hidden', i !== index);
+	});
+	container.querySelectorAll('[data-pair-tab]').forEach((btn, i) => {
+		if (i === index) {
+			btn.classList.remove('bg-transparent', 'text-gray-600', 'hover:bg-gray-100', 'dark:text-gray-400', 'dark:hover:bg-gray-700');
+			btn.classList.add('bg-indigo-100', 'text-indigo-700', 'dark:bg-indigo-900', 'dark:text-indigo-300');
+		} else {
+			btn.classList.remove('bg-indigo-100', 'text-indigo-700', 'dark:bg-indigo-900', 'dark:text-indigo-300');
+			btn.classList.add('bg-transparent', 'text-gray-600', 'hover:bg-gray-100', 'dark:text-gray-400', 'dark:hover:bg-gray-700');
+		}
+	});
+}
+
+script toggleLogsPanelScript(containerId string) {
+	const container = document.getElementById(containerId);
+	const logsPanel = container.querySelector('[data-logs-panel]');
+	const collapsedBar = container.querySelector('[data-collapsed-bar]');
+	const mainContent = container.querySelector('[data-main-content]');
+	
+	if (logsPanel.classList.contains('hidden')) {
+		// Open logs panel
+		logsPanel.classList.remove('hidden');
+		collapsedBar.classList.add('hidden');
+		mainContent.classList.remove('lg:w-full');
+		mainContent.classList.add('lg:w-2/3');
+	} else {
+		// Close logs panel
+		logsPanel.classList.add('hidden');
+		collapsedBar.classList.remove('hidden');
+		mainContent.classList.remove('lg:w-2/3');
+		mainContent.classList.add('lg:w-full');
+	}
+}
