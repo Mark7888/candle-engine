@@ -6,10 +6,9 @@ import (
 
 	"testcharting/internal/webserver/routes"
 	sse_handler "testcharting/internal/webserver/sse"
-	"testcharting/pkg/charting/chartproject"
 )
 
-func InitServer(chartProjects ...*chartproject.ChartProject) {
+func InitServer() {
 	routes.LoadRoutes()
 
 	// render static content from assets folder

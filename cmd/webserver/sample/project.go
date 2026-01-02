@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func GetSampleChartProject() *chartproject.ChartProject {
+func GetSampleChartProject() chartproject.ChartProject {
 	// Sources and pairs to add
 	sourceCoinbase := coinbase.NewCoinbaseSource()
 	sourceBinance := binance.NewBinanceSource()
@@ -59,5 +59,5 @@ func GetSampleChartProject() *chartproject.ChartProject {
 	chartProject1.SetTimeRange(timeRange)
 	chartProject1.AddIndicators(indicatorsToAdd...)
 
-	return chartProject1
+	return *chartProject1
 }

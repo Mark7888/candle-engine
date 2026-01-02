@@ -7,24 +7,24 @@ import (
 
 // ChartManager manages a collection of chart projects in a thread-safe manner
 type ChartManager struct {
-	chartProjects []*chartproject.ChartProject
+	chartProjects []chartproject.ChartProject
 	mu            sync.RWMutex
 }
 
 // NewChartManager creates a new ChartManager instance
 func NewChartManager() *ChartManager {
 	return &ChartManager{
-		chartProjects: make([]*chartproject.ChartProject, 0),
+		chartProjects: make([]chartproject.ChartProject, 0),
 	}
 }
 
 // GetChartProjects returns a copy of all chart projects
-func (cm *ChartManager) GetChartProjects() []*chartproject.ChartProject {
+func (cm *ChartManager) GetChartProjects() []chartproject.ChartProject {
 	cm.mu.RLock()
 	defer cm.mu.RUnlock()
 
 	// Create a copy of the slice
-	projects := make([]*chartproject.ChartProject, len(cm.chartProjects))
+	projects := make([]chartproject.ChartProject, len(cm.chartProjects))
 	copy(projects, cm.chartProjects)
 	return projects
 }
@@ -40,18 +40,18 @@ func (cm *ChartManager) GetChartProjectsList() (titles []string) {
 }
 
 // GetChartProject returns a copy of a chart project by index
-func (cm *ChartManager) GetChartProject(index int) (*chartproject.ChartProject, bool) {
+func (cm *ChartManager) GetChartProject(index int) (chartproject.ChartProject, bool) {
 	cm.mu.RLock()
 	defer cm.mu.RUnlock()
 
 	if index < 0 || index >= len(cm.chartProjects) {
-		return nil, false
+		return chartproject.ChartProject{}, false
 	}
 	return cm.chartProjects[index], true
 }
 
 // AddChartProject adds a new chart project to the manager
-func (cm *ChartManager) AddChartProjects(project ...*chartproject.ChartProject) {
+func (cm *ChartManager) AddChartProjects(project ...chartproject.ChartProject) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
@@ -84,5 +84,5 @@ func (cm *ChartManager) Clear() {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
-	cm.chartProjects = make([]*chartproject.ChartProject, 0)
+	cm.chartProjects = make([]chartproject.ChartProject, 0)
 }

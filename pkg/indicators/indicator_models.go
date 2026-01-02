@@ -73,13 +73,13 @@ func (pcch *PlotPointCollectionHistory) GetAllCollections() []PlotPointCollectio
 	return pcch.Collections
 }
 
-type IndicatorLogLevel int
+type IndicatorLogLevel string
 
 const (
-	LogDebug IndicatorLogLevel = iota
-	LogInfo
-	LogWarning
-	LogError
+	LogDebug   IndicatorLogLevel = "DEBUG"
+	LogInfo    IndicatorLogLevel = "INFO"
+	LogWarning IndicatorLogLevel = "WARNING"
+	LogError   IndicatorLogLevel = "ERROR"
 )
 
 type IndicatorLog struct {
@@ -117,6 +117,7 @@ func (ioh *IndicatorOutputHandler) GetOutput() PlotPointCollection {
 
 func (ioh *IndicatorOutputHandler) LogDebug(message string) {
 	ioh.Logs = append(ioh.Logs, IndicatorLog{
+		Time:    ioh.Time,
 		Level:   LogDebug,
 		Message: message,
 	})
@@ -124,6 +125,7 @@ func (ioh *IndicatorOutputHandler) LogDebug(message string) {
 
 func (ioh *IndicatorOutputHandler) LogInfo(message string) {
 	ioh.Logs = append(ioh.Logs, IndicatorLog{
+		Time:    ioh.Time,
 		Level:   LogInfo,
 		Message: message,
 	})
@@ -131,6 +133,7 @@ func (ioh *IndicatorOutputHandler) LogInfo(message string) {
 
 func (ioh *IndicatorOutputHandler) LogWarning(message string) {
 	ioh.Logs = append(ioh.Logs, IndicatorLog{
+		Time:    ioh.Time,
 		Level:   LogWarning,
 		Message: message,
 	})
@@ -138,6 +141,7 @@ func (ioh *IndicatorOutputHandler) LogWarning(message string) {
 
 func (ioh *IndicatorOutputHandler) LogError(message string) {
 	ioh.Logs = append(ioh.Logs, IndicatorLog{
+		Time:    ioh.Time,
 		Level:   LogError,
 		Message: message,
 	})

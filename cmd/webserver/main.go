@@ -10,5 +10,5 @@ func main() {
 	chartProject := sample.GetSampleChartProject()
 	chartmanager.GetChartManager().AddChartProjects(chartProject)
 
-	webserver.InitServer(chartProject)
+	webserver.InitServer()
 }
