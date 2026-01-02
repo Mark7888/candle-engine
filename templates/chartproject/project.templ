@@ -13,6 +13,21 @@ type ProjectRenderData struct {
 	// Some more stuff, like current settings
 }
 
+type LogLevelEnum string
+
+const (
+	LogLevelDebug LogLevelEnum = "DEBUG"
+	LogLevelInfo  LogLevelEnum = "INFO"
+	LogLevelWarn  LogLevelEnum = "WARN"
+	LogLevelError LogLevelEnum = "ERROR"
+)
+
+type ProjectLogData struct {
+	LogLevel LogLevelEnum
+	TimeFormatted string
+	Message   string
+}
+
 templ ChartProjectLoader(index int) {
 	<div hx-get={ "/project/" + fmt.Sprint(index) } hx-target="this" hx-swap="outerHTML" hx-trigger="load">
 		@templates_utils.LoadingSpinner("Loading chart project...")
@@ -93,14 +108,16 @@ templ ProjectPairRenderLoader(data ProjectRenderData) {
 	</div>
 }
 
-templ ProjectPairRender(temp string) {
+// TODO - Make log panel scrollable independently of chart area, inside the flex container
+templ ProjectPairRender(chartTemp string, logTemp map[string][]ProjectLogData) {
 	{{ panelId := uuid.New().String() }}
+	{{ selectId := uuid.New().String() }}
 	<div id={ panelId } class="flex gap-2 w-full min-h-[calc(100vh-16rem)] mb-8">
 		@syncLogsPanelState()
 		<!-- Main Content Area (2/3) -->
 		<div data-main-content class="w-full lg:w-full transition-all duration-300 flex flex-col">
 			<div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 flex-1 overflow-y-auto">
-				@ChartContent(temp)
+				@ChartContent(chartTemp)
 			</div>
 		</div>
 		<!-- Collapsed Logs Bar (shown by default) -->
@@ -117,9 +134,21 @@ templ ProjectPairRender(temp string) {
 		<!-- Logs Panel (1/3, hidden by default) -->
 		<div data-logs-panel class="hidden lg:w-1/3 w-full transition-all duration-300 flex flex-col">
 			<div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 flex-1 flex flex-col">
-				<!-- Header with close button -->
+				<!-- Header with close button and dropdown -->
 				<div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-					<h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Logs</h3>
+					<div class="flex items-center gap-3">
+						<h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Logs</h3>
+						<select
+							id={ selectId }
+							class="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+							onchange={ onLogTypeChangeScript(panelId, selectId) }
+						>
+							<option value="" disabled selected>-</option>
+							for logType := range logTemp {
+								<option value={ logType }>{ logType }</option>
+							}
+						</select>
+					</div>
 					<button
 						onclick={ toggleLogsPanelScript() }
 						class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
@@ -132,12 +161,18 @@ templ ProjectPairRender(temp string) {
 				</div>
 				<!-- Logs content -->
 				<div class="flex-1 overflow-y-auto min-h-0">
-					<div class="space-y-2 text-sm font-mono">
-						@LogContent("Debug", "12:34:56", "System initialized")
-						@LogContent("INFO", "12:35:01", "Loading data...")
-						@LogContent("WARN", "12:36:10", "Data source response time is slow")
-						@LogContent("ERROR", "12:37:22", "Failed to fetch data from source")
+					<!-- Empty state when no log type selected -->
+					<div data-log-empty class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+						<span>Select a log type to view logs</span>
 					</div>
+					<!-- Log collections (hidden by default) -->
+					for logType, logs := range logTemp {
+						<div data-log-collection={ logType } class="hidden space-y-2 text-sm font-mono">
+							for _, logLine := range logs {
+								@LogContent(logLine)
+							}
+						</div>
+					}
 				</div>
 			</div>
 		</div>
@@ -149,8 +184,8 @@ templ ChartContent(temp string) {
 	{ temp }
 }
 
-templ LogContent(logLevel string, timestamp string, message string) {
-	<div class={ "text-sm font-mono", templ.KV("text-red-600 dark:text-red-400", logLevel == "ERROR"), templ.KV("text-yellow-600 dark:text-yellow-400", logLevel == "WARN"), templ.KV("text-green-600 dark:text-green-400", logLevel == "INFO"), templ.KV("text-gray-600 dark:text-gray-400", logLevel != "ERROR" && logLevel != "WARN" && logLevel != "INFO") }>
-		<span class="text-gray-500 dark:text-gray-500">[{ timestamp }]</span> { message }
+templ LogContent(logData ProjectLogData) {
+	<div class={ "text-sm font-mono", templ.KV("text-red-600 dark:text-red-400", logData.LogLevel == "ERROR"), templ.KV("text-yellow-600 dark:text-yellow-400", logData.LogLevel == "WARN"), templ.KV("text-green-600 dark:text-green-400", logData.LogLevel == "INFO"), templ.KV("text-gray-600 dark:text-gray-400", logData.LogLevel != "ERROR" && logData.LogLevel != "WARN" && logData.LogLevel != "INFO") }>
+		<span class="text-gray-500 dark:text-gray-500">[{ logData.TimeFormatted }]</span> { logData.Message }
 	</div>
 }

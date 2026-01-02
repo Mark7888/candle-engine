@@ -3,6 +3,7 @@ package chartproject
 import (
 	"testcharting/pkg/charting/sources"
 	"testcharting/pkg/indicators"
+	templates_chartproject "testcharting/templates/chartproject"
 )
 
 type RenderableIndicator struct {
@@ -37,6 +38,48 @@ type RenderableChartProject struct {
 
 func NewRenderableChartProject() RenderableChartProject {
 	return RenderableChartProject{}
+}
+
+func (rcp *RenderableChartProject) GetLogs() map[string][]templates_chartproject.ProjectLogData {
+	var logList map[string][]templates_chartproject.ProjectLogData
+	logList = make(map[string][]templates_chartproject.ProjectLogData)
+
+	for _, indicators := range rcp.IndicatorCharts {
+		for _, indicator := range indicators {
+			// First collect rendering errors
+			if indicator.DataError {
+				var renderErrorLogs []templates_chartproject.ProjectLogData
+				for _, err := range indicator.RenderingErrors {
+					renderErrorLogs = append(renderErrorLogs, templates_chartproject.ProjectLogData{
+						LogLevel:      templates_chartproject.LogLevelError,
+						TimeFormatted: "",
+						Message:       "Rendering error for indicator " + indicator.Name + ": " + err.Error(),
+					})
+				}
+
+				if logList["RenderingErrors"] == nil {
+					logList["RenderingErrors"] = []templates_chartproject.ProjectLogData{}
+				}
+				logList["RenderingErrors"] = append(logList["RenderingErrors"], renderErrorLogs...)
+			}
+
+			var indicatorLogList []templates_chartproject.ProjectLogData
+			for _, logEntry := range indicator.Logs {
+				indicatorLogList = append(indicatorLogList, templates_chartproject.ProjectLogData{
+					LogLevel:      templates_chartproject.LogLevelEnum(logEntry.Level),
+					TimeFormatted: logEntry.Time.Format("2006:01:02 15:04:05"),
+					Message:       logEntry.Message,
+				})
+			}
+
+			if logList[indicator.Name] == nil {
+				logList[indicator.Name] = []templates_chartproject.ProjectLogData{}
+			}
+			logList[indicator.Name] = append(logList[indicator.Name], indicatorLogList...)
+		}
+	}
+
+	return logList
 }
 
 // TODO - add methods to RenderableChartProject struct

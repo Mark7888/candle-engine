@@ -38,6 +38,7 @@ func (r *RSIIndicator) HandleEntry(points indicators.PlotPointCollectionHistory,
 			Value: 0,
 			Color: "#ff0000",
 		})
+		handler.LogInfo("Not enough data to calculate RSI")
 		return handler, nil // Not enough data yet
 	}
 

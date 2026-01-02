@@ -112,3 +112,31 @@ script syncLogsPanelState() {
 		}
 	});
 }
+
+script onLogTypeChangeScript(panelId string, selectId string) {
+	const panel = document.getElementById(panelId);
+	const select = document.getElementById(selectId);
+	const selectedType = select.value;
+	
+	// Find all log collections and empty state within this panel
+	const logCollections = panel.querySelectorAll('[data-log-collection]');
+	const emptyState = panel.querySelector('[data-log-empty]');
+	
+	if (selectedType === '') {
+		// Show empty state, hide all collections
+		if (emptyState) emptyState.classList.remove('hidden');
+		logCollections.forEach(collection => {
+			collection.classList.add('hidden');
+		});
+	} else {
+		// Hide empty state, show selected collection
+		if (emptyState) emptyState.classList.add('hidden');
+		logCollections.forEach(collection => {
+			if (collection.getAttribute('data-log-collection') === selectedType) {
+				collection.classList.remove('hidden');
+			} else {
+				collection.classList.add('hidden');
+			}
+		});
+	}
+}

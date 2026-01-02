@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 	"testcharting/internal/chartmanager"
+	"testcharting/pkg/charting/sources"
 	"testcharting/templates"
 	templates_chartproject "testcharting/templates/chartproject"
 
@@ -46,7 +47,35 @@ func LoadRoutes() {
 		index := r.PathValue("index")
 		source := r.URL.Query().Get("source")
 		pair := r.URL.Query().Get("pair")
-		templates_chartproject.ProjectPairRender(index+" "+source+" "+pair).Render(r.Context(), w)
+
+		sourcePair := sources.SourcePairId{
+			SourceName: source,
+			PairId:     pair,
+		}
+
+		cm := chartmanager.GetChartManager()
+		indexInt, err := strconv.Atoi(index)
+		if err != nil {
+			http.Error(w, "Invalid project index", http.StatusBadRequest)
+			return
+		}
+
+		project, found := cm.GetChartProject(indexInt)
+		if !found {
+			http.Error(w, "Project not found", http.StatusNotFound)
+			return
+		}
+
+		project.SetActivePair(sourcePair)
+		render, err := project.GetRender()
+		if err != nil {
+			templates_chartproject.ChartProjectError(err).Render(r.Context(), w)
+			return
+		}
+
+		logData := render.GetLogs()
+
+		templates_chartproject.ProjectPairRender(index+" "+source+" "+pair, logData).Render(r.Context(), w)
 	})
 
 	/*
