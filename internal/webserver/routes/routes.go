@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"testcharting/internal/chartmanager"
@@ -19,14 +20,14 @@ func LoadRoutes() {
 		index := r.PathValue("index")
 		indexInt, err := strconv.Atoi(index)
 		if err != nil {
-			http.Error(w, "Invalid project index", http.StatusBadRequest)
+			templates_chartproject.ChartProjectError(errors.New("Invalid project index format")).Render(r.Context(), w)
 			return
 		}
 
 		cm := chartmanager.GetChartManager()
 		project, found := cm.GetChartProject(indexInt)
 		if !found {
-			http.Error(w, "Project not found", http.StatusNotFound)
+			templates_chartproject.ChartProjectError(errors.New("Project index out of range")).Render(r.Context(), w)
 			return
 		}
 
@@ -56,13 +57,13 @@ func LoadRoutes() {
 		cm := chartmanager.GetChartManager()
 		indexInt, err := strconv.Atoi(index)
 		if err != nil {
-			http.Error(w, "Invalid project index", http.StatusBadRequest)
+			templates_chartproject.ChartProjectError(errors.New("Invalid project index format")).Render(r.Context(), w)
 			return
 		}
 
 		project, found := cm.GetChartProject(indexInt)
 		if !found {
-			http.Error(w, "Project not found", http.StatusNotFound)
+			templates_chartproject.ChartProjectError(errors.New("Project index out of range")).Render(r.Context(), w)
 			return
 		}
 
