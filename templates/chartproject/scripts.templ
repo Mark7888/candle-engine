@@ -3,10 +3,10 @@ package templates_chartproject
 // Collection scripts
 
 script switchTabScript(index int) {
-	document.querySelectorAll('[id^="tab-"]').forEach((el, i) => {
+	document.querySelectorAll('[id^="project-tab-content-"]').forEach((el, i) => {
 		el.classList.toggle('hidden', i !== index);
 	});
-	document.querySelectorAll('nav button').forEach((btn, i) => {
+	document.querySelectorAll('[id^="project-tab-button-"]').forEach((btn, i) => {
 		if (i === index) {
 			btn.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'dark:text-gray-400', 'dark:hover:text-gray-300', 'dark:hover:border-gray-600');
 			btn.classList.add('border-indigo-500', 'text-indigo-600', 'dark:border-indigo-400', 'dark:text-indigo-400');

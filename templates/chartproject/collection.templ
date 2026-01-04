@@ -12,6 +12,7 @@ templ ChartProjectCollection(projects []string) {
 						<button
 							class={ "whitespace-nowrap py-4 px-1 border-b-2 font-medium text-md", templ.KV("border-indigo-500 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400", i == 0), templ.KV("border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:border-gray-600", i != 0) }
 							onclick={ switchTabScript(i) }
+							 id={ "project-tab-button-" + fmt.Sprint(i) }
 						>
 							{ projectTitle }
 						</button>
@@ -22,7 +23,7 @@ templ ChartProjectCollection(projects []string) {
 		</div>
 		<div class="mt-4 px-6">
 			for i, _ := range projects {
-				<div class={ "space-y-4", templ.KV("hidden", i != 0) } id={ templ.JSONString("tab-" + fmt.Sprint(i)) }>
+				<div class={ "space-y-4", templ.KV("hidden", i != 0) } id={ "project-tab-content-" + fmt.Sprint(i) }>
 					@ChartProjectLoader(i)
 				</div>
 			}
