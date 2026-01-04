@@ -15,6 +15,7 @@ type IndicatorType int
 const (
 	IndicatorTypeLine IndicatorType = iota
 	IndicatorTypeStepLine
+	IndicatorTypeBarChart
 	IndicatorTypeTable
 	IndicatorTypeHistogram
 )
@@ -24,14 +25,17 @@ type IndicatorConfig struct {
 	// Empty string for main chart, any other string for custom sub-charts
 	TargetChart string
 
-	LineIndicator      LineIndicatorConfig
-	StepLineIndicator  StepLineIndicatorConfig
-	TableIndicator     TableIndicatorConfig
-	HistogramIndicator HistogramIndicatorConfig
+	LineIndicator        LineIndicatorConfig
+	StepLineIndicator    StepLineIndicatorConfig
+	BarChartIndicator    BarChartIndicatorConfig
+	CandleStickIndicator CandleStickIndicatorConfig
+	TableIndicator       TableIndicatorConfig
+	HistogramIndicator   HistogramIndicatorConfig
 }
 
 type LineIndicatorConfig struct {
 	LineThickness int
+	IsSmooth      bool
 	LineTitles    []string
 }
 
@@ -46,6 +50,15 @@ const (
 type StepLineIndicatorConfig struct {
 	StepAlignment StepAlignment
 	LineTitles    []string
+}
+
+type BarChartIndicatorConfig struct {
+	BarTitles []string
+	// TODO - add more bar chart specific configurations
+}
+
+type CandleStickIndicatorConfig struct {
+	// TODO - add candlestick specific configurations
 }
 
 type TableIndicatorConfig struct {

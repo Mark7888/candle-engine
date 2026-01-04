@@ -102,8 +102,9 @@ const (
 |------|-------|-------------|----------|
 | **IndicatorTypeLine** | 0 | Smooth continuous line plot | Moving averages, oscillators, price-based indicators |
 | **IndicatorTypeStepLine** | 1 | Step-wise line with alignment options | Discrete signals, levels, binary indicators |
-| **IndicatorTypeTable** | 2 | Tabular data display | Statistical summaries, multi-metric displays |
-| **IndicatorTypeHistogram** | 3 | Vertical bar histogram | Volume analysis, distribution displays |
+| **IndicatorTypeBarChart** | 2 | Bar chart visualization | Comparative analysis, multi-value comparisons |
+| **IndicatorTypeTable** | 3 | Tabular data display | Statistical summaries, multi-metric displays |
+| **IndicatorTypeHistogram** | 4 | Vertical bar histogram | Volume analysis, distribution displays |
 
 ### Future Indicator Types (Coming Soon)
 
@@ -111,7 +112,6 @@ The following indicator types are planned for future releases:
 
 | Type | Description | Use Case |
 |------|-------------|----------|
-| **IndicatorTypeBarChart** | Bar chart visualization | Comparative analysis, multi-value comparisons |
 | **IndicatorTypePieChart** | Pie chart for proportional data | Portfolio allocation, percentage breakdowns |
 | **IndicatorTypeAreaChart** | Filled area charts | Cumulative data, volume profiles |
 | **IndicatorTypeCandleStick** | Custom candlestick overlays | Alternative price representations, synthetic instruments |
@@ -147,6 +147,7 @@ type IndicatorConfig struct {
     
     LineIndicator      LineIndicatorConfig
     StepLineIndicator  StepLineIndicatorConfig
+    BarChartIndicator  BarChartIndicatorConfig
     TableIndicator     TableIndicatorConfig
     HistogramIndicator HistogramIndicatorConfig
 }
@@ -168,6 +169,7 @@ For `IndicatorTypeLine`:
 ```go
 type LineIndicatorConfig struct {
     LineThickness int      // Width of the line in pixels
+    IsSmooth      bool     // Whether the line should be smoothed
     LineTitles    []string // Names for each line (for multi-line indicators)
 }
 ```
@@ -176,6 +178,7 @@ type LineIndicatorConfig struct {
 ```go
 LineIndicator: indicators.LineIndicatorConfig{
     LineThickness: 2,
+    IsSmooth:      true,
     LineTitles:    []string{"Fast MA", "Slow MA"},
 }
 ```
@@ -195,6 +198,16 @@ type StepLineIndicatorConfig struct {
 - `StepAlignStart` (0): Step occurs at candle start
 - `StepAlignMidpoint` (1): Step occurs at candle midpoint
 - `StepAlignEnd` (2): Step occurs at candle end
+
+#### BarChartIndicatorConfig
+
+For `IndicatorTypeBarChart`:
+
+```go
+type BarChartIndicatorConfig struct {
+    BarTitles []string // Names for each bar series
+}
+```
 
 #### TableIndicatorConfig
 
@@ -287,10 +300,13 @@ Represents a single data point with optional styling:
 
 ```go
 type PlotPoint struct {
-    Value float64 // The numeric value to plot
-    Color string  // CSS color string (e.g., "#00ff00", "red")
+    Value   float64 // The numeric value to plot
+    Color   string  // CSS color string (e.g., "#00ff00", "red")
+    Invalid bool    // If true, this point won't be displayed
 }
 ```
+
+**Important**: If a `PlotPoint` has `Invalid` set to `true`, that specific point will not be displayed in the chart. This allows for gaps in your indicator line at specific positions where data is insufficient or invalid.
 
 ### PlotPointCollection
 
@@ -303,21 +319,35 @@ type PlotPointCollection struct {
 }
 ```
 
+**Important Behavior**:
+- If the **entire collection** has `Invalid` set to `true`, **none of the points** from that collection will be displayed for that candle/iteration
+- If **individual points** within a collection have their `Invalid` field set to `true`, only those specific points won't be displayed, while other valid points in the same collection will still render
+
 **Creating Collections**:
 ```go
 // Single point
-collection := indicators.NewPlotPointCollection([]indicators.PlotPoint{
-    {Value: 50.0, Color: "#00ff00"},
-})
+collection := indicators.NewPlotPointCollection(
+    indicators.PlotPoint{Value: 50.0, Color: "#00ff00"},
+)
 
-// Multiple points
-collection := indicators.NewPlotPointCollection([]indicators.PlotPoint{
-    {Value: 20.0, Color: "#ff0000"},
-    {Value: 80.0, Color: "#00ff00"},
-})
+// Multiple points (variadic arguments)
+collection := indicators.NewPlotPointCollection(
+    indicators.PlotPoint{Value: 20.0, Color: "#ff0000"},
+    indicators.PlotPoint{Value: 80.0, Color: "#00ff00"},
+)
 
-// Invalid/no data
+// Invalid/no data - entire collection is invalid
 collection := indicators.NewInvalidPlotPointCollection()
+
+// Create a single invalid point (for use within a collection)
+invalidPoint := indicators.NewInvalidPlotPoint()
+
+// Mixed valid and invalid points in one collection
+collection := indicators.NewPlotPointCollection(
+    indicators.PlotPoint{Value: 20.0, Color: "#ff0000"}, // Valid - will be displayed
+    indicators.NewInvalidPlotPoint(),                     // Invalid - won't be displayed
+    indicators.PlotPoint{Value: 80.0, Color: "#00ff00"}, // Valid - will be displayed
+)
 ```
 
 ### Setting Output
@@ -330,18 +360,29 @@ handler.SetSingleOutput(indicators.PlotPoint{
 })
 ```
 
-**Multiple Values**:
-```go
-handler.SetOutput(indicators.NewPlotPointCollection([]indicators.PlotPoint{
-    {Value: fastMA, Color: "#00ff00"},
-    {Value: slowMA, Color: "#ff0000"},
-}))
-```
-
-**No Output** (insufficient data):
+**No Output** (insufficient data - entire collection invalid):
 ```go
 handler.SetOutput(indicators.NewInvalidPlotPointCollection())
 ```
+
+**Partial Output** (some valid, some invalid points):
+```go
+// For a multi-line indicator where only some lines have valid data
+handler.SetOutput(indicators.NewPlotPointCollection(
+    indicators.PlotPoint{Value: fastMA, Color: "#00ff00"}, // Valid point - displays
+    indicators.NewInvalidPlotPoint(),                       // Invalid point - creates gap
+    indicators.PlotPoint{Value: slowMA, Color: "#ff0000"}, // Valid point - displays
+))
+```
+
+**Multiple Values**:
+```go
+handler.SetOutput(indicators.NewPlotPointCollection(
+    indicators.PlotPoint{Value: fastMA, Color: "#00ff00"},
+    indicators.PlotPoint{Value: slowMA, Color: "#ff0000"},
+))
+```
+
 
 ### Accessing Previous Values
 
@@ -732,16 +773,16 @@ func (s *SimpleMovingAverageIndicator) HandleEntry(points indicators.PlotPointCo
     }
     
     // Output both moving averages
-    handler.SetOutput(indicators.NewPlotPointCollection([]indicators.PlotPoint{
-        {
+    handler.SetOutput(indicators.NewPlotPointCollection(
+        indicators.PlotPoint{
             Value: fastSMA,
             Color: fastColor,
         },
-        {
+        indicators.PlotPoint{
             Value: slowSMA,
             Color: slowColor,
         },
-    }))
+    ))
     
     return handler, nil
 }
@@ -892,7 +933,8 @@ func (i *EMAIndicator) HandleEntry(points indicators.PlotPointCollectionHistory,
 - Reduce logging in production
 - Optimize loops over historical data
 - Consider caching repeated calculations
-
+ (no points will be displayed)
+- `NewInvalidPlotPoint()`: Create invalid point (creates gap in line for that position)
 ---
 
 ## API Reference Summary
@@ -915,10 +957,12 @@ func (i *EMAIndicator) HandleEntry(points indicators.PlotPointCollectionHistory,
 - `handler.SetSingleOutput(point)`: Set single value output
 - `handler.SetOutput(collection)`: Set multi-value output
 - `handler.LogDebug/Info/Warning/Error(msg)`: Log messages
-- `NewPlotPointCollection(points)`: Create valid collection
-- `NewInvalidPlotPointCollection()`: Create invalid collection
+- `NewPlotPointCollection(points ...PlotPoint)`: Create valid collection (variadic arguments)
+- `NewInvalidPlotPointCollection()`: Create invalid collection (no points will be displayed)
+- `NewInvalidPlotPoint()`: Create invalid point (creates gap in line for that position)
 - `points.GetCollection(index)`: Get historical indicator output by index
 - `points.Length()`: Get number of historical outputs available
+- `points.GetAllCollections()`: Get all historical outputs as slice
 - `points.GetAllCollections()`: Get all historical outputs as slice
 
 ---

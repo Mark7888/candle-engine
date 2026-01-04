@@ -3,14 +3,16 @@ package indicators
 import "time"
 
 type PlotPoint struct {
-	Value float64
-	Color string
+	Value   float64
+	Color   string
+	Invalid bool
 }
 
-func GenerateInvalidPlotPoint() PlotPoint {
+func NewInvalidPlotPoint() PlotPoint {
 	return PlotPoint{
-		Value: -999,
-		Color: "red",
+		Value:   -999,
+		Color:   "red",
+		Invalid: true,
 	}
 }
 
@@ -19,7 +21,7 @@ type PlotPointCollection struct {
 	Invalid bool
 }
 
-func NewPlotPointCollection(points []PlotPoint) PlotPointCollection {
+func NewPlotPointCollection(points ...PlotPoint) PlotPointCollection {
 	return PlotPointCollection{
 		Points: points,
 	}
@@ -98,7 +100,7 @@ type IndicatorOutputHandler struct {
 func NewIndicatorOutputHandler(activeEntryTime time.Time) IndicatorOutputHandler {
 	return IndicatorOutputHandler{
 		Time: activeEntryTime,
-		Data: NewPlotPointCollection([]PlotPoint{}),
+		Data: NewPlotPointCollection(),
 		Logs: []IndicatorLog{},
 	}
 }
@@ -108,7 +110,7 @@ func (ioh *IndicatorOutputHandler) SetOutput(data PlotPointCollection) {
 }
 
 func (ioh *IndicatorOutputHandler) SetSingleOutput(point PlotPoint) {
-	ioh.Data = NewPlotPointCollection([]PlotPoint{point})
+	ioh.Data = NewPlotPointCollection(point)
 }
 
 func (ioh *IndicatorOutputHandler) GetOutput() PlotPointCollection {
