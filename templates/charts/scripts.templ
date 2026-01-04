@@ -1,0 +1,55 @@
+package templates_charts
+
+script chartDimensionFixScript(chartId string) {
+    document.body.addEventListener('htmx:afterSettle', function(event) {
+        var chartRenderDivs = event.target.querySelectorAll('[data-chart-render]');
+        chartRenderDivs.forEach(function(div) {
+            if (!div.id || div.id !== chartId) {
+                return;
+            }
+
+            let targetChart = echarts.getInstanceByDom(div);
+            if (!targetChart) {
+                console.error("ECharts instance not found for div:", div);
+                return;
+            }
+
+            div.style.width = '100%';
+            div.style.minHeight = '400px';
+            targetChart.resize();
+        });
+    });
+
+    window.addEventListener('resize', function() {
+        let targetElement = document.getElementById(chartId);
+        if (!targetElement) return;
+        let targetChart = echarts.getInstanceByDom(targetElement);
+        if (!targetChart) return;
+        let elementVisible = targetElement.checkVisibility({
+            opacityProperty: true,   // Check CSS opacity property too
+            visibilityProperty: true // Check CSS visibility property too
+        });
+        if (!elementVisible) return;
+        targetChart.resize();
+    });
+
+    let resizeTimeout;
+    const observer = new ResizeObserver(entries => {
+        if (resizeTimeout) {
+            clearTimeout(resizeTimeout);
+        }
+        let targetElement = document.getElementById(chartId);
+        if (!targetElement) return;
+        let targetChart = echarts.getInstanceByDom(targetElement);
+        if (!targetChart) return;
+        resizeTimeout = setTimeout(() => {
+            for (let entry of entries) {
+                if (entry.target.id === chartId) {
+                    targetChart.resize();
+                }
+            }
+        }, 100);
+    });
+
+    observer.observe(targetElement);
+}

@@ -1,0 +1,7 @@
+package templates_charts
+
+templ ChartRender(id string) {
+	<div data-chart-render id={ id }></div>
+	@chartRenderScript(id)
+	@chartDimensionFixScript(id)
+}

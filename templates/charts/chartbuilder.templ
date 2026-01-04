@@ -1,0 +1,33 @@
+package templates_charts
+
+script chartRenderScript(chartId string) {
+    targetElement = document.getElementById(chartId);
+    if (!targetElement) {
+        console.error("Element with ID " + chartId + " not found.");
+        return;
+    }
+    var targetChart = echarts.init(document.getElementById(chartId));
+
+    var option = {
+        title: {
+        text: 'ECharts Getting Started Example'
+        },
+        tooltip: {},
+        legend: {
+        data: ['sales']
+        },
+        xAxis: {
+        data: ['Shirts', 'Cardigans', 'Chiffons', 'Pants', 'Heels', 'Socks']
+        },
+        yAxis: {},
+        series: [
+            {
+                name: 'sales',
+                type: 'bar',
+                data: [5, 20, 36, 10, 10, 20]
+            }
+        ]
+    };
+    
+    targetChart.setOption(option);
+}

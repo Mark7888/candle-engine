@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"testcharting/templates/utils"
+	"testcharting/templates/charts"
 )
 
 type ProjectRenderData struct {
@@ -23,9 +24,9 @@ const (
 )
 
 type ProjectLogData struct {
-	LogLevel LogLevelEnum
+	LogLevel      LogLevelEnum
 	TimeFormatted string
-	Message   string
+	Message       string
 }
 
 templ ChartProjectLoader(index int) {
@@ -182,6 +183,7 @@ templ ProjectPairRender(chartTemp string, logTemp map[string][]ProjectLogData) {
 templ ChartContent(temp string) {
 	// TODO - this is a temporary placeholder
 	{ temp }
+	@templates_charts.ChartRender(temp)
 }
 
 templ LogContent(logData ProjectLogData) {
