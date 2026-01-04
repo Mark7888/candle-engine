@@ -8,7 +8,8 @@ import (
 
 func main() {
 	chartProject := sample.GetSampleChartProject()
-	chartmanager.GetChartManager().AddChartProjects(chartProject)
+	chartProject2 := sample.GetSampleChartProject2()
+	chartmanager.GetChartManager().AddChartProjects(chartProject, chartProject2)
 
 	webserver.InitServer()
 }
