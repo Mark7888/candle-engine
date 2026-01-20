@@ -37,3 +37,4 @@ go.work.sum
 # Other
 tmp/
 *.log
+misc/downloads/

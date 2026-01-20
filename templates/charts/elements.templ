@@ -1,7 +1,13 @@
 package templates_charts
 
-templ ChartRender(id string) {
+import (
+	"testcharting/pkg/charting/chartproject/echarts"
+	"github.com/google/uuid"
+)
+
+templ ChartRender(echartOptions echarts.EchartsOptions) {
+	{{ id := "chart-" + uuid.New().String() }}
 	<div data-chart-render id={ id }></div>
-	@chartRenderScript(id)
+	@chartRenderScript(id, echartOptions)
 	@chartDimensionFixScript(id)
 }

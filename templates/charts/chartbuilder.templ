@@ -1,6 +1,8 @@
 package templates_charts
 
-script chartRenderScript(chartId string) {
+import "testcharting/pkg/charting/chartproject/echarts"
+
+script chartRenderScript(chartId string, echartOptions echarts.EchartsOptions) {
     targetElement = document.getElementById(chartId);
     if (!targetElement) {
         console.error("Element with ID " + chartId + " not found.");
@@ -30,4 +32,5 @@ script chartRenderScript(chartId string) {
     };
     
     targetChart.setOption(option);
+    // targetChart.setOption(echartOptions);
 }

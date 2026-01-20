@@ -1,6 +1,7 @@
 package chartproject
 
 import (
+	"testcharting/pkg/charting/chartproject/echarts"
 	"testcharting/pkg/charting/sources"
 	"testcharting/pkg/indicators"
 	templates_chartproject "testcharting/templates/chartproject"
@@ -80,6 +81,13 @@ func (rcp *RenderableChartProject) GetLogs() map[string][]templates_chartproject
 	}
 
 	return logList
+}
+
+func (rcp *RenderableChartProject) GetEchartsOptions() echarts.EchartsOptions {
+	// TODO - implement conversion to Echarts options
+	return echarts.EchartsOptions{
+		Temp: "Some Echarts Options String",
+	}
 }
 
 // TODO - add methods to RenderableChartProject struct

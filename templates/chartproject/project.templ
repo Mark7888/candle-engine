@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"testcharting/templates/utils"
 	"testcharting/templates/charts"
+	"testcharting/pkg/charting/chartproject/echarts"
 )
 
 type ProjectRenderData struct {
@@ -110,7 +111,7 @@ templ ProjectPairRenderLoader(data ProjectRenderData) {
 }
 
 // TODO - Make log panel scrollable independently of chart area, inside the flex container
-templ ProjectPairRender(chartTemp string, logTemp map[string][]ProjectLogData) {
+templ ProjectPairRender(echartOptions echarts.EchartsOptions, logTemp map[string][]ProjectLogData) {
 	{{ panelId := uuid.New().String() }}
 	{{ selectId := uuid.New().String() }}
 	<div id={ panelId } class="flex gap-2 w-full min-h-[calc(100vh-16rem)] mb-8">
@@ -118,7 +119,7 @@ templ ProjectPairRender(chartTemp string, logTemp map[string][]ProjectLogData) {
 		<!-- Main Content Area (2/3) -->
 		<div data-main-content class="w-full lg:w-full transition-all duration-300 flex flex-col">
 			<div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 flex-1 overflow-y-auto">
-				@ChartContent(chartTemp)
+				@ChartContent(echartOptions)
 			</div>
 		</div>
 		<!-- Collapsed Logs Bar (shown by default) -->
@@ -180,10 +181,10 @@ templ ProjectPairRender(chartTemp string, logTemp map[string][]ProjectLogData) {
 	</div>
 }
 
-templ ChartContent(temp string) {
+templ ChartContent(echartOptions echarts.EchartsOptions) {
 	// TODO - this is a temporary placeholder
-	{ temp }
-	@templates_charts.ChartRender(temp)
+	{ echartOptions.Temp }
+	@templates_charts.ChartRender(echartOptions)
 }
 
 templ LogContent(logData ProjectLogData) {

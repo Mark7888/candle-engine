@@ -75,8 +75,9 @@ func LoadRoutes() {
 		}
 
 		logData := render.GetLogs()
+		echartOptions := render.GetEchartsOptions()
 
-		templates_chartproject.ProjectPairRender(index+" "+source+" "+pair, logData).Render(r.Context(), w)
+		templates_chartproject.ProjectPairRender(echartOptions, logData).Render(r.Context(), w)
 	})
 
 	/*
