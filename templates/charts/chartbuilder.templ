@@ -9,28 +9,7 @@ script chartRenderScript(chartId string, echartOptions echarts.EchartsOptions) {
         return;
     }
     var targetChart = echarts.init(document.getElementById(chartId));
-
-    var option = {
-        title: {
-        text: 'ECharts Getting Started Example'
-        },
-        tooltip: {},
-        legend: {
-        data: ['sales']
-        },
-        xAxis: {
-        data: ['Shirts', 'Cardigans', 'Chiffons', 'Pants', 'Heels', 'Socks']
-        },
-        yAxis: {},
-        series: [
-            {
-                name: 'sales',
-                type: 'bar',
-                data: [5, 20, 36, 10, 10, 20]
-            }
-        ]
-    };
     
-    targetChart.setOption(option);
-    // targetChart.setOption(echartOptions);
+    // Use the echartOptions passed from Go
+    targetChart.setOption(echartOptions);
 }

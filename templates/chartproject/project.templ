@@ -182,8 +182,6 @@ templ ProjectPairRender(echartOptions echarts.EchartsOptions, logTemp map[string
 }
 
 templ ChartContent(echartOptions echarts.EchartsOptions) {
-	// TODO - this is a temporary placeholder
-	{ echartOptions.Temp }
 	@templates_charts.ChartRender(echartOptions)
 }
 
