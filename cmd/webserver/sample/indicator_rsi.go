@@ -22,9 +22,9 @@ func (r *RSIIndicator) GetName() string {
 
 func (r *RSIIndicator) GetConfig() indicators.IndicatorConfig {
 	return indicators.IndicatorConfig{
-		TargetChart: "", // empty means main chart
+		TargetChart: "rsi", // empty means main chart
 		LineIndicator: indicators.LineIndicatorConfig{
-			LineThickness: 2,
+			LineThickness: 1,
 			LineTitles:    []string{"RSI"},
 		},
 	}
@@ -34,10 +34,7 @@ func (r *RSIIndicator) HandleEntry(points indicators.PlotPointCollectionHistory,
 	// RSI calculation requires 14 periods of data
 	period := 14
 	if chartsData.GetEntryCount(config.ActivePair) < period+1 {
-		handler.SetSingleOutput(indicators.PlotPoint{
-			Value: 0,
-			Color: "#ff0000",
-		})
+		handler.SetSingleOutput(indicators.NewInvalidPlotPoint())
 		handler.LogDebug("Not enough data yet to calculate RSI")
 		return handler, nil // Not enough data yet
 	}

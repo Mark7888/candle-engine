@@ -42,6 +42,7 @@ func GetSampleChartProject() chartproject.ChartProject {
 	// Indicators to add
 	indicatorsToAdd := []indicators.BaseIndicator{
 		GetSampleRSIIndicator(),
+		GetSampleVolumeIndicator(),
 		// GetSampleMACDIndicator(),
 		// GetSampleSMAIndicator(),
 		// GetSampleEMAIndicator(),
@@ -51,7 +52,7 @@ func GetSampleChartProject() chartproject.ChartProject {
 	}
 
 	chartProject1 := chartproject.NewChartProject("Sample Project")
-	chartProject1.SetCandleColors(sources.CandleColorConfig{BullishColor: "#ffffffff", BearishColor: "#00c8ffff"})
+	chartProject1.SetCandleColors(sources.CandleColorConfig{BullishColor: "#ffffff", BearishColor: "#00c8ff"})
 	chartProject1.AddSources(sourcesToAdd...)
 	chartProject1.AddTradingPairs(allPairsToAdd...)
 	chartProject1.SetActivePair(activePair)
@@ -89,10 +90,11 @@ func GetSampleChartProject2() chartproject.ChartProject {
 	// Indicators to add
 	indicatorsToAdd := []indicators.BaseIndicator{
 		GetSampleMAIndicator(),
+		GetSampleVolumeIndicator(),
 	}
 
 	chartProject1 := chartproject.NewChartProject("Second Project MA Only")
-	chartProject1.SetCandleColors(sources.CandleColorConfig{BullishColor: "#ffff51ff", BearishColor: "#b872ffff"})
+	chartProject1.SetCandleColors(sources.CandleColorConfig{BullishColor: "#ffff51", BearishColor: "#b872ff"})
 	chartProject1.AddSources(sourcesToAdd...)
 	chartProject1.AddTradingPairs(allPairsToAdd...)
 	chartProject1.SetActivePair(activePair)

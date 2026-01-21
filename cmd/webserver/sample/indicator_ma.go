@@ -24,7 +24,7 @@ func (r *MAIndicator) GetConfig() indicators.IndicatorConfig {
 	return indicators.IndicatorConfig{
 		TargetChart: "", // empty means main chart
 		LineIndicator: indicators.LineIndicatorConfig{
-			LineThickness: 2,
+			LineThickness: 1,
 			LineTitles:    []string{"MA5", "MA10", "MA20"},
 		},
 	}
