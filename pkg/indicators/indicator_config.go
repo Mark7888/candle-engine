@@ -17,7 +17,7 @@ const (
 	IndicatorTypeStepLine
 	IndicatorTypeBarChart
 	IndicatorTypeTable
-	IndicatorTypeHistogram
+	IndicatorTypeAreaChart
 )
 
 // IndicatorConfig holds type-specific configuration for different indicator types
@@ -30,13 +30,15 @@ type IndicatorConfig struct {
 	BarChartIndicator    BarChartIndicatorConfig
 	CandleStickIndicator CandleStickIndicatorConfig
 	TableIndicator       TableIndicatorConfig
-	HistogramIndicator   HistogramIndicatorConfig
+	AreaChartIndicator   AreaChartIndicatorConfig
 }
 
 type LineIndicatorConfig struct {
 	LineThickness int
 	IsSmooth      bool
 	LineTitles    []string
+	ShowSymbols   bool    // Show circle markers at data points
+	Opacity       float64 // Line opacity (0.0 to 1.0)
 }
 
 type StepAlignment int
@@ -50,11 +52,15 @@ const (
 type StepLineIndicatorConfig struct {
 	StepAlignment StepAlignment
 	LineTitles    []string
+	LineThickness int
+	Opacity       float64 // Line opacity (0.0 to 1.0)
 }
 
 type BarChartIndicatorConfig struct {
 	BarTitles []string
-	// TODO - add more bar chart specific configurations
+	BarWidth  string  // Bar width (e.g., "60%", "20", "auto")
+	Opacity   float64 // Bar opacity (0.0 to 1.0)
+	Stacked   bool    // Whether bars should be stacked
 }
 
 type CandleStickIndicatorConfig struct {
@@ -69,6 +75,12 @@ type TableIndicatorConfig struct {
 	ValueDisplayFormat string // e.g., "%.2f" // TODO - implement proper formatting
 }
 
-type HistogramIndicatorConfig struct{}
+type AreaChartIndicatorConfig struct {
+	LineTitles    []string
+	LineThickness int
+	IsSmooth      bool
+	ShowSymbols   bool    // Show circle markers at data points
+	Opacity       float64 // Area fill opacity (0.0 to 1.0)
+}
 
-// TODO - add indicator configs for type: BarChart, AreaChart, PieChart, etc.
+// TODO - add indicator configs for type: PieChart, etc.
