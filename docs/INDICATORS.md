@@ -104,7 +104,7 @@ const (
 | **IndicatorTypeStepLine** | 1 | Step-wise line with alignment options | Discrete signals, levels, binary indicators |
 | **IndicatorTypeBarChart** | 2 | Bar chart visualization | Comparative analysis, multi-value comparisons |
 | **IndicatorTypeTable** | 3 | Tabular data display | Statistical summaries, multi-metric displays |
-| **IndicatorTypeHistogram** | 4 | Vertical bar histogram | Volume analysis, distribution displays |
+| **IndicatorTypeAreaChart** | 4 | Filled area chart | Cumulative data, volume profiles, range displays |
 
 ### Future Indicator Types (Coming Soon)
 
@@ -113,7 +113,6 @@ The following indicator types are planned for future releases:
 | Type | Description | Use Case |
 |------|-------------|----------|
 | **IndicatorTypePieChart** | Pie chart for proportional data | Portfolio allocation, percentage breakdowns |
-| **IndicatorTypeAreaChart** | Filled area charts | Cumulative data, volume profiles |
 | **IndicatorTypeCandleStick** | Custom candlestick overlays | Alternative price representations, synthetic instruments |
 
 ---
@@ -145,11 +144,12 @@ Defines how your indicator should be rendered. This is **returned by your indica
 type IndicatorConfig struct {
     TargetChart string
     
-    LineIndicator      LineIndicatorConfig
-    StepLineIndicator  StepLineIndicatorConfig
-    BarChartIndicator  BarChartIndicatorConfig
-    TableIndicator     TableIndicatorConfig
-    HistogramIndicator HistogramIndicatorConfig
+    LineIndicator        LineIndicatorConfig
+    StepLineIndicator    StepLineIndicatorConfig
+    BarChartIndicator    BarChartIndicatorConfig
+    CandleStickIndicator CandleStickIndicatorConfig
+    TableIndicator       TableIndicatorConfig
+    AreaChartIndicator   AreaChartIndicatorConfig
 }
 ```
 
@@ -171,6 +171,8 @@ type LineIndicatorConfig struct {
     LineThickness int      // Width of the line in pixels
     IsSmooth      bool     // Whether the line should be smoothed
     LineTitles    []string // Names for each line (for multi-line indicators)
+    ShowSymbols   bool     // Show circle markers at data points
+    Opacity       float64  // Line opacity (0.0 to 1.0)
 }
 ```
 
@@ -180,6 +182,8 @@ LineIndicator: indicators.LineIndicatorConfig{
     LineThickness: 2,
     IsSmooth:      true,
     LineTitles:    []string{"Fast MA", "Slow MA"},
+    ShowSymbols:   false,
+    Opacity:       0.8,
 }
 ```
 
@@ -191,6 +195,8 @@ For `IndicatorTypeStepLine`:
 type StepLineIndicatorConfig struct {
     StepAlignment StepAlignment // How steps align with candles
     LineTitles    []string      // Names for each line
+    LineThickness int           // Width of the line in pixels
+    Opacity       float64       // Line opacity (0.0 to 1.0)
 }
 ```
 
@@ -206,6 +212,9 @@ For `IndicatorTypeBarChart`:
 ```go
 type BarChartIndicatorConfig struct {
     BarTitles []string // Names for each bar series
+    BarWidth  string  // Bar width (e.g., "60%", "20", "auto")
+    Opacity   float64 // Bar opacity (0.0 to 1.0)
+    Stacked   bool    // Whether bars should be stacked
 }
 ```
 
@@ -222,15 +231,30 @@ type TableIndicatorConfig struct {
 }
 ```
 
-#### HistogramIndicatorConfig
+#### AreaChartIndicatorConfig
 
-For `IndicatorTypeHistogram`:
+For `IndicatorTypeAreaChart`:
 
 ```go
-type HistogramIndicatorConfig struct{}
+type AreaChartIndicatorConfig struct {
+    LineTitles    []string // Names for each area series
+    LineThickness int      // Width of the line border in pixels
+    IsSmooth      bool     // Enable smooth curve interpolation
+    ShowSymbols   bool     // Show circle markers at data points
+    Opacity       float64  // Area fill opacity (0.0 to 1.0)
+}
 ```
 
-Currently no configuration options for histograms.
+**Example**:
+```go
+AreaChartIndicator: indicators.AreaChartIndicatorConfig{
+    LineTitles:    []string{"Cumulative Volume"},
+    LineThickness: 1,
+    IsSmooth:      false,
+    ShowSymbols:   false,
+    Opacity:       0.3,
+}
+```
 
 ---
 
@@ -618,7 +642,7 @@ func (r *RangeIndicator) GetName() string {
 }
 
 func (r *RangeIndicator) GetType() indicators.IndicatorType {
-    return indicators.IndicatorTypeHistogram
+    return indicators.IndicatorTypeBarChart
 }
 
 func (r *RangeIndicator) GetConfig() indicators.IndicatorConfig {
