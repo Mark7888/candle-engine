@@ -138,6 +138,7 @@ func (c *ChartProject) GetRender() (RenderableChartProject, error) {
 	renderableChartProject.ActivePair = c.activePair
 
 	renderableChartProject.CandleData = entries
+	renderableChartProject.CandleColors = c.colors
 	renderableChartProject.IndicatorCharts = make(map[string][]RenderableIndicator)
 
 	for _, indicator := range c.indicators {
