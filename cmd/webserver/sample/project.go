@@ -42,7 +42,8 @@ func GetSampleChartProject() chartproject.ChartProject {
 	// Indicators to add
 	indicatorsToAdd := []indicators.BaseIndicator{
 		GetSampleRSIIndicator(),
-		GetSampleVolumeIndicator(),
+		GetSampleKAMAIndicator(),
+		// GetSampleVolumeIndicator(),
 		// GetSampleMACDIndicator(),
 		// GetSampleSMAIndicator(),
 		// GetSampleEMAIndicator(),
@@ -90,7 +91,7 @@ func GetSampleChartProject2() chartproject.ChartProject {
 	// Indicators to add
 	indicatorsToAdd := []indicators.BaseIndicator{
 		GetSampleMAIndicator(),
-		GetSampleVolumeIndicator(),
+		// GetSampleVolumeIndicator(),
 	}
 
 	chartProject1 := chartproject.NewChartProject("Second Project MA Only")
