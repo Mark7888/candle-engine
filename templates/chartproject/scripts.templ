@@ -148,4 +148,46 @@ script onLogTypeChangeScript(panelId string, selectId string) {
 			}
 		});
 	}
+	
+	// Apply current log level filters
+	applyLogLevelFilters();
+}
+
+script toggleLogLevelFilterScript(level string) {
+	// Toggle active class on all buttons with this level across all panels
+	const buttons = document.querySelectorAll(`[data-log-filter="${level}"]`);
+	buttons.forEach(btn => btn.classList.toggle('log-filter-inactive'));
+	
+	// Apply filters to all log entries
+	applyLogLevelFilters();
+}
+
+script syncLogFilterButtonStates() {
+	// When new panels load, sync their button states with existing buttons
+	const existingButtons = document.querySelectorAll('.log-filter-btn');
+	if (existingButtons.length === 0) return;
+	
+	// Get the state from existing buttons
+	const inactiveLevels = new Set();
+	existingButtons.forEach(btn => {
+		if (btn.classList.contains('log-filter-inactive')) {
+			inactiveLevels.add(btn.getAttribute('data-log-filter'));
+		}
+	});
+	
+	// Apply this state to all buttons across all panels
+	['DEBUG', 'INFO', 'WARN', 'ERROR'].forEach(level => {
+		const shouldBeInactive = inactiveLevels.has(level);
+		const allButtons = document.querySelectorAll(`[data-log-filter="${level}"]`);
+		allButtons.forEach(btn => {
+			if (shouldBeInactive) {
+				btn.classList.add('log-filter-inactive');
+			} else {
+				btn.classList.remove('log-filter-inactive');
+			}
+		});
+	});
+	
+	// Apply filters to newly loaded log entries
+	applyLogLevelFilters();
 }
