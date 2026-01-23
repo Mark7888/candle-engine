@@ -68,7 +68,7 @@ func (rcp *RenderableChartProject) GetLogs() map[string][]templates_chartproject
 			for _, logEntry := range indicator.Logs {
 				indicatorLogList = append(indicatorLogList, templates_chartproject.ProjectLogData{
 					LogLevel:      templates_chartproject.LogLevelEnum(logEntry.Level),
-					TimeFormatted: logEntry.Time.Format("2006:01:02 15:04:05"),
+					TimeFormatted: logEntry.Time.Format("2006-01-02 15:04:05"),
 					Message:       logEntry.Message,
 				})
 			}
