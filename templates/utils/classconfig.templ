@@ -1,0 +1,21 @@
+package templates_utils
+
+// Unified configuration class management
+// Handles document.documentElement class toggles with localStorage persistence
+
+script InitConfigClasses() {
+	// Iterate through all localStorage items starting with 'classConfig.'
+	for (let i = 0; i < localStorage.length; i++) {
+		const key = localStorage.key(i);
+		if (key && key.startsWith('classConfig.')) {
+			const className = key.substring('classConfig.'.length);
+			const isActive = localStorage.getItem(key) === 'true';
+			document.documentElement.classList.toggle(className, isActive);
+		}
+	}
+}
+
+script ToggleConfigClass(className string) {
+	const isActive = document.documentElement.classList.toggle(className);
+	localStorage.setItem(`classConfig.${className}`, isActive ? 'true' : 'false');
+}

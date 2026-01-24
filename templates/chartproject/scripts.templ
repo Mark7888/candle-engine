@@ -17,25 +17,6 @@ script switchTabScript(index int) {
 	});
 }
 
-script onDarkModeButtonClick() {
-	const isDark = document.documentElement.classList.toggle('dark');
-	localStorage.setItem('darkMode', isDark ? 'true' : 'false');
-	
-	const moonIcon = document.getElementById('moon-icon');
-	const sunIcon = document.getElementById('sun-icon');
-	if (moonIcon && sunIcon) {
-		moonIcon.classList.toggle('hidden');
-		sunIcon.classList.toggle('hidden');
-	}
-}
-
-script initDarkMode() {
-	const savedDarkMode = localStorage.getItem('darkMode');
-	if (!savedDarkMode) return;
-	
-	document.documentElement.classList.toggle('dark', savedDarkMode === 'true');
-}
-
 // Project scripts
 
 script switchPairTabScript(containerId string, index int) {
@@ -157,66 +138,4 @@ script onLogTypeChangeScript(panelId string, selectId string) {
 			}
 		});
 	}
-	
-	// Apply current log level filters
-	applyLogLevelFilters();
-}
-
-script toggleLogLevelFilterScript(level string) {
-	// Toggle active class on all buttons with this level across all panels
-	const buttons = document.querySelectorAll(`[data-log-filter="${level}"]`);
-	buttons.forEach(btn => btn.classList.toggle('log-filter-inactive'));
-	
-	// Save state to localStorage
-	const inactiveLevels = [];
-	document.querySelectorAll('.log-filter-btn.log-filter-inactive').forEach(btn => {
-		const level = btn.getAttribute('data-log-filter');
-		if (level && !inactiveLevels.includes(level)) {
-			inactiveLevels.push(level);
-		}
-	});
-	localStorage.setItem('logFilterInactive', JSON.stringify(inactiveLevels));
-	
-	// Apply filters to all log entries
-	applyLogLevelFilters();
-}
-
-script syncLogFilterButtonStates() {
-	// Get the saved state from localStorage, or check existing buttons
-	const savedState = localStorage.getItem('logFilterInactive');
-	let inactiveLevels = new Set();
-	
-	if (savedState) {
-		// Use saved state
-		try {
-			const parsed = JSON.parse(savedState);
-			inactiveLevels = new Set(parsed);
-		} catch (e) {
-			console.error('Failed to parse saved log filter state:', e);
-		}
-	} else {
-		// Fall back to checking existing buttons
-		const existingButtons = document.querySelectorAll('.log-filter-btn');
-		existingButtons.forEach(btn => {
-			if (btn.classList.contains('log-filter-inactive')) {
-				inactiveLevels.add(btn.getAttribute('data-log-filter'));
-			}
-		});
-	}
-	
-	// Apply this state to all buttons across all panels
-	['DEBUG', 'INFO', 'WARN', 'ERROR'].forEach(level => {
-		const shouldBeInactive = inactiveLevels.has(level);
-		const allButtons = document.querySelectorAll(`[data-log-filter="${level}"]`);
-		allButtons.forEach(btn => {
-			if (shouldBeInactive) {
-				btn.classList.add('log-filter-inactive');
-			} else {
-				btn.classList.remove('log-filter-inactive');
-			}
-		});
-	});
-	
-	// Apply filters to newly loaded log entries
-	applyLogLevelFilters();
 }

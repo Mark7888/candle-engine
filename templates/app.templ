@@ -14,8 +14,6 @@ templ AppHead() {
 		<script src="https://cdn.tailwindcss.com"></script>
 		<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js"></script>
-		// Common Scripts
-		@templates_scripts.CommonScriptLoader()
 		// Configurations
 		<script>
 			tailwind.config = {
@@ -34,5 +32,7 @@ templ MainApp() {
 				@templates_utils.LoadingSpinner("Loading chart projects...")
 			</div>
 		</body>
+		@templates_utils.InitConfigClasses()
+		@templates_scripts.CommonScriptLoader()
 	</html>
 }
