@@ -394,14 +394,6 @@ func buildCandlestickSeries(candleData []sources.ChartEntry, colors sources.Cand
 			"borderColor":  normalizeColor(colors.BullishColor),
 			"borderColor0": normalizeColor(colors.BearishColor),
 		},
-		"emphasis": map[string]interface{}{
-			"itemStyle": map[string]interface{}{
-				"color":        "black",
-				"color0":       "#444",
-				"borderColor":  "black",
-				"borderColor0": "#444",
-			},
-		},
 	}
 
 	return candleSeries
