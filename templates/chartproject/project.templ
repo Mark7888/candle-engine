@@ -116,26 +116,25 @@ templ ProjectPairRender(echartOptions echarts.EchartsOptions, logTemp map[string
 	{{ panelId := uuid.New().String() }}
 	{{ selectId := uuid.New().String() }}
 	<div id={ panelId } class="flex gap-2 w-full min-h-[calc(100vh-16rem)] mb-8">
-		@syncLogsPanelState()
 		<!-- Main Content Area (2/3) -->
-		<div data-main-content class="w-full lg:w-full transition-all duration-300 flex flex-col">
+		<div data-main-content class="w-full lg:w-2/3 [.logs-panel-closed_&]:lg:w-full transition-all duration-300 flex flex-col">
 			<div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 flex-1 overflow-y-auto">
 				@ChartContent(echartOptions)
 			</div>
 		</div>
-		<!-- Collapsed Logs Bar (shown by default) -->
+		<!-- Collapsed Logs Bar (shown when panel is closed) -->
 		<div
 			data-collapsed-bar
-			class="w-12 min-h-full bg-gradient-to-b from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center group"
-			onclick={ toggleLogsPanelScript() }
+			class="hidden [.logs-panel-closed_&]:flex w-12 min-h-full bg-gradient-to-b from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors items-center justify-center group"
+			onclick={ templates_utils.ToggleConfigClass("logs-panel-closed") }
 			title="Open logs panel"
 		>
 			<svg class="w-4 h-4 text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
 			</svg>
 		</div>
-		<!-- Logs Panel (1/3, hidden by default) -->
-		<div data-logs-panel class="hidden lg:w-1/3 w-full transition-all duration-300 flex flex-col">
+		<!-- Logs Panel (1/3, visible by default) -->
+		<div data-logs-panel class="flex [.logs-panel-closed_&]:hidden lg:w-1/3 w-full transition-all duration-300 flex-col">
 			<div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 flex-1 flex flex-col">
 				<!-- Header with close button and dropdown -->
 				<div class="flex items-center justify-between mb-3 pb-2 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
@@ -153,7 +152,7 @@ templ ProjectPairRender(echartOptions echarts.EchartsOptions, logTemp map[string
 						</select>
 					</div>
 					<button
-						onclick={ toggleLogsPanelScript() }
+						onclick={ templates_utils.ToggleConfigClass("logs-panel-closed") }
 						class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
 						title="Close logs panel"
 					>
