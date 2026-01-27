@@ -1,5 +1,7 @@
 package templates_charts
 
+import "testcharting/pkg/charting/chartproject/echarts"
+
 script chartDimensionFixScript(chartId string) {
     document.body.addEventListener('htmx:afterSettle', function(event) {
         var chartRenderDivs = event.target.querySelectorAll('[data-chart-render]');
@@ -52,4 +54,16 @@ script chartDimensionFixScript(chartId string) {
     });
 
     observer.observe(targetElement);
+}
+
+script chartRenderScript(chartId string, echartOptions echarts.EchartsOptions) {
+    targetElement = document.getElementById(chartId);
+    if (!targetElement) {
+        console.error("Element with ID " + chartId + " not found.");
+        return;
+    }
+    var targetChart = echarts.init(document.getElementById(chartId));
+    
+    // Use the echartOptions passed from Go
+    targetChart.setOption(echartOptions);
 }
