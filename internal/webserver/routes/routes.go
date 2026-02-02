@@ -1,13 +1,13 @@
 package routes
 
 import (
+	"candle-engine/internal/chartmanager"
+	"candle-engine/pkg/charting/sources"
+	"candle-engine/templates"
+	templates_chartproject "candle-engine/templates/chartproject"
 	"errors"
 	"net/http"
 	"strconv"
-	"testcharting/internal/chartmanager"
-	"testcharting/pkg/charting/sources"
-	"testcharting/templates"
-	templates_chartproject "testcharting/templates/chartproject"
 
 	"github.com/a-h/templ"
 )

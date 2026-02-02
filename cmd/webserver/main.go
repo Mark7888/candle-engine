@@ -1,9 +1,9 @@
 package main
 
 import (
-	"testcharting/cmd/webserver/sample"
-	"testcharting/internal/chartmanager"
-	"testcharting/internal/webserver"
+	"candle-engine/cmd/webserver/sample"
+	"candle-engine/internal/chartmanager"
+	"candle-engine/internal/webserver"
 )
 
 func main() {

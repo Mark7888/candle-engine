@@ -1,8 +1,8 @@
 package sample
 
 import (
-	"testcharting/pkg/charting/sources"
-	"testcharting/pkg/indicators"
+	"candle-engine/pkg/charting/sources"
+	"candle-engine/pkg/indicators"
 )
 
 func GetSampleVolumeIndicator() indicators.BaseIndicator {

@@ -1,10 +1,10 @@
 package chartproject
 
 import (
-	"testcharting/pkg/charting/chartproject/echarts"
-	"testcharting/pkg/charting/sources"
-	"testcharting/pkg/indicators"
-	templates_chartproject "testcharting/templates/chartproject"
+	"candle-engine/pkg/charting/chartproject/echarts"
+	"candle-engine/pkg/charting/sources"
+	"candle-engine/pkg/indicators"
+	templates_chartproject "candle-engine/templates/chartproject"
 )
 
 type RenderableIndicator struct {

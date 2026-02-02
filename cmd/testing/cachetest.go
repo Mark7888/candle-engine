@@ -1,9 +1,9 @@
 package main
 
 import (
+	"candle-engine/pkg/charting/cachedsource"
+	"candle-engine/pkg/charting/sources"
 	"fmt"
-	"testcharting/pkg/charting/cachedsource"
-	"testcharting/pkg/charting/sources"
 	"time"
 )
 

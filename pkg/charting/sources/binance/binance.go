@@ -1,11 +1,11 @@
 package binance
 
 import (
+	"candle-engine/pkg/charting/sources"
 	"errors"
 	"maps"
 	"slices"
 	"strconv"
-	"testcharting/pkg/charting/sources"
 	"time"
 )
 

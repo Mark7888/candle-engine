@@ -1,6 +1,6 @@
 package indicators
 
-import "testcharting/pkg/charting/sources"
+import "candle-engine/pkg/charting/sources"
 
 type BaseIndicator interface {
 	GetName() string

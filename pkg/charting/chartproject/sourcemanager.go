@@ -1,10 +1,10 @@
 package chartproject
 
 import (
+	"candle-engine/pkg/charting/sources"
 	"fmt"
 	"slices"
 	"sync"
-	"testcharting/pkg/charting/sources"
 	"time"
 )
 

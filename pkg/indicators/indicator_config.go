@@ -1,6 +1,6 @@
 package indicators
 
-import "testcharting/pkg/charting/sources"
+import "candle-engine/pkg/charting/sources"
 
 // ChartConfig holds general chart configuration applicable to all indicators
 type ChartConfig struct {

@@ -1,9 +1,9 @@
 package chartproject
 
 import (
+	"candle-engine/pkg/charting/sources"
+	"candle-engine/pkg/indicators"
 	"fmt"
-	"testcharting/pkg/charting/sources"
-	"testcharting/pkg/indicators"
 	"time"
 )
 

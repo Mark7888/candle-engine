@@ -1,4 +1,4 @@
-module testcharting
+module candle-engine
 
 go 1.25
 

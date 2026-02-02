@@ -1,12 +1,12 @@
 package sample
 
 import (
-	"testcharting/pkg/charting/cachedsource"
-	"testcharting/pkg/charting/chartproject"
-	"testcharting/pkg/charting/sources"
-	"testcharting/pkg/charting/sources/binance"
-	"testcharting/pkg/charting/sources/coinbase"
-	"testcharting/pkg/indicators"
+	"candle-engine/pkg/charting/cachedsource"
+	"candle-engine/pkg/charting/chartproject"
+	"candle-engine/pkg/charting/sources"
+	"candle-engine/pkg/charting/sources/binance"
+	"candle-engine/pkg/charting/sources/coinbase"
+	"candle-engine/pkg/indicators"
 	"time"
 )
 

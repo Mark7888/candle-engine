@@ -524,8 +524,8 @@ A simple indicator that displays the closing price of the current candle.
 package sample
 
 import (
-    "testcharting/pkg/charting/sources"
-    "testcharting/pkg/indicators"
+    "candle-engine/pkg/charting/sources"
+    "candle-engine/pkg/indicators"
 )
 
 type LastPriceIndicator struct{}
@@ -574,8 +574,8 @@ Shows the difference between current and previous close prices.
 package sample
 
 import (
-    "testcharting/pkg/charting/sources"
-    "testcharting/pkg/indicators"
+    "candle-engine/pkg/charting/sources"
+    "candle-engine/pkg/indicators"
 )
 
 type PriceChangeIndicator struct{}
@@ -631,8 +631,8 @@ Displays the difference between high and low for each candle.
 package sample
 
 import (
-    "testcharting/pkg/charting/sources"
-    "testcharting/pkg/indicators"
+    "candle-engine/pkg/charting/sources"
+    "candle-engine/pkg/indicators"
 )
 
 type RangeIndicator struct{}
@@ -691,8 +691,8 @@ package sample
 
 import (
     "fmt"
-    "testcharting/pkg/charting/sources"
-    "testcharting/pkg/indicators"
+    "candle-engine/pkg/charting/sources"
+    "candle-engine/pkg/indicators"
 )
 
 type SimpleMovingAverageIndicator struct {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"testcharting/internal/webserver/routes"
-	sse_handler "testcharting/internal/webserver/sse"
+	"candle-engine/internal/webserver/routes"
+	sse_handler "candle-engine/internal/webserver/sse"
 )
 
 func InitServer() {

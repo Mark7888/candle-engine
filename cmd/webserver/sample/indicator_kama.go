@@ -1,10 +1,10 @@
 package sample
 
 import (
+	"candle-engine/pkg/charting/sources"
+	"candle-engine/pkg/indicators"
 	"fmt"
 	"math"
-	"testcharting/pkg/charting/sources"
-	"testcharting/pkg/indicators"
 )
 
 func GetSampleKAMAIndicator() indicators.BaseIndicator {

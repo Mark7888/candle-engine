@@ -1,9 +1,9 @@
 package main
 
 import (
+	"candle-engine/pkg/charting/chartproject"
+	"candle-engine/pkg/charting/sources"
 	"fmt"
-	"testcharting/pkg/charting/chartproject"
-	"testcharting/pkg/charting/sources"
 	"time"
 )
 

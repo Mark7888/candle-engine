@@ -1,8 +1,8 @@
 package chartmanager
 
 import (
+	"candle-engine/pkg/charting/chartproject"
 	"sync"
-	"testcharting/pkg/charting/chartproject"
 )
 
 // ChartManager manages a collection of chart projects in a thread-safe manner
