@@ -1,5 +1,38 @@
 basePath: /
 definitions:
+  models.CandleColors:
+    properties:
+      bearishColor:
+        type: string
+      bullishColor:
+        type: string
+    type: object
+  models.CandleEntry:
+    properties:
+      close:
+        type: number
+      high:
+        type: number
+      low:
+        type: number
+      open:
+        type: number
+      timestamp:
+        type: string
+      volume:
+        type: number
+    type: object
+  models.CandleSeries:
+    properties:
+      entries:
+        items:
+          $ref: '#/definitions/models.CandleEntry'
+        type: array
+      pairId:
+        type: string
+      sourceName:
+        type: string
+    type: object
   models.ErrorResponse:
     properties:
       details:
@@ -12,6 +45,26 @@ definitions:
       status:
         type: string
     type: object
+  models.IndicatorData:
+    properties:
+      config: {}
+      dataError:
+        type: boolean
+      errors:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      plotPoints:
+        items:
+          $ref: '#/definitions/models.PlotPointCollection'
+        type: array
+      targetChart:
+        type: string
+      type:
+        type: string
+    type: object
   models.LogEntry:
     properties:
       indicator:
@@ -22,6 +75,24 @@ definitions:
         type: string
       time:
         type: string
+    type: object
+  models.PlotPoint:
+    properties:
+      color:
+        type: string
+      invalid:
+        type: boolean
+      value:
+        type: number
+    type: object
+  models.PlotPointCollection:
+    properties:
+      invalid:
+        type: boolean
+      points:
+        items:
+          $ref: '#/definitions/models.PlotPoint'
+        type: array
     type: object
   models.ProjectDetailResponse:
     properties:
@@ -55,11 +126,28 @@ definitions:
     properties:
       activePair:
         $ref: '#/definitions/models.SourcePair'
-      echartOptions: {}
+      activeTimeFrame:
+        type: string
+      availableTimeFrames:
+        items:
+          type: string
+        type: array
+      candleColors:
+        $ref: '#/definitions/models.CandleColors'
+      candles:
+        items:
+          $ref: '#/definitions/models.CandleSeries'
+        type: array
+      indicators:
+        items:
+          $ref: '#/definitions/models.IndicatorData'
+        type: array
       logs:
         items:
           $ref: '#/definitions/models.LogEntry'
         type: array
+      timeRange:
+        $ref: '#/definitions/models.TimeRange'
       title:
         type: string
     type: object
@@ -149,7 +237,8 @@ paths:
     get:
       description: |-
         Fetches OHLCV data and computes all configured indicators for the requested trading pair.
-        The returned `echartOptions` object can be passed directly to an Apache ECharts instance.
+        The response contains raw candle and indicator data for the frontend to render.
+        Indicator PlotPoints arrays are index-aligned with the active pair's candle entries.
       parameters:
       - description: Project ID (zero-based index)
         in: path

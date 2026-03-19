@@ -7,15 +7,55 @@ import (
 	"candle-engine/internal/chartmanager"
 	"candle-engine/internal/webserver/api/models"
 	"candle-engine/pkg/charting/sources"
+	"candle-engine/pkg/indicators"
 
 	"github.com/gin-gonic/gin"
 )
+
+// indicatorTypeName converts the internal IndicatorType int to a stable string
+// name that the frontend can use to select the correct rendering strategy.
+func indicatorTypeName(t indicators.IndicatorType) string {
+	switch t {
+	case indicators.IndicatorTypeLine:
+		return "line"
+	case indicators.IndicatorTypeStepLine:
+		return "stepLine"
+	case indicators.IndicatorTypeBarChart:
+		return "bar"
+	case indicators.IndicatorTypeTable:
+		return "table"
+	case indicators.IndicatorTypeAreaChart:
+		return "area"
+	default:
+		return "unknown"
+	}
+}
+
+// indicatorConfig extracts only the type-relevant configuration sub-object so
+// the frontend receives a clean, narrowly-typed config instead of a union struct.
+func indicatorConfig(t indicators.IndicatorType, cfg indicators.IndicatorConfig) interface{} {
+	switch t {
+	case indicators.IndicatorTypeLine:
+		return cfg.LineIndicator
+	case indicators.IndicatorTypeStepLine:
+		return cfg.StepLineIndicator
+	case indicators.IndicatorTypeBarChart:
+		return cfg.BarChartIndicator
+	case indicators.IndicatorTypeTable:
+		return cfg.TableIndicator
+	case indicators.IndicatorTypeAreaChart:
+		return cfg.AreaChartIndicator
+	default:
+		return nil
+	}
+}
 
 // RenderProject godoc
 //
 //	@Summary		Render chart data for a project
 //	@Description	Fetches OHLCV data and computes all configured indicators for the requested trading pair.
-//	@Description	The returned `echartOptions` object can be passed directly to an Apache ECharts instance.
+//	@Description	The response contains raw candle and indicator data for the frontend to render.
+//	@Description	Indicator PlotPoints arrays are index-aligned with the active pair's candle entries.
 //	@Tags			projects
 //	@Produce		json
 //	@Param			id		path		int		true	"Project ID (zero-based index)"
@@ -41,8 +81,8 @@ func RenderProject(c *gin.Context) {
 	}
 
 	cm := chartmanager.GetChartManager()
-	// GetChartProject returns a value copy so each request has its own working copy,
-	// which is safe for concurrent use when setting the active pair.
+	// GetChartProject returns a value copy so each request works on its own
+	// instance, making concurrent pair switching safe.
 	project, found := cm.GetChartProject(id)
 	if !found {
 		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "project not found"})
@@ -60,22 +100,82 @@ func RenderProject(c *gin.Context) {
 		return
 	}
 
-	// Collect all indicator logs and rendering errors into a flat list.
+	// --- Candle data ---
+	// Convert the map[SourcePairId][]ChartEntry to a JSON-friendly slice.
+	candles := make([]models.CandleSeries, 0, len(render.CandleData))
+	for pairId, entries := range render.CandleData {
+		candleEntries := make([]models.CandleEntry, len(entries))
+		for i, e := range entries {
+			candleEntries[i] = models.CandleEntry{
+				Timestamp: e.Timestamp,
+				Open:      e.Open,
+				High:      e.High,
+				Low:       e.Low,
+				Close:     e.Close,
+				Volume:    e.Volume,
+			}
+		}
+		candles = append(candles, models.CandleSeries{
+			SourceName: pairId.SourceName,
+			PairID:     pairId.PairId,
+			Entries:    candleEntries,
+		})
+	}
+
+	// --- Indicator data ---
+	// Flatten the per-chart map into a single slice; TargetChart is included on
+	// each indicator so the frontend can re-group them as needed.
+	var indicatorData []models.IndicatorData
 	var logs []models.LogEntry
+
 	for _, indicatorGroup := range render.IndicatorCharts {
-		for _, indicator := range indicatorGroup {
-			if indicator.DataError {
-				for _, renderErr := range indicator.RenderingErrors {
+		for _, ind := range indicatorGroup {
+			// Convert plot point collections.
+			plotPoints := make([]models.PlotPointCollection, len(ind.PlotPoints))
+			for i, coll := range ind.PlotPoints {
+				points := make([]models.PlotPoint, len(coll.Points))
+				for j, pt := range coll.Points {
+					points[j] = models.PlotPoint{
+						Value:   pt.Value,
+						Color:   pt.Color,
+						Invalid: pt.Invalid,
+					}
+				}
+				plotPoints[i] = models.PlotPointCollection{
+					Points:  points,
+					Invalid: coll.Invalid,
+				}
+			}
+
+			// Collect error strings (errors.Error() is the only safe serialization).
+			var errStrings []string
+			for _, renderErr := range ind.RenderingErrors {
+				errStrings = append(errStrings, renderErr.Error())
+			}
+
+			indicatorData = append(indicatorData, models.IndicatorData{
+				Name:        ind.Name,
+				Type:        indicatorTypeName(ind.Type),
+				TargetChart: ind.IndicatorConfig.TargetChart,
+				Config:      indicatorConfig(ind.Type, ind.IndicatorConfig),
+				PlotPoints:  plotPoints,
+				DataError:   ind.DataError,
+				Errors:      errStrings,
+			})
+
+			// Collect logs for this indicator.
+			if ind.DataError {
+				for _, renderErr := range ind.RenderingErrors {
 					logs = append(logs, models.LogEntry{
-						Indicator: indicator.Name,
+						Indicator: ind.Name,
 						Level:     "ERROR",
 						Message:   "data inconsistency: " + renderErr.Error(),
 					})
 				}
 			}
-			for _, logEntry := range indicator.Logs {
+			for _, logEntry := range ind.Logs {
 				logs = append(logs, models.LogEntry{
-					Indicator: indicator.Name,
+					Indicator: ind.Name,
 					Level:     string(logEntry.Level),
 					Time:      logEntry.Time,
 					Message:   logEntry.Message,
@@ -83,15 +183,32 @@ func RenderProject(c *gin.Context) {
 			}
 		}
 	}
+
+	if indicatorData == nil {
+		indicatorData = []models.IndicatorData{}
+	}
 	if logs == nil {
 		logs = []models.LogEntry{}
 	}
 
 	ap := render.ActivePair
+	tr := render.TimeRange
+
 	c.JSON(http.StatusOK, models.ProjectRenderResponse{
-		Title:         render.Title,
-		ActivePair:    models.SourcePair{SourceName: ap.SourceName, PairID: ap.PairId},
-		EchartOptions: render.GetEchartsOptions(),
-		Logs:          logs,
+		Title: render.Title,
+		TimeRange: models.TimeRange{
+			Start: tr.Start,
+			End:   tr.End,
+		},
+		AvailableTimeFrames: render.AvailableTimeFrames,
+		ActiveTimeFrame:     render.ActiveTimeFrame,
+		ActivePair:          models.SourcePair{SourceName: ap.SourceName, PairID: ap.PairId},
+		CandleColors: models.CandleColors{
+			BullishColor: render.CandleColors.BullishColor,
+			BearishColor: render.CandleColors.BearishColor,
+		},
+		Candles:    candles,
+		Indicators: indicatorData,
+		Logs:       logs,
 	})
 }

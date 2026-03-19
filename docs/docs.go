@@ -98,7 +98,7 @@ const docTemplate = `{
         },
         "/api/v1/projects/{id}/render": {
             "get": {
-                "description": "Fetches OHLCV data and computes all configured indicators for the requested trading pair.\nThe returned ` + "`" + `echartOptions` + "`" + ` object can be passed directly to an Apache ECharts instance.",
+                "description": "Fetches OHLCV data and computes all configured indicators for the requested trading pair.\nThe response contains raw candle and indicator data for the frontend to render.\nIndicator PlotPoints arrays are index-aligned with the active pair's candle entries.",
                 "produces": [
                     "application/json"
                 ],
@@ -159,6 +159,57 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.CandleColors": {
+            "type": "object",
+            "properties": {
+                "bearishColor": {
+                    "type": "string"
+                },
+                "bullishColor": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CandleEntry": {
+            "type": "object",
+            "properties": {
+                "close": {
+                    "type": "number"
+                },
+                "high": {
+                    "type": "number"
+                },
+                "low": {
+                    "type": "number"
+                },
+                "open": {
+                    "type": "number"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "volume": {
+                    "type": "number"
+                }
+            }
+        },
+        "models.CandleSeries": {
+            "type": "object",
+            "properties": {
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.CandleEntry"
+                    }
+                },
+                "pairId": {
+                    "type": "string"
+                },
+                "sourceName": {
+                    "type": "string"
+                }
+            }
+        },
         "models.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -178,6 +229,36 @@ const docTemplate = `{
                 }
             }
         },
+        "models.IndicatorData": {
+            "type": "object",
+            "properties": {
+                "config": {},
+                "dataError": {
+                    "type": "boolean"
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "plotPoints": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PlotPointCollection"
+                    }
+                },
+                "targetChart": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
         "models.LogEntry": {
             "type": "object",
             "properties": {
@@ -192,6 +273,34 @@ const docTemplate = `{
                 },
                 "time": {
                     "type": "string"
+                }
+            }
+        },
+        "models.PlotPoint": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "invalid": {
+                    "type": "boolean"
+                },
+                "value": {
+                    "type": "number"
+                }
+            }
+        },
+        "models.PlotPointCollection": {
+            "type": "object",
+            "properties": {
+                "invalid": {
+                    "type": "boolean"
+                },
+                "points": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PlotPoint"
+                    }
                 }
             }
         },
@@ -244,12 +353,38 @@ const docTemplate = `{
                 "activePair": {
                     "$ref": "#/definitions/models.SourcePair"
                 },
-                "echartOptions": {},
+                "activeTimeFrame": {
+                    "type": "string"
+                },
+                "availableTimeFrames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "candleColors": {
+                    "$ref": "#/definitions/models.CandleColors"
+                },
+                "candles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.CandleSeries"
+                    }
+                },
+                "indicators": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.IndicatorData"
+                    }
+                },
                 "logs": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.LogEntry"
                     }
+                },
+                "timeRange": {
+                    "$ref": "#/definitions/models.TimeRange"
                 },
                 "title": {
                     "type": "string"
