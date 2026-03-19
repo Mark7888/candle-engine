@@ -2,7 +2,7 @@ root = "."
 tmp_dir = "tmp"
 
 [build]
-  pre_cmd = ["go tool templ generate"]
+  pre_cmd = ["go tool templ generate", "go tool swag init --generalInfo internal/webserver/webserver.go --output docs"]
   cmd = "go build -o ./tmp/main cmd/webserver/*.go"
   bin = "tmp/main"
   args_bin = ["-host", ":8080"]

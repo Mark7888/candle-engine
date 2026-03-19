@@ -1,21 +1,57 @@
+// Package webserver initialises and starts the Gin HTTP server.
+//
+//	@title			Candle Engine API
+//	@version		1.0
+//	@description	REST API for the Candle Engine charting system.
+//	@host			localhost:8080
+//	@BasePath		/
+//	@schemes		http
 package webserver
 
 import (
-	"fmt"
-	"net/http"
+	"log"
+	"os"
 
-	"candle-engine/internal/webserver/routes"
+	"candle-engine/internal/webserver/api"
+	"candle-engine/internal/webserver/legacy"
 	sse_handler "candle-engine/internal/webserver/sse"
+
+	_ "candle-engine/docs" // Swagger generated docs
+
+	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// InitServer configures and starts the Gin router on localhost:8080.
+//
+// Configuration via environment variables:
+//   - CORS_ALLOWED_ORIGIN: allowed CORS origin for the REST API (default: "*").
+//     Set to your frontend URL in production, e.g. "https://app.example.com".
 func InitServer() {
-	routes.LoadRoutes()
+	router := gin.Default()
 
-	// render static content from assets folder
-	// http.Handle("/static/", http.StripPrefix(strings.TrimRight("/static/", "/"), http.FileServer(http.Dir("./assets/static"))))
+	// REST API routes (JSON) at /api/v1/*.
+	// Read the allowed CORS origin from an environment variable so that
+	// production deployments can lock this down without a code change.
+	corsOrigin := os.Getenv("CORS_ALLOWED_ORIGIN")
+	if corsOrigin == "" {
+		corsOrigin = "*" // permissive default for local development
+	}
+	api.RegisterRoutes(router, corsOrigin)
 
-	sse_handler.StartServer("/events/")
+	// Swagger UI at /swagger/index.html.
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	fmt.Println("Webserver listening on localhost:8080")
-	http.ListenAndServe("localhost:8080", nil)
+	// Legacy Templ+HTMX HTML routes – kept for backward compatibility.
+	// These can be removed once the React frontend is in place.
+	legacy.RegisterRoutes(&router.RouterGroup)
+
+	// Server-Sent Events endpoint for real-time browser push.
+	sse_handler.RegisterRoute(router, "/events/")
+
+	log.Println("Webserver listening on localhost:8080")
+	if err := router.Run("localhost:8080"); err != nil {
+		log.Fatalf("failed to start server: %v", err)
+	}
 }
