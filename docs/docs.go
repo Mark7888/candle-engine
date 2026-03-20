@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/api/v1/health": {
             "get": {
-                "description": "Returns the operational status of the API server.",
+                "description": "Returns the operational status of the API server and the current server time.",
                 "produces": [
                     "application/json"
                 ],
@@ -224,6 +224,9 @@ const docTemplate = `{
         "models.HealthResponse": {
             "type": "object",
             "properties": {
+                "serverTime": {
+                    "type": "string"
+                },
                 "status": {
                     "type": "string"
                 }

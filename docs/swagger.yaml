@@ -42,6 +42,8 @@ definitions:
     type: object
   models.HealthResponse:
     properties:
+      serverTime:
+        type: string
       status:
         type: string
     type: object
@@ -181,7 +183,8 @@ info:
 paths:
   /api/v1/health:
     get:
-      description: Returns the operational status of the API server.
+      description: Returns the operational status of the API server and the current
+        server time.
       produces:
       - application/json
       responses:
