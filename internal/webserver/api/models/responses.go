@@ -115,7 +115,8 @@ type ProjectRenderResponse struct {
 
 // HealthResponse is returned by GET /api/v1/health.
 type HealthResponse struct {
-	Status string `json:"status"`
+	Status     string    `json:"status"`
+	ServerTime time.Time `json:"serverTime"`
 }
 
 // ErrorResponse is returned for any API error.
