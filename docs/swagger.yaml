@@ -1,0 +1,282 @@
+basePath: /
+definitions:
+  models.CandleColors:
+    properties:
+      bearishColor:
+        type: string
+      bullishColor:
+        type: string
+    type: object
+  models.CandleEntry:
+    properties:
+      close:
+        type: number
+      high:
+        type: number
+      low:
+        type: number
+      open:
+        type: number
+      timestamp:
+        type: string
+      volume:
+        type: number
+    type: object
+  models.CandleSeries:
+    properties:
+      entries:
+        items:
+          $ref: '#/definitions/models.CandleEntry'
+        type: array
+      pairId:
+        type: string
+      sourceName:
+        type: string
+    type: object
+  models.ErrorResponse:
+    properties:
+      details:
+        type: string
+      error:
+        type: string
+    type: object
+  models.HealthResponse:
+    properties:
+      status:
+        type: string
+    type: object
+  models.IndicatorData:
+    properties:
+      config: {}
+      dataError:
+        type: boolean
+      errors:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      plotPoints:
+        items:
+          $ref: '#/definitions/models.PlotPointCollection'
+        type: array
+      targetChart:
+        type: string
+      type:
+        type: string
+    type: object
+  models.LogEntry:
+    properties:
+      indicator:
+        type: string
+      level:
+        type: string
+      message:
+        type: string
+      time:
+        type: string
+    type: object
+  models.PlotPoint:
+    properties:
+      color:
+        type: string
+      invalid:
+        type: boolean
+      value:
+        type: number
+    type: object
+  models.PlotPointCollection:
+    properties:
+      invalid:
+        type: boolean
+      points:
+        items:
+          $ref: '#/definitions/models.PlotPoint'
+        type: array
+    type: object
+  models.ProjectDetailResponse:
+    properties:
+      activePair:
+        $ref: '#/definitions/models.SourcePair'
+      availableTimeFrames:
+        items:
+          type: string
+        type: array
+      id:
+        type: integer
+      pairs:
+        items:
+          $ref: '#/definitions/models.SourcePair'
+        type: array
+      timeFrame:
+        type: string
+      timeRange:
+        $ref: '#/definitions/models.TimeRange'
+      title:
+        type: string
+    type: object
+  models.ProjectListResponse:
+    properties:
+      projects:
+        items:
+          $ref: '#/definitions/models.ProjectSummary'
+        type: array
+    type: object
+  models.ProjectRenderResponse:
+    properties:
+      activePair:
+        $ref: '#/definitions/models.SourcePair'
+      activeTimeFrame:
+        type: string
+      availableTimeFrames:
+        items:
+          type: string
+        type: array
+      candleColors:
+        $ref: '#/definitions/models.CandleColors'
+      candles:
+        items:
+          $ref: '#/definitions/models.CandleSeries'
+        type: array
+      indicators:
+        items:
+          $ref: '#/definitions/models.IndicatorData'
+        type: array
+      logs:
+        items:
+          $ref: '#/definitions/models.LogEntry'
+        type: array
+      timeRange:
+        $ref: '#/definitions/models.TimeRange'
+      title:
+        type: string
+    type: object
+  models.ProjectSummary:
+    properties:
+      id:
+        type: integer
+      title:
+        type: string
+    type: object
+  models.SourcePair:
+    properties:
+      pairId:
+        type: string
+      sourceName:
+        type: string
+    type: object
+  models.TimeRange:
+    properties:
+      end:
+        type: string
+      start:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: REST API for the Candle Engine charting system.
+  title: Candle Engine API
+  version: "1.0"
+paths:
+  /api/v1/health:
+    get:
+      description: Returns the operational status of the API server.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.HealthResponse'
+      summary: Health check
+      tags:
+      - system
+  /api/v1/projects:
+    get:
+      description: Returns a summary list of all available chart projects.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ProjectListResponse'
+      summary: List all chart projects
+      tags:
+      - projects
+  /api/v1/projects/{id}:
+    get:
+      description: Returns full details for a chart project, including available trading
+        pairs and time frames.
+      parameters:
+      - description: Project ID (zero-based index)
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ProjectDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get project details
+      tags:
+      - projects
+  /api/v1/projects/{id}/render:
+    get:
+      description: |-
+        Fetches OHLCV data and computes all configured indicators for the requested trading pair.
+        The response contains raw candle and indicator data for the frontend to render.
+        Indicator PlotPoints arrays are index-aligned with the active pair's candle entries.
+      parameters:
+      - description: Project ID (zero-based index)
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Data source name (e.g. 'Binance')
+        in: query
+        name: source
+        required: true
+        type: string
+      - description: Trading pair ID (e.g. 'BTCUSDC')
+        in: query
+        name: pair
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ProjectRenderResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Render chart data for a project
+      tags:
+      - projects
+schemes:
+- http
+swagger: "2.0"

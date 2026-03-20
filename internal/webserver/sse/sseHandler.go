@@ -6,40 +6,42 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/r3labs/sse/v2"
 )
 
 var server *sse.Server
 var mutex sync.Mutex
 
-// StartServer starts the server
-func StartServer(path string) *sse.Server {
+// RegisterRoute registers the SSE endpoint on the provided Gin router.
+// The r3labs/sse server is wrapped with gin.WrapH so it integrates seamlessly
+// with the Gin middleware chain.
+func RegisterRoute(router *gin.Engine, path string) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	if server == nil {
 		server = sse.New()
 		server.CreateStream("messages")
-
-		http.HandleFunc(path, server.ServeHTTP)
 	}
 
+	router.GET(path, gin.WrapH(http.HandlerFunc(server.ServeHTTP)))
+
 	go func() {
-		// send a reload message after 3 seconds to ensure client connects properly
+		// Send a reconnect event after a short delay so clients that connect
+		// immediately after startup receive at least one event.
 		time.Sleep(3 * time.Second)
 		SendMessage("reconnect", "_")
 	}()
-
-	return server
 }
 
-// send message
+// SendMessage publishes an SSE event to all connected clients.
 func SendMessage(event string, message string) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	if server == nil {
-		log.Println("Server not started")
+		log.Println("SSE server not started")
 		return
 	}
 

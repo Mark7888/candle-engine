@@ -1,0 +1,425 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "REST API for the Candle Engine charting system.",
+        "title": "Candle Engine API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/api/v1/health": {
+            "get": {
+                "description": "Returns the operational status of the API server.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "Health check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.HealthResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/projects": {
+            "get": {
+                "description": "Returns a summary list of all available chart projects.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "List all chart projects",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ProjectListResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/projects/{id}": {
+            "get": {
+                "description": "Returns full details for a chart project, including available trading pairs and time frames.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Get project details",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID (zero-based index)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ProjectDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/projects/{id}/render": {
+            "get": {
+                "description": "Fetches OHLCV data and computes all configured indicators for the requested trading pair.\nThe response contains raw candle and indicator data for the frontend to render.\nIndicator PlotPoints arrays are index-aligned with the active pair's candle entries.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Render chart data for a project",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Project ID (zero-based index)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Data source name (e.g. 'Binance')",
+                        "name": "source",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Trading pair ID (e.g. 'BTCUSDC')",
+                        "name": "pair",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ProjectRenderResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.CandleColors": {
+            "type": "object",
+            "properties": {
+                "bearishColor": {
+                    "type": "string"
+                },
+                "bullishColor": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CandleEntry": {
+            "type": "object",
+            "properties": {
+                "close": {
+                    "type": "number"
+                },
+                "high": {
+                    "type": "number"
+                },
+                "low": {
+                    "type": "number"
+                },
+                "open": {
+                    "type": "number"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "volume": {
+                    "type": "number"
+                }
+            }
+        },
+        "models.CandleSeries": {
+            "type": "object",
+            "properties": {
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.CandleEntry"
+                    }
+                },
+                "pairId": {
+                    "type": "string"
+                },
+                "sourceName": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.HealthResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.IndicatorData": {
+            "type": "object",
+            "properties": {
+                "config": {},
+                "dataError": {
+                    "type": "boolean"
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "plotPoints": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PlotPointCollection"
+                    }
+                },
+                "targetChart": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.LogEntry": {
+            "type": "object",
+            "properties": {
+                "indicator": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.PlotPoint": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "invalid": {
+                    "type": "boolean"
+                },
+                "value": {
+                    "type": "number"
+                }
+            }
+        },
+        "models.PlotPointCollection": {
+            "type": "object",
+            "properties": {
+                "invalid": {
+                    "type": "boolean"
+                },
+                "points": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PlotPoint"
+                    }
+                }
+            }
+        },
+        "models.ProjectDetailResponse": {
+            "type": "object",
+            "properties": {
+                "activePair": {
+                    "$ref": "#/definitions/models.SourcePair"
+                },
+                "availableTimeFrames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "pairs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.SourcePair"
+                    }
+                },
+                "timeFrame": {
+                    "type": "string"
+                },
+                "timeRange": {
+                    "$ref": "#/definitions/models.TimeRange"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ProjectListResponse": {
+            "type": "object",
+            "properties": {
+                "projects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ProjectSummary"
+                    }
+                }
+            }
+        },
+        "models.ProjectRenderResponse": {
+            "type": "object",
+            "properties": {
+                "activePair": {
+                    "$ref": "#/definitions/models.SourcePair"
+                },
+                "activeTimeFrame": {
+                    "type": "string"
+                },
+                "availableTimeFrames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "candleColors": {
+                    "$ref": "#/definitions/models.CandleColors"
+                },
+                "candles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.CandleSeries"
+                    }
+                },
+                "indicators": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.IndicatorData"
+                    }
+                },
+                "logs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.LogEntry"
+                    }
+                },
+                "timeRange": {
+                    "$ref": "#/definitions/models.TimeRange"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ProjectSummary": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.SourcePair": {
+            "type": "object",
+            "properties": {
+                "pairId": {
+                    "type": "string"
+                },
+                "sourceName": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TimeRange": {
+            "type": "object",
+            "properties": {
+                "end": {
+                    "type": "string"
+                },
+                "start": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
