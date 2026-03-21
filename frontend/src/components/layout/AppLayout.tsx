@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { api } from '../../api/client';
 import ProjectList from '../project/ProjectList';
 import ProjectView from '../project/ProjectView';
@@ -41,13 +42,7 @@ export default function AppLayout() {
             className="p-1 rounded hover:bg-gray-700 text-gray-400 hover:text-gray-200 transition-colors ml-auto"
             title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {sidebarOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-              )}
-            </svg>
+            {sidebarOpen ? <ChevronsLeft size={20} /> : <ChevronsRight size={20} />}
           </button>
         </div>
 

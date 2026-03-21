@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ChevronLeft } from 'lucide-react';
 import { Spinner, Alert } from '@chakra-ui/react';
 import PairTabs from './PairTabs';
 import ChartView from '../chart/ChartView';
@@ -156,14 +157,10 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
             title="Open logs panel"
             className="w-10 flex-shrink-0 bg-gray-800 border border-gray-700 rounded-lg flex items-center justify-center hover:bg-gray-700 transition-colors group"
           >
-            <svg
-              className="w-4 h-4 text-gray-500 group-hover:text-indigo-400 transition-colors"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <ChevronLeft
+              size={16}
+              className="text-gray-500 group-hover:text-indigo-400 transition-colors"
+            />
           </button>
         )}
       </div>
