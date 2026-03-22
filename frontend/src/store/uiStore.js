@@ -9,6 +9,15 @@ export const useUIStore = create(
       setLogsPanelOpen: (key, value) =>
         set((s) => ({ logsPanelOpen: { ...s.logsPanelOpen, [key]: value } })),
 
+      // Log level filter: levels in this array are HIDDEN (persisted globally)
+      hiddenLogLevels: [],
+      toggleLogLevel: (level) =>
+        set((s) => ({
+          hiddenLogLevels: s.hiddenLogLevels.includes(level)
+            ? s.hiddenLogLevels.filter((l) => l !== level)
+            : [...s.hiddenLogLevels, level],
+        })),
+
       // Active project tab
       activeProjectId: null,
       setActiveProjectId: (id) => set({ activeProjectId: id }),
@@ -25,8 +34,21 @@ export const useUIStore = create(
     }),
     {
       name: 'candle-engine-ui',
-      // Only persist the logs-panel state to localStorage
-      partialize: (s) => ({ logsPanelOpen: s.logsPanelOpen }),
+      // Persist log panel open state and log level filters across page reloads.
+      partialize: (s) => ({
+        logsPanelOpen: s.logsPanelOpen,
+        hiddenLogLevels: s.hiddenLogLevels,
+      }),
     }
   )
 );
+
+// Sync persisted state across browser tabs: when another tab writes to
+// localStorage, rehydrate this store so both tabs stay in sync immediately.
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'candle-engine-ui') {
+      useUIStore.persist.rehydrate();
+    }
+  });
+}

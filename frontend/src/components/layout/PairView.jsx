@@ -1,26 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Flex, Box } from '@chakra-ui/react';
 import ChartContainer from '../chart/ChartContainer';
 import LogPanel from '../logs/LogPanel';
-
-const LOGS_OPEN_KEY_PREFIX = 'logs-open-';
-
-function getStoredLogOpen(key) {
-  try {
-    const val = localStorage.getItem(LOGS_OPEN_KEY_PREFIX + key);
-    return val === null ? true : val !== 'false';
-  } catch {
-    return true;
-  }
-}
-
-function storeLogOpen(key, value) {
-  try {
-    localStorage.setItem(LOGS_OPEN_KEY_PREFIX + key, String(value));
-  } catch {
-    // ignore storage errors
-  }
-}
+import { useUIStore } from '../../store/uiStore';
 
 /**
  * PairView – the main content area for a selected trading pair.
@@ -33,18 +15,18 @@ function storeLogOpen(key, value) {
  *  - The log panel scrolls its content internally when taller than the viewport.
  */
 export default function PairView({ renderData, loading, error, pairKey }) {
-  // Initialise from localStorage directly in useState – no effect needed.
-  const [logsOpen, setLogsOpen] = useState(() => getStoredLogOpen(pairKey));
+  // Log panel open/closed state is persisted in uiStore and synced across tabs.
+  const logsOpen = useUIStore((s) => s.logsPanelOpen[pairKey] ?? true);
+  const setLogsPanelOpen = useUIStore((s) => s.setLogsPanelOpen);
 
-  const closePanel = useCallback(() => {
-    setLogsOpen(false);
-    storeLogOpen(pairKey, false);
-  }, [pairKey]);
-
-  const openPanel = useCallback(() => {
-    setLogsOpen(true);
-    storeLogOpen(pairKey, true);
-  }, [pairKey]);
+  const closePanel = useCallback(
+    () => setLogsPanelOpen(pairKey, false),
+    [pairKey, setLogsPanelOpen]
+  );
+  const openPanel = useCallback(
+    () => setLogsPanelOpen(pairKey, true),
+    [pairKey, setLogsPanelOpen]
+  );
 
   const logs = renderData?.logs ?? [];
 

@@ -42,6 +42,37 @@ export function buildTimestamps(candleEntries) {
   });
 }
 
+/**
+ * Returns the DataZoom start/end percentages so that roughly the last 3 months
+ * of data are visible by default. Uses the last candle's timestamp as the
+ * reference point so the window is always relative to the actual data, not
+ * wall-clock time.
+ */
+function computeDefaultZoom(candleEntries) {
+  const total = candleEntries.length;
+  if (total === 0) return { start: 0, end: 100 };
+
+  const lastDate = new Date(candleEntries[total - 1].timestamp);
+  // Use 90 days in ms instead of setMonth() to avoid month-boundary rollover
+  // issues (e.g. Jan 31 − 3 months ≠ Oct 31 on some engines).
+  const THREE_MONTHS_MS = 90 * 24 * 60 * 60 * 1000;
+  const windowStart = new Date(lastDate.getTime() - THREE_MONTHS_MS);
+
+  let startIdx = 0;
+  for (let i = 0; i < total; i++) {
+    if (new Date(candleEntries[i].timestamp) >= windowStart) {
+      startIdx = i;
+      break;
+    }
+  }
+
+  const startPercent = Math.round((startIdx / total) * 100);
+  // Cap at 95 so at least 5 % of the data range is always visible when the
+  // 3-month window is very close to the end of a short dataset.
+  const MAX_START = 95;
+  return { start: Math.min(startPercent, MAX_START), end: 100 };
+}
+
 function getPointValue(plotPoints, timeIdx, lineIdx) {
   const collection = plotPoints[timeIdx];
   if (!collection || collection.invalid) return '-';
@@ -369,20 +400,22 @@ export function buildEchartsOption(renderData, isDark = true) {
     data: legendData,
   };
 
+  const { start: zoomStart, end: zoomEnd } = computeDefaultZoom(candleEntries);
+
   const dataZoom = [
     {
       type: 'inside',
       xAxisIndex: allXAxisIndices,
-      start: 0,
-      end: 100,
+      start: zoomStart,
+      end: zoomEnd,
     },
     {
       type: 'slider',
       xAxisIndex: allXAxisIndices,
       bottom: 10,
       height: LAYOUT.dataZoomHeight,
-      start: 0,
-      end: 100,
+      start: zoomStart,
+      end: zoomEnd,
       handleStyle: { color: isDark ? '#6366f1' : '#4f46e5' },
       fillerColor: isDark ? 'rgba(99,102,241,0.15)' : 'rgba(79,70,229,0.1)',
       borderColor: isDark ? '#444' : '#ddd',

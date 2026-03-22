@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Box,
   Flex,
@@ -12,6 +12,7 @@ import {
 import { MdChevronLeft, MdChevronRight, MdClose } from 'react-icons/md';
 import LogEntry from './LogEntry';
 import LogLevelFilters from './LogLevelFilters';
+import { useUIStore } from '../../store/uiStore';
 
 /**
  * LogPanel – right-side panel showing indicator logs.
@@ -26,19 +27,17 @@ export default function LogPanel({ logs = [], isOpen, onClose, onOpen }) {
   const { colorMode } = useColorMode();
   const isDark = colorMode === 'dark';
 
+  // Channel selector is local UI state — no need to persist it.
   const [selectedChannel, setSelectedChannel] = useState('');
-  const [hiddenLevels, setHiddenLevels] = useState([]);
+
+  // Log level filters are persisted in uiStore and synced across tabs.
+  const hiddenLevels = useUIStore((s) => s.hiddenLogLevels);
+  const toggleLevel = useUIStore((s) => s.toggleLogLevel);
 
   const channels = useMemo(() => {
     const names = new Set(logs.map((l) => l.indicator).filter(Boolean));
     return Array.from(names).sort();
   }, [logs]);
-
-  const toggleLevel = useCallback((level) => {
-    setHiddenLevels((prev) =>
-      prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level]
-    );
-  }, []);
 
   const filteredLogs = useMemo(
     () =>
