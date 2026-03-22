@@ -101,9 +101,12 @@ func RenderProject(c *gin.Context) {
 	}
 
 	// --- Candle data ---
-	// Convert the map[SourcePairId][]ChartEntry to a JSON-friendly slice.
-	candles := make([]models.CandleSeries, 0, len(render.CandleData))
-	for pairId, entries := range render.CandleData {
+	// Only include the active pair's candle data. Iterating over a Go map yields
+	// non-deterministic order, so sending all pairs would let the frontend pick
+	// the wrong series. The indicators are already index-aligned with the active
+	// pair, so only that series is meaningful here.
+	var candles []models.CandleSeries
+	if entries, ok := render.CandleData[render.ActivePair]; ok {
 		candleEntries := make([]models.CandleEntry, len(entries))
 		for i, e := range entries {
 			candleEntries[i] = models.CandleEntry{
@@ -115,11 +118,13 @@ func RenderProject(c *gin.Context) {
 				Volume:    e.Volume,
 			}
 		}
-		candles = append(candles, models.CandleSeries{
-			SourceName: pairId.SourceName,
-			PairID:     pairId.PairId,
+		candles = []models.CandleSeries{{
+			SourceName: render.ActivePair.SourceName,
+			PairID:     render.ActivePair.PairId,
 			Entries:    candleEntries,
-		})
+		}}
+	} else {
+		candles = []models.CandleSeries{}
 	}
 
 	// --- Indicator data ---

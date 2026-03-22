@@ -21,12 +21,23 @@ export default function ProjectView({ projectId }) {
   const loadProject = useProjectStore((s) => s.loadProject);
   const loadRender = useProjectStore((s) => s.loadRender);
   const projectDetail = useProjectStore((s) => s.projectDetails[projectId]);
-  const getRender = useProjectStore((s) => s.getRender);
 
   const activePairs = useUIStore((s) => s.activePairs);
   const setActivePair = useUIStore((s) => s.setActivePair);
 
   const activePairEntry = activePairs[projectId];
+
+  // Derive the cache key outside hooks so it can be used in selectors below.
+  const renderKey = activePairEntry
+    ? `${projectId}-${activePairEntry.source}-${activePairEntry.pair}`
+    : null;
+
+  // Subscribe directly to the data/loading/error slices so the component
+  // re-renders when loadRender() updates them (subscribing to getRender — a
+  // stable function reference — would never trigger a re-render).
+  const renderData = useProjectStore((s) => (renderKey ? (s.renderData[renderKey] ?? null) : null));
+  const loading = useProjectStore((s) => (renderKey ? (s.renderLoading[renderKey] ?? false) : false));
+  const error = useProjectStore((s) => (renderKey ? (s.renderErrors[renderKey] ?? null) : null));
 
   // Load project detail on mount
   useEffect(() => {
@@ -68,13 +79,8 @@ export default function ProjectView({ projectId }) {
     );
   }
 
-  const { data: renderData, loading, error } = activePairEntry
-    ? getRender(projectId, activePairEntry.source, activePairEntry.pair)
-    : { data: null, loading: false, error: null };
-
-  const pairKey = activePairEntry
-    ? `${projectId}-${activePairEntry.source}-${activePairEntry.pair}`
-    : `${projectId}`;
+  // renderKey is already computed above as a hook dependency; reuse it.
+  const pairKey = renderKey ?? `${projectId}`;
 
   return (
     <Flex gap={0} h="100%">

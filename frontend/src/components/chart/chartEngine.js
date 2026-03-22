@@ -240,15 +240,22 @@ function sortedChartIds(groups) {
  * Builds a complete ECharts option from API render data.
  *
  * @param {object} renderData - ProjectRenderResponse from the API
- * @param {string[]} hiddenSeries - names of series the user has toggled off
  * @param {boolean} isDark - current color mode
  * @returns {object} ECharts option object (includes _totalHeight for container sizing)
  */
-export function buildEchartsOption(renderData, hiddenSeries = [], isDark = true) {
+export function buildEchartsOption(renderData, isDark = true) {
   if (!renderData) return {};
 
-  const { candles, candleColors, indicators } = renderData;
-  const activeSeries = candles?.[0];
+  const { candles, candleColors, indicators, activePair } = renderData;
+
+  // Use activePair from the response to find the correct candle series.
+  // The backend may return data for multiple pairs; activePair identifies which
+  // one the indicators are aligned with.
+  const activeSeries = activePair
+    ? candles?.find(
+        (c) => c.sourceName === activePair.sourceName && c.pairId === activePair.pairId
+      )
+    : candles?.[0];
   if (!activeSeries) return {};
 
   const candleEntries = activeSeries.entries ?? [];
@@ -359,9 +366,6 @@ export function buildEchartsOption(renderData, hiddenSeries = [], isDark = true)
     top: 10,
     right: LAYOUT.rightMargin,
     textStyle: { color: textColor, fontSize: 11 },
-    selected: Object.fromEntries(
-      legendData.map((d) => [d.name, !hiddenSeries.includes(d.name)])
-    ),
     data: legendData,
   };
 
@@ -422,12 +426,4 @@ export function buildEchartsOption(renderData, hiddenSeries = [], isDark = true)
     yAxis: yAxes,
     series: allSeries,
   };
-}
-
-/**
- * Extracts all series names from an ECharts option for use in legend toggles.
- */
-export function extractSeriesNames(option) {
-  if (!option?.series) return [];
-  return option.series.map((s) => s.name).filter(Boolean);
 }

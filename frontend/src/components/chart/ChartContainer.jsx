@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
 import {
   Box,
@@ -7,18 +7,13 @@ import {
   Spinner,
   Center,
   useColorMode,
-  Wrap,
-  WrapItem,
-  Button,
-  Tooltip,
 } from '@chakra-ui/react';
-import { buildEchartsOption, extractSeriesNames } from './chartEngine';
+import { buildEchartsOption } from './chartEngine';
 
 /**
  * ChartContainer renders the full multi-grid ECharts chart from API render data.
  * Handles:
  *  - Building the ECharts option from raw API data via chartEngine
- *  - Legend toggle (series visibility)
  *  - Responsive resizing via ResizeObserver (React-idiomatic ref pattern)
  *  - Dark / light mode theming
  */
@@ -27,17 +22,9 @@ export default function ChartContainer({ renderData, loading, error }) {
   const isDark = colorMode === 'dark';
   const echartsRef = useRef(null);
   const containerRef = useRef(null);
-  const [hiddenSeries, setHiddenSeries] = useState([]);
 
-  const option = buildEchartsOption(renderData, hiddenSeries, isDark);
+  const option = buildEchartsOption(renderData, isDark);
   const totalHeight = option._totalHeight ?? 600;
-  const seriesNames = extractSeriesNames(option);
-
-  const toggleSeries = useCallback((name) => {
-    setHiddenSeries((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
-    );
-  }, []);
 
   // Resize chart when container width changes
   useEffect(() => {
@@ -82,31 +69,6 @@ export default function ChartContainer({ renderData, loading, error }) {
 
   return (
     <Flex direction="column" gap={2} ref={containerRef} w="100%">
-      {/* Series toggle legend */}
-      {seriesNames.length > 0 && (
-        <Wrap spacing={1} px={1}>
-          {seriesNames.map((name) => {
-            const isHidden = hiddenSeries.includes(name);
-            return (
-              <WrapItem key={name}>
-                <Tooltip label={isHidden ? 'Show' : 'Hide'} placement="top">
-                  <Button
-                    size="xs"
-                    variant={isHidden ? 'outline' : 'solid'}
-                    colorScheme={isHidden ? 'gray' : 'brand'}
-                    opacity={isHidden ? 0.5 : 1}
-                    onClick={() => toggleSeries(name)}
-                    borderRadius="full"
-                  >
-                    {name}
-                  </Button>
-                </Tooltip>
-              </WrapItem>
-            );
-          })}
-        </Wrap>
-      )}
-
       {/* Chart */}
       <Box w="100%">
         <ReactECharts
