@@ -30,9 +30,10 @@ export default defineConfig([
       react: { version: 'detect' },
     },
     rules: {
-      'no-unused-vars': ['warn', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' }],
+      'no-unused-vars': ['warn', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^[A-Z_]|^_' }],
       'react/prop-types': 'off',
       'react/react-in-jsx-scope': 'off',
+      'react/jsx-uses-vars': 'error',
     },
   },
 ]);
