@@ -9,7 +9,7 @@ import {
   VStack,
   useColorMode,
 } from '@chakra-ui/react';
-import { MdChevronLeft, MdChevronRight, MdClose } from 'react-icons/md';
+import { MdChevronLeft, MdClose } from 'react-icons/md';
 import LogEntry from './LogEntry';
 import LogLevelFilters from './LogLevelFilters';
 import { useUIStore } from '../../store/uiStore';
@@ -115,15 +115,6 @@ export default function LogPanel({ logs = [], isOpen, onClose, onOpen }) {
             ))}
           </Select>
         </HStack>
-        <IconButton
-          icon={<MdChevronRight size={16} />}
-          size="xs"
-          variant="ghost"
-          colorScheme="gray"
-          onClick={onClose}
-          aria-label="Close logs panel"
-          title="Collapse logs"
-        />
         <IconButton
           icon={<MdClose size={14} />}
           size="xs"
