@@ -1,16 +1,81 @@
-# React + Vite
+# Candle Engine – Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React-based frontend for the Candle Engine trading chart application.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Package | Purpose |
+|---|---|
+| Vite 8 | Build tool & dev server |
+| React 19 | UI framework |
+| Chakra UI v2 | Component library |
+| ECharts 6 + echarts-for-react | Charting |
+| Zustand 5 | State management |
+| react-icons | Icon library |
+| Axios | HTTP client |
+| ESLint 9 | Linting |
 
-## React Compiler
+## Quick Start
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+# Install dependencies
+npm install
 
-## Expanding the ESLint configuration
+# Start development server (proxies /api to localhost:8080)
+npm run dev
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+# Lint
+npm run lint
+
+# Production build
+npm run build
+```
+
+> **Prerequisites**: The Go backend must be running on `http://localhost:8080`.
+
+## Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `VITE_API_URL` | `http://localhost:8080` | Backend API base URL |
+
+Copy `.env.example` to `.env.local` and adjust as needed.
+
+## Project Structure
+
+```
+src/
+├── api/
+│   └── client.js          # Axios API client
+├── components/
+│   ├── chart/
+│   │   ├── chartEngine.js  # ECharts option builder (pure functions)
+│   │   └── ChartContainer.jsx
+│   ├── layout/
+│   │   ├── Navbar.jsx
+│   │   ├── ThemeToggle.jsx
+│   │   ├── PairView.jsx
+│   │   └── ProjectView.jsx
+│   └── logs/
+│       ├── LogEntry.jsx
+│       ├── LogLevelFilters.jsx
+│       └── LogPanel.jsx
+├── store/
+│   ├── projectStore.js    # Projects + render data (Zustand)
+│   └── uiStore.js         # UI state + localStorage persistence
+├── theme/
+│   └── theme.js           # Chakra UI theme
+├── App.jsx
+├── index.css
+└── main.jsx
+```
+
+## Chart Architecture
+
+The chart engine builds a single ECharts instance with multiple stacked grids:
+
+- **Main chart** (top): candlestick + overlay indicators (`targetChart === ""`)
+- **Sub-charts** (below): grouped by `targetChart`, sorted alphabetically
+
+All charts share the same X-axis (timestamps) and are linked via `axisPointer`
+so hovering highlights the same timestamp across every panel.
