@@ -134,7 +134,7 @@ export default function ProjectView({ projectId }) {
       </VStack>
 
       {/* Main content */}
-      <Box flex={1} minW={0} py={2}>
+      <Box flex={1} minW={0} py={2} h="100%" overflow="hidden">
         <PairView
           renderData={renderData}
           loading={loading}

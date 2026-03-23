@@ -11,8 +11,10 @@ import { useUIStore } from '../../store/uiStore';
  * When the log panel is closed, the chart expands to full width.
  *
  * Scrolling behaviour:
- *  - The whole page scrolls when the chart exceeds the viewport.
- *  - The log panel scrolls its content internally when taller than the viewport.
+ *  - The chart area scrolls internally when the chart is taller than the
+ *    available viewport height (multiple sub-grids).
+ *  - The log panel is bounded to the same height as the chart area; long log
+ *    lists scroll inside the panel independently of the page.
  */
 export default function PairView({ renderData, loading, error, pairKey }) {
   // Log panel open/closed state is persisted in uiStore and synced across tabs.
@@ -34,25 +36,26 @@ export default function PairView({ renderData, loading, error, pairKey }) {
     <Flex
       direction={{ base: 'column', lg: 'row' }}
       gap={3}
-      alignItems="flex-start"
+      alignItems="stretch"
+      h="100%"
       w="100%"
     >
-      {/* Chart area – grows to fill available space */}
+      {/* Chart area – scrolls internally when chart is taller than viewport */}
       <Box
         flex={logsOpen ? '2' : '1'}
         minW={0}
+        overflowY="auto"
         transition="flex 0.3s ease"
       >
         <ChartContainer renderData={renderData} loading={loading} error={error} />
       </Box>
 
-      {/* Log panel */}
+      {/* Log panel – bounded to the same height; logs scroll inside the panel */}
       <Box
         flex={logsOpen ? '1' : '0 0 auto'}
         transition="flex 0.3s ease"
-        alignSelf="stretch"
-        minH="calc(100vh - 160px)"
         display="flex"
+        minW={0}
       >
         <LogPanel
           logs={logs}

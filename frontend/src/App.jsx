@@ -26,14 +26,14 @@ export default function App() {
   }, [projects, activeProjectId, setActiveProjectId]);
 
   return (
-    <Box minH="100vh" bg={contentBg}>
+    <Box h="100vh" bg={contentBg} display="flex" flexDirection="column" overflow="hidden">
       <Navbar
         projects={projects}
         loading={projectsLoading}
         activeProjectId={activeProjectId}
         onSelectProject={setActiveProjectId}
       />
-      <Box px={6} pt={4} pb={8}>
+      <Box flex={1} overflow="hidden" px={6} pt={4} pb={4}>
         {activeProjectId !== null && (
           <ProjectView key={activeProjectId} projectId={activeProjectId} />
         )}
