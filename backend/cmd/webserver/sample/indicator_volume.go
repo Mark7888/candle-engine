@@ -17,12 +17,12 @@ func (r *VolumeIndicator) GetType() indicators.IndicatorType {
 }
 
 func (r *VolumeIndicator) GetName() string {
-	return "Relative Strength Index (RSI)"
+	return "Volume"
 }
 
 func (r *VolumeIndicator) GetConfig() indicators.IndicatorConfig {
 	return indicators.IndicatorConfig{
-		TargetChart: "1_volume", // empty means main chart
+		TargetChart: "volume",
 		BarChartIndicator: indicators.BarChartIndicatorConfig{
 			BarTitles: []string{"Volume"},
 		},
