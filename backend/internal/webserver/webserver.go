@@ -13,7 +13,6 @@ import (
 	"os"
 
 	"candle-engine/internal/webserver/api"
-	"candle-engine/internal/webserver/legacy"
 	sse_handler "candle-engine/internal/webserver/sse"
 
 	_ "candle-engine/docs" // Swagger generated docs
@@ -42,10 +41,6 @@ func InitServer() {
 
 	// Swagger UI at /swagger/index.html.
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
-	// Legacy Templ+HTMX HTML routes – kept for backward compatibility.
-	// These can be removed once the React frontend is in place.
-	legacy.RegisterRoutes(&router.RouterGroup)
 
 	// Server-Sent Events endpoint for real-time browser push.
 	sse_handler.RegisterRoute(router, "/events/")
