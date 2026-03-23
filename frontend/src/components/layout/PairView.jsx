@@ -16,18 +16,18 @@ import { useUIStore } from '../../store/uiStore';
  *  - The log panel is bounded to the same height as the chart area; long log
  *    lists scroll inside the panel independently of the page.
  */
-export default function PairView({ renderData, loading, error, pairKey }) {
-  // Log panel open/closed state is persisted in uiStore and synced across tabs.
-  const logsOpen = useUIStore((s) => s.logsPanelOpen[pairKey] ?? true);
+export default function PairView({ renderData, loading, error }) {
+  // Log panel open/closed state is a single global flag synced across all pair tabs.
+  const logsOpen = useUIStore((s) => s.logsPanelOpen);
   const setLogsPanelOpen = useUIStore((s) => s.setLogsPanelOpen);
 
   const closePanel = useCallback(
-    () => setLogsPanelOpen(pairKey, false),
-    [pairKey, setLogsPanelOpen]
+    () => setLogsPanelOpen(false),
+    [setLogsPanelOpen]
   );
   const openPanel = useCallback(
-    () => setLogsPanelOpen(pairKey, true),
-    [pairKey, setLogsPanelOpen]
+    () => setLogsPanelOpen(true),
+    [setLogsPanelOpen]
   );
 
   const logs = renderData?.logs ?? [];

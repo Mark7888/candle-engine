@@ -79,9 +79,6 @@ export default function ProjectView({ projectId }) {
     );
   }
 
-  // renderKey is already computed above as a hook dependency; reuse it.
-  const pairKey = renderKey ?? `${projectId}`;
-
   return (
     <Flex gap={0} h="100%">
       {/* Left pair sidebar */}
@@ -139,7 +136,6 @@ export default function ProjectView({ projectId }) {
           renderData={renderData}
           loading={loading}
           error={error}
-          pairKey={pairKey}
         />
       </Box>
     </Flex>

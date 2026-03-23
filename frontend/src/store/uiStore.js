@@ -4,10 +4,9 @@ import { persist } from 'zustand/middleware';
 export const useUIStore = create(
   persist(
     (set) => ({
-      // Logs panel open/closed state per pair key "projectId-source-pair"
-      logsPanelOpen: {},
-      setLogsPanelOpen: (key, value) =>
-        set((s) => ({ logsPanelOpen: { ...s.logsPanelOpen, [key]: value } })),
+      // Logs panel open/closed state – global, synced across all pair tabs
+      logsPanelOpen: true,
+      setLogsPanelOpen: (value) => set({ logsPanelOpen: value }),
 
       // Log level filter: levels in this array are HIDDEN (persisted globally)
       hiddenLogLevels: [],
