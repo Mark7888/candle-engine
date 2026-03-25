@@ -46,6 +46,14 @@ export const useUIStore = create(
         set((s) => ({
           floatingWidgets: { ...s.floatingWidgets, [projectId]: widgets },
         })),
+
+      // Chart settings per project: { [projectId]: { timeFrame, timeRangeFrom, timeRangeTo } }
+      // NOT persisted — session-only.
+      projectSettings: {},
+      setProjectSettings: (projectId, settings) =>
+        set((s) => ({
+          projectSettings: { ...s.projectSettings, [projectId]: settings },
+        })),
     }),
     {
       name: 'candle-engine-ui',

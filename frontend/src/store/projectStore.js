@@ -37,15 +37,16 @@ export const useProjectStore = create((set, get) => ({
     }
   },
 
-  loadRender: async (projectId, source, pair) => {
-    const key = `${projectId}-${source}-${pair}`;
+  loadRender: async (projectId, source, pair, settings = {}) => {
+    const { timeFrame = '', timeRangeFrom = '', timeRangeTo = '' } = settings;
+    const key = `${projectId}-${source}-${pair}-${timeFrame}-${timeRangeFrom}-${timeRangeTo}`;
     if (get().renderData[key]) return;
     set((s) => ({
       renderLoading: { ...s.renderLoading, [key]: true },
       renderErrors: { ...s.renderErrors, [key]: null },
     }));
     try {
-      const data = await fetchRender(projectId, source, pair);
+      const data = await fetchRender(projectId, source, pair, settings);
       set((s) => ({
         renderData: { ...s.renderData, [key]: data },
         renderLoading: { ...s.renderLoading, [key]: false },
@@ -58,8 +59,9 @@ export const useProjectStore = create((set, get) => ({
     }
   },
 
-  getRender: (projectId, source, pair) => {
-    const key = `${projectId}-${source}-${pair}`;
+  getRender: (projectId, source, pair, settings = {}) => {
+    const { timeFrame = '', timeRangeFrom = '', timeRangeTo = '' } = settings;
+    const key = `${projectId}-${source}-${pair}-${timeFrame}-${timeRangeFrom}-${timeRangeTo}`;
     return {
       data: get().renderData[key] ?? null,
       loading: get().renderLoading[key] ?? false,

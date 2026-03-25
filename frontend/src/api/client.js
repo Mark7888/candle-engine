@@ -13,9 +13,13 @@ export const fetchProjects = () =>
 export const fetchProject = (id) =>
   api.get(`/api/v1/projects/${id}`).then((r) => r.data);
 
-export const fetchRender = (id, source, pair) =>
-  api
-    .get(`/api/v1/projects/${id}/render`, { params: { source, pair } })
-    .then((r) => r.data);
+export const fetchRender = (id, source, pair, settings = {}) => {
+  const { timeFrame, timeRangeFrom, timeRangeTo } = settings;
+  const params = { source, pair };
+  if (timeFrame) params.timeFrame = timeFrame;
+  if (timeRangeFrom) params.timeRangeFrom = timeRangeFrom;
+  if (timeRangeTo) params.timeRangeTo = timeRangeTo;
+  return api.get(`/api/v1/projects/${id}/render`, { params }).then((r) => r.data);
+};
 
 export default api;
