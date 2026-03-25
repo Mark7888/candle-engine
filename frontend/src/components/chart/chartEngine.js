@@ -200,6 +200,34 @@ function buildCandlestickSeries(candleEntries, candleColors, xAxisIndex, yAxisIn
   };
 }
 
+function buildCandleStickSubSeries(indicator, xAxisIndex, yAxisIndex, fallbackColors) {
+  const cfg = indicator.config ?? {};
+  const bullish = cfg.bullishColor || fallbackColors.bullishColor;
+  const bearish = cfg.bearishColor || fallbackColors.bearishColor;
+
+  const data = indicator.plotPoints.map((coll) => {
+    if (coll.invalid || coll.points.length < 4) return null;
+    const [o, h, l, c] = coll.points;
+    if (o.invalid || h.invalid || l.invalid || c.invalid) return null;
+    // ECharts candlestick data format: [open, close, low, high]
+    return [o.value, c.value, l.value, h.value];
+  });
+
+  return [{
+    name: indicator.name,
+    type: 'candlestick',
+    xAxisIndex,
+    yAxisIndex,
+    data,
+    itemStyle: {
+      color:        normalizeColor(bullish),
+      color0:       normalizeColor(bearish),
+      borderColor:  normalizeColor(bullish),
+      borderColor0: normalizeColor(bearish),
+    },
+  }];
+}
+
 // ---------------------------------------------------------------------------
 // Layout calculator
 // ---------------------------------------------------------------------------
@@ -267,7 +295,12 @@ export function buildEchartsOption(renderData, isDark = true) {
   const lineColor = isDark ? '#444' : '#ddd';
   const bgColor = isDark ? '#1a202c' : '#fff';
 
-  const groups = groupIndicatorsByChart(indicators ?? []);
+  // Filter out drawer-only types — they are rendered in IndicatorPanel, not ECharts.
+  const echartsIndicators = (indicators ?? []).filter(
+    (ind) => ind.type !== 'table' && ind.type !== 'pieChart'
+  );
+
+  const groups = groupIndicatorsByChart(echartsIndicators);
   const chartIds = sortedChartIds(groups);
   const numCharts = chartIds.length;
 
@@ -352,6 +385,9 @@ export function buildEchartsOption(renderData, isDark = true) {
           break;
         case 'area':
           built = buildAreaSeries(ind, idx, idx);
+          break;
+        case 'candleStick':
+          built = buildCandleStickSubSeries(ind, idx, idx, candleColors);
           break;
         default:
           break;

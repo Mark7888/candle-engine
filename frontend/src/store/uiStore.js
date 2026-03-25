@@ -30,6 +30,22 @@ export const useUIStore = create(
             [projectId]: { source, pair },
           },
         })),
+
+      // Indicator panel open/closed — global, same behaviour as logsPanelOpen
+      indicatorPanelOpen: true,
+      setIndicatorPanelOpen: (value) => set({ indicatorPanelOpen: value }),
+
+      // Indicator panel height in pixels — remembered across open/close and page reloads
+      indicatorPanelHeight: 280,
+      setIndicatorPanelHeight: (value) => set({ indicatorPanelHeight: value }),
+
+      // Floating widgets per project: { [projectId]: [{ id, x, y }] }
+      // id is the indicator name. NOT persisted — session-only.
+      floatingWidgets: {},
+      setFloatingWidgets: (projectId, widgets) =>
+        set((s) => ({
+          floatingWidgets: { ...s.floatingWidgets, [projectId]: widgets },
+        })),
     }),
     {
       name: 'candle-engine-ui',
@@ -37,6 +53,8 @@ export const useUIStore = create(
       partialize: (s) => ({
         logsPanelOpen: s.logsPanelOpen,
         hiddenLogLevels: s.hiddenLogLevels,
+        indicatorPanelOpen: s.indicatorPanelOpen,
+        indicatorPanelHeight: s.indicatorPanelHeight,
       }),
     }
   )

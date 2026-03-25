@@ -26,6 +26,10 @@ func indicatorTypeName(t indicators.IndicatorType) string {
 		return "table"
 	case indicators.IndicatorTypeAreaChart:
 		return "area"
+	case indicators.IndicatorTypePieChart:
+		return "pieChart"
+	case indicators.IndicatorTypeCandleStick:
+		return "candleStick"
 	default:
 		return "unknown"
 	}
@@ -45,6 +49,10 @@ func indicatorConfig(t indicators.IndicatorType, cfg indicators.IndicatorConfig)
 		return cfg.TableIndicator
 	case indicators.IndicatorTypeAreaChart:
 		return cfg.AreaChartIndicator
+	case indicators.IndicatorTypePieChart:
+		return cfg.PieChartIndicator
+	case indicators.IndicatorTypeCandleStick:
+		return cfg.CandleStickIndicator
 	default:
 		return nil
 	}

@@ -136,6 +136,7 @@ export default function ProjectView({ projectId }) {
           renderData={renderData}
           loading={loading}
           error={error}
+          projectId={projectId}
         />
       </Box>
     </Flex>

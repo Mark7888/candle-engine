@@ -13,11 +13,13 @@ type ChartConfig struct {
 type IndicatorType int
 
 const (
-	IndicatorTypeLine IndicatorType = iota
-	IndicatorTypeStepLine
-	IndicatorTypeBarChart
-	IndicatorTypeTable
-	IndicatorTypeAreaChart
+	IndicatorTypeLine        IndicatorType = iota // 0 – existing
+	IndicatorTypeStepLine                         // 1 – existing
+	IndicatorTypeBarChart                         // 2 – existing
+	IndicatorTypeTable                            // 3 – existing
+	IndicatorTypeAreaChart                        // 4 – existing
+	IndicatorTypePieChart                         // 5 – pie/donut widget in indicator drawer
+	IndicatorTypeCandleStick                      // 6 – custom candlestick sub-chart in ECharts
 )
 
 // IndicatorConfig holds type-specific configuration for different indicator types
@@ -31,6 +33,7 @@ type IndicatorConfig struct {
 	CandleStickIndicator CandleStickIndicatorConfig
 	TableIndicator       TableIndicatorConfig
 	AreaChartIndicator   AreaChartIndicatorConfig
+	PieChartIndicator    PieChartIndicatorConfig
 }
 
 type LineIndicatorConfig struct {
@@ -64,7 +67,11 @@ type BarChartIndicatorConfig struct {
 }
 
 type CandleStickIndicatorConfig struct {
-	// TODO - add candlestick specific configurations
+	// Custom sub-chart candlestick (not the main price candles — a separate indicator sub-chart).
+	// PlotPoints per timestamp: 4 points in order [Open, High, Low, Close].
+	// Falls back to project CandleColors if these are empty strings.
+	BullishColor string
+	BearishColor string
 }
 
 type TableIndicatorConfig struct {
@@ -83,4 +90,7 @@ type AreaChartIndicatorConfig struct {
 	Opacity       float64 // Area fill opacity (0.0 to 1.0)
 }
 
-// TODO - add indicator configs for type: PieChart, etc.
+type PieChartIndicatorConfig struct {
+	DisplayName string
+	SliceTitles []string // label for each slice; length defines number of slices
+}
