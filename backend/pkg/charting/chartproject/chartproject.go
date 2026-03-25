@@ -77,15 +77,31 @@ func (c *ChartProject) AddIndicators(indicator ...indicators.BaseIndicator) {
 	c.indicators = append(c.indicators, indicator...)
 }
 
-// * This will return an object with all the info needed to render the chart in the frontend
-func (c *ChartProject) GetRender(activePair sources.SourcePairId) (RenderableChartProject, error) {
-	entries, width, err := c.sourceManager.FetchSources(c.timeRange, c.sourceManager.selectedPairs, c.timeFrame)
+// GetRender returns an object with all the info needed to render the chart in
+// the frontend.
+//
+// timeFrameOverride: if non-empty, it is used instead of the project's
+// configured timeFrame.
+// timeRangeOverride: if non-nil, it is used instead of the project's
+// configured timeRange.
+func (c *ChartProject) GetRender(activePair sources.SourcePairId, timeFrameOverride string, timeRangeOverride *sources.TimeRange) (RenderableChartProject, error) {
+	timeFrame := c.timeFrame
+	if timeFrameOverride != "" {
+		timeFrame = timeFrameOverride
+	}
+
+	timeRange := c.timeRange
+	if timeRangeOverride != nil {
+		timeRange = *timeRangeOverride
+	}
+
+	entries, width, err := c.sourceManager.FetchSources(timeRange, c.sourceManager.selectedPairs, timeFrame)
 	if err != nil {
 		fmt.Println("Error fetching sources:", err)
 		return RenderableChartProject{}, err
 	}
 
-	chartConfig := c.assembleChartConfig(activePair)
+	chartConfig := c.assembleChartConfigWith(activePair, timeFrame)
 
 	var historyEntries map[sources.SourcePairId][]sources.ChartEntry = make(map[sources.SourcePairId][]sources.ChartEntry)
 	var currentMultiSourceEntries sources.MultiSourceEntries
@@ -109,9 +125,9 @@ func (c *ChartProject) GetRender(activePair sources.SourcePairId) (RenderableCha
 
 	renderableChartProject := NewRenderableChartProject()
 	renderableChartProject.Title = c.title
-	renderableChartProject.TimeRange = c.timeRange
+	renderableChartProject.TimeRange = timeRange
 	renderableChartProject.AvailableTimeFrames = c.sourceManager.GetCommonTimeFrames()
-	renderableChartProject.ActiveTimeFrame = c.timeFrame
+	renderableChartProject.ActiveTimeFrame = timeFrame
 	renderableChartProject.LoadedPairs = c.sourceManager.GetLoadedPairs()
 	renderableChartProject.ActivePair = activePair
 
@@ -141,8 +157,12 @@ func (c *ChartProject) GetRender(activePair sources.SourcePairId) (RenderableCha
 }
 
 func (c *ChartProject) assembleChartConfig(activePair sources.SourcePairId) indicators.ChartConfig {
+	return c.assembleChartConfigWith(activePair, c.timeFrame)
+}
+
+func (c *ChartProject) assembleChartConfigWith(activePair sources.SourcePairId, timeFrame string) indicators.ChartConfig {
 	return indicators.ChartConfig{
-		TimeFrameSeconds: c.sourceManager.GetTimeFrameSeconds(c.timeFrame),
+		TimeFrameSeconds: c.sourceManager.GetTimeFrameSeconds(timeFrame),
 		ActivePair:       activePair,
 		LoadedPairs:      c.sourceManager.GetLoadedPairs(),
 	}

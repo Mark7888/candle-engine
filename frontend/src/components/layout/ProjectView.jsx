@@ -12,18 +12,28 @@ import {
 import { useProjectStore } from '../../store/projectStore';
 import { useUIStore } from '../../store/uiStore';
 import PairView from '../layout/PairView';
+import SettingsBar from '../layout/SettingsBar';
 
 /**
- * ProjectView – renders the inner pair tabs (vertical sidebar) and the
- * PairView for the currently selected pair.
+ * ProjectView – renders the settings bar, the inner pair tabs (vertical
+ * sidebar) and the PairView for the currently selected pair.
  */
 export default function ProjectView({ projectId }) {
   const loadProject = useProjectStore((s) => s.loadProject);
   const loadRender = useProjectStore((s) => s.loadRender);
+  const clearProjectRenderCache = useProjectStore((s) => s.clearProjectRenderCache);
   const projectDetail = useProjectStore((s) => s.projectDetails[projectId]);
 
   const activePairs = useUIStore((s) => s.activePairs);
   const setActivePair = useUIStore((s) => s.setActivePair);
+
+  // Select each setting individually so selectors always return a stable
+  // primitive (string | null), avoiding the infinite-loop that `?? {}` causes
+  // when the project key is not yet present in the store.
+  const settingsTimeFrame = useUIStore((s) => s.projectSettings[projectId]?.timeFrame ?? null);
+  const settingsRangeFrom = useUIStore((s) => s.projectSettings[projectId]?.rangeFrom ?? null);
+  const settingsRangeTo = useUIStore((s) => s.projectSettings[projectId]?.rangeTo ?? null);
+  const setProjectSetting = useUIStore((s) => s.setProjectSetting);
 
   const activePairEntry = activePairs[projectId];
 
@@ -52,18 +62,31 @@ export default function ProjectView({ projectId }) {
     }
   }, [projectDetail, activePairEntry, projectId, setActivePair]);
 
-  // Load render data whenever active pair changes
+  // Load render data whenever active pair or any setting value changes
   useEffect(() => {
     if (activePairEntry) {
-      loadRender(projectId, activePairEntry.source, activePairEntry.pair);
+      loadRender(projectId, activePairEntry.source, activePairEntry.pair, {
+        timeFrame: settingsTimeFrame,
+        rangeFrom: settingsRangeFrom,
+        rangeTo: settingsRangeTo,
+      });
     }
-  }, [projectId, activePairEntry, loadRender]);
+  }, [projectId, activePairEntry, settingsTimeFrame, settingsRangeFrom, settingsRangeTo, loadRender]);
 
   const handleSelectPair = useCallback(
     (sourceName, pairId) => {
       setActivePair(projectId, sourceName, pairId);
     },
     [projectId, setActivePair]
+  );
+
+  // When a setting changes: clear cached renders so the new request goes out
+  const handleSettingChange = useCallback(
+    (patch) => {
+      clearProjectRenderCache(projectId);
+      setProjectSetting(projectId, patch);
+    },
+    [projectId, clearProjectRenderCache, setProjectSetting]
   );
 
   const borderColor = useColorModeValue('gray.200', 'gray.700');
@@ -79,66 +102,88 @@ export default function ProjectView({ projectId }) {
     );
   }
 
-  return (
-    <Flex gap={0} h="100%">
-      {/* Left pair sidebar */}
-      <VStack
-        spacing={1}
-        align="stretch"
-        minW="160px"
-        maxW="200px"
-        pr={3}
-        mr={3}
-        borderRight="1px solid"
-        borderColor={borderColor}
-        py={2}
-        flexShrink={0}
-      >
-        {projectDetail.pairs.map((pair) => {
-          const isActive =
-            activePairEntry?.source === pair.sourceName &&
-            activePairEntry?.pair === pair.pairId;
-          return (
-            <Button
-              key={`${pair.sourceName}-${pair.pairId}`}
-              variant="ghost"
-              textAlign="left"
-              px={3}
-              py={2}
-              h="auto"
-              borderRadius="md"
-              bg={isActive ? activeBg : 'transparent'}
-              color={isActive ? activeColor : undefined}
-              _hover={{ bg: isActive ? activeBg : hoverBg }}
-              onClick={() => handleSelectPair(pair.sourceName, pair.pairId)}
-              display="block"
-              whiteSpace="normal"
-              fontWeight={isActive ? 'semibold' : 'normal'}
-            >
-              <Text fontSize="sm" fontWeight="inherit" lineHeight={1.3}>
-                {pair.pairId}
-              </Text>
-              <Text
-                fontSize="xs"
-                color={isActive ? activeColor : 'gray.500'}
-                lineHeight={1.3}
-              >
-                {pair.sourceName}
-              </Text>
-            </Button>
-          );
-        })}
-      </VStack>
+  // Use the first available time frame as the default when none is set yet
+  const defaultTimeFrame = projectDetail.timeFrame ?? '';
+  const defaultRangeFrom = projectDetail.timeRange?.start ?? '';
+  const defaultRangeTo = projectDetail.timeRange?.end ?? '';
 
-      {/* Main content */}
-      <Box flex={1} minW={0} py={2} h="100%" overflow="hidden">
-        <PairView
-          renderData={renderData}
-          loading={loading}
-          error={error}
-          projectId={projectId}
-        />
-      </Box>
+  return (
+    <Flex direction="column" gap={0} h="100%">
+      {/* Settings bar */}
+      <SettingsBar
+        availableTimeFrames={projectDetail.availableTimeFrames ?? []}
+        defaultTimeFrame={defaultTimeFrame}
+        defaultRangeFrom={defaultRangeFrom}
+        defaultRangeTo={defaultRangeTo}
+        timeFrame={settingsTimeFrame}
+        rangeFrom={settingsRangeFrom}
+        rangeTo={settingsRangeTo}
+        onTimeFrameChange={(tf) => handleSettingChange({ timeFrame: tf })}
+        onRangeFromChange={(v) => handleSettingChange({ rangeFrom: v })}
+        onRangeToChange={(v) => handleSettingChange({ rangeTo: v })}
+      />
+
+      {/* Pair selector + chart */}
+      <Flex gap={0} flex={1} minH={0}>
+        {/* Left pair sidebar */}
+        <VStack
+          spacing={1}
+          align="stretch"
+          minW="160px"
+          maxW="200px"
+          pr={3}
+          mr={3}
+          borderRight="1px solid"
+          borderColor={borderColor}
+          py={2}
+          flexShrink={0}
+        >
+          {projectDetail.pairs.map((pair) => {
+            const isActive =
+              activePairEntry?.source === pair.sourceName &&
+              activePairEntry?.pair === pair.pairId;
+            return (
+              <Button
+                key={`${pair.sourceName}-${pair.pairId}`}
+                variant="ghost"
+                textAlign="left"
+                px={3}
+                py={2}
+                h="auto"
+                borderRadius="md"
+                bg={isActive ? activeBg : 'transparent'}
+                color={isActive ? activeColor : undefined}
+                _hover={{ bg: isActive ? activeBg : hoverBg }}
+                onClick={() => handleSelectPair(pair.sourceName, pair.pairId)}
+                display="block"
+                whiteSpace="normal"
+                fontWeight={isActive ? 'semibold' : 'normal'}
+              >
+                <Text fontSize="sm" fontWeight="inherit" lineHeight={1.3}>
+                  {pair.pairId}
+                </Text>
+                <Text
+                  fontSize="xs"
+                  color={isActive ? activeColor : 'gray.500'}
+                  lineHeight={1.3}
+                >
+                  {pair.sourceName}
+                </Text>
+              </Button>
+            );
+          })}
+        </VStack>
+
+        {/* Main content */}
+        <Box flex={1} minW={0} py={2} h="100%" overflow="hidden">
+          <PairView
+            renderData={renderData}
+            loading={loading}
+            error={error}
+            projectId={projectId}
+          />
+        </Box>
+      </Flex>
     </Flex>
   );
 }
