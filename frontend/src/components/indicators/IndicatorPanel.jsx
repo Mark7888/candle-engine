@@ -120,22 +120,22 @@ function FloatingWidget({ indicator, collection, position, size, onSnapBack, onS
         {/* Resize handle — bottom-right corner */}
         <Box
           as="svg"
-          viewBox="0 0 10 10"
+          viewBox="0 0 16 16"
           position="absolute"
           bottom="4px"
           right="4px"
-          w="10px"
-          h="10px"
+          w="16px"
+          h="16px"
           cursor="se-resize"
           zIndex={10001}
           onMouseDown={handleResizeMouseDown}
-          opacity={0.5}
+          opacity={0.6}
           _hover={{ opacity: 1 }}
           sx={{ color: handleColor, pointerEvents: 'all' }}
         >
-          <line x1="2" y1="10" x2="10" y2="2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          <line x1="5" y1="10" x2="10" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          <line x1="8" y1="10" x2="10" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <line x1="4" y1="16" x2="16" y2="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <line x1="9" y1="16" x2="16" y2="9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <line x1="14" y1="16" x2="16" y2="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </Box>
       </Box>
     </Draggable>,
