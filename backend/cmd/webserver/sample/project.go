@@ -20,10 +20,6 @@ func GetSampleChartProject() chartproject.ChartProject {
 		cachedSourceCoinbase,
 		cachedSourceBinance,
 	}
-	activePair := sources.SourcePairId{
-		SourceName: "Coinbase",
-		PairId:     "BTC-USDT",
-	}
 	allPairsToAdd := []sources.SourcePairId{
 		{SourceName: "Coinbase", PairId: "BTC-USDT"},
 		{SourceName: "Coinbase", PairId: "ETH-USDT"},
@@ -56,7 +52,6 @@ func GetSampleChartProject() chartproject.ChartProject {
 	chartProject1.SetCandleColors(sources.CandleColorConfig{BullishColor: "#ffffff", BearishColor: "#00c8ff"})
 	chartProject1.AddSources(sourcesToAdd...)
 	chartProject1.AddTradingPairs(allPairsToAdd...)
-	chartProject1.SetActivePair(activePair)
 	chartProject1.SetTimeFrame("1d")
 	chartProject1.SetTimeRange(timeRange)
 	chartProject1.AddIndicators(indicatorsToAdd...)
@@ -70,10 +65,6 @@ func GetSampleChartProject2() chartproject.ChartProject {
 	cachedSourceBinance := cachedsource.NewCachedSource(sourceBinance, "./tmp/binance_cache.json")
 	sourcesToAdd := []sources.Source{
 		cachedSourceBinance,
-	}
-	activePair := sources.SourcePairId{
-		SourceName: "Binance",
-		PairId:     "BTCUSDC",
 	}
 	allPairsToAdd := []sources.SourcePairId{
 		{SourceName: "Binance", PairId: "BTCUSDC"},
@@ -98,7 +89,6 @@ func GetSampleChartProject2() chartproject.ChartProject {
 	chartProject1.SetCandleColors(sources.CandleColorConfig{BullishColor: "#ffff51", BearishColor: "#b872ff"})
 	chartProject1.AddSources(sourcesToAdd...)
 	chartProject1.AddTradingPairs(allPairsToAdd...)
-	chartProject1.SetActivePair(activePair)
 	chartProject1.SetTimeFrame("1d")
 	chartProject1.SetTimeRange(timeRange)
 	chartProject1.AddIndicators(indicatorsToAdd...)

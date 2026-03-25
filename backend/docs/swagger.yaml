@@ -98,8 +98,6 @@ definitions:
     type: object
   models.ProjectDetailResponse:
     properties:
-      activePair:
-        $ref: '#/definitions/models.SourcePair'
       availableTimeFrames:
         items:
           type: string

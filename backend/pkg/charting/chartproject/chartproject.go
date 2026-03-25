@@ -13,9 +13,8 @@ type ChartProject struct {
 	sourceManager *ChartSourceManager
 	indicators    []indicators.BaseIndicator
 
-	timeRange  sources.TimeRange
-	timeFrame  string // TODO - we should be storing time frame in seconds internally
-	activePair sources.SourcePairId
+	timeRange sources.TimeRange
+	timeFrame string // TODO - we should be storing time frame in seconds internally
 }
 
 func NewChartProject(title string) *ChartProject {
@@ -62,27 +61,6 @@ func (c *ChartProject) GetTimeRange() sources.TimeRange {
 	return c.timeRange
 }
 
-func (c *ChartProject) SetActivePair(pair sources.SourcePairId) error {
-	loadedPairs := c.sourceManager.GetLoadedPairs()
-
-	for _, loadedPair := range loadedPairs {
-		if c.activePair == (sources.SourcePairId{}) {
-			c.activePair = loadedPair
-		}
-
-		if loadedPair == pair {
-			c.activePair = pair
-			return nil
-		}
-	}
-
-	return fmt.Errorf("pair %v is not loaded", pair)
-}
-
-func (c *ChartProject) GetActivePair() sources.SourcePairId {
-	return c.activePair
-}
-
 func (c *ChartProject) GetLoadedPairs() []sources.SourcePairId {
 	return c.sourceManager.GetLoadedPairs()
 }
@@ -100,14 +78,14 @@ func (c *ChartProject) AddIndicators(indicator ...indicators.BaseIndicator) {
 }
 
 // * This will return an object with all the info needed to render the chart in the frontend
-func (c *ChartProject) GetRender() (RenderableChartProject, error) {
+func (c *ChartProject) GetRender(activePair sources.SourcePairId) (RenderableChartProject, error) {
 	entries, width, err := c.sourceManager.FetchSources(c.timeRange, c.sourceManager.selectedPairs, c.timeFrame)
 	if err != nil {
 		fmt.Println("Error fetching sources:", err)
 		return RenderableChartProject{}, err
 	}
 
-	chartConfig := c.assembleChartConfig()
+	chartConfig := c.assembleChartConfig(activePair)
 
 	var historyEntries map[sources.SourcePairId][]sources.ChartEntry = make(map[sources.SourcePairId][]sources.ChartEntry)
 	var currentMultiSourceEntries sources.MultiSourceEntries
@@ -135,7 +113,7 @@ func (c *ChartProject) GetRender() (RenderableChartProject, error) {
 	renderableChartProject.AvailableTimeFrames = c.sourceManager.GetCommonTimeFrames()
 	renderableChartProject.ActiveTimeFrame = c.timeFrame
 	renderableChartProject.LoadedPairs = c.sourceManager.GetLoadedPairs()
-	renderableChartProject.ActivePair = c.activePair
+	renderableChartProject.ActivePair = activePair
 
 	renderableChartProject.CandleData = entries
 	renderableChartProject.CandleColors = c.colors
@@ -162,10 +140,10 @@ func (c *ChartProject) GetRender() (RenderableChartProject, error) {
 	return renderableChartProject, nil
 }
 
-func (c *ChartProject) assembleChartConfig() indicators.ChartConfig {
+func (c *ChartProject) assembleChartConfig(activePair sources.SourcePairId) indicators.ChartConfig {
 	return indicators.ChartConfig{
 		TimeFrameSeconds: c.sourceManager.GetTimeFrameSeconds(c.timeFrame),
-		ActivePair:       c.activePair,
+		ActivePair:       activePair,
 		LoadedPairs:      c.sourceManager.GetLoadedPairs(),
 	}
 }

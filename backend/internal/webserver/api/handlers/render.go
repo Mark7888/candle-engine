@@ -97,12 +97,7 @@ func RenderProject(c *gin.Context) {
 		return
 	}
 
-	if err := project.SetActivePair(sources.SourcePairId{SourceName: source, PairId: pair}); err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "invalid trading pair", Details: err.Error()})
-		return
-	}
-
-	render, err := project.GetRender()
+	render, err := project.GetRender(sources.SourcePairId{SourceName: source, PairId: pair})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "failed to render chart", Details: err.Error()})
 		return

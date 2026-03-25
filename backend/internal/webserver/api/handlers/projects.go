@@ -62,7 +62,6 @@ func GetProject(c *gin.Context) {
 		pairs[i] = models.SourcePair{SourceName: p.SourceName, PairID: p.PairId}
 	}
 
-	ap := project.GetActivePair()
 	tr := project.GetTimeRange()
 
 	c.JSON(http.StatusOK, models.ProjectDetailResponse{
@@ -71,7 +70,6 @@ func GetProject(c *gin.Context) {
 		TimeFrame:           project.GetTimeFrame(),
 		AvailableTimeFrames: project.GetAvailableTimeFrames(),
 		Pairs:               pairs,
-		ActivePair:          models.SourcePair{SourceName: ap.SourceName, PairID: ap.PairId},
 		TimeRange:           models.TimeRange{Start: tr.Start, End: tr.End},
 	})
 }

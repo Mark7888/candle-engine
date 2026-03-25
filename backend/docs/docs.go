@@ -310,9 +310,6 @@ const docTemplate = `{
         "models.ProjectDetailResponse": {
             "type": "object",
             "properties": {
-                "activePair": {
-                    "$ref": "#/definitions/models.SourcePair"
-                },
                 "availableTimeFrames": {
                     "type": "array",
                     "items": {

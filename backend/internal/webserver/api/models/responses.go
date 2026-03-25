@@ -34,7 +34,6 @@ type ProjectDetailResponse struct {
 	TimeFrame           string       `json:"timeFrame"`
 	AvailableTimeFrames []string     `json:"availableTimeFrames"`
 	Pairs               []SourcePair `json:"pairs"`
-	ActivePair          SourcePair   `json:"activePair"`
 	TimeRange           TimeRange    `json:"timeRange"`
 }
 
@@ -102,15 +101,15 @@ type LogEntry struct {
 // Indicator PlotPoints arrays are index-aligned with the entries in the
 // active pair's CandleSeries.
 type ProjectRenderResponse struct {
-	Title               string         `json:"title"`
-	TimeRange           TimeRange      `json:"timeRange"`
-	AvailableTimeFrames []string       `json:"availableTimeFrames"`
-	ActiveTimeFrame     string         `json:"activeTimeFrame"`
-	ActivePair          SourcePair     `json:"activePair"`
-	CandleColors        CandleColors   `json:"candleColors"`
-	Candles             []CandleSeries `json:"candles"`
+	Title               string          `json:"title"`
+	TimeRange           TimeRange       `json:"timeRange"`
+	AvailableTimeFrames []string        `json:"availableTimeFrames"`
+	ActiveTimeFrame     string          `json:"activeTimeFrame"`
+	ActivePair          SourcePair      `json:"activePair"`
+	CandleColors        CandleColors    `json:"candleColors"`
+	Candles             []CandleSeries  `json:"candles"`
 	Indicators          []IndicatorData `json:"indicators"`
-	Logs                []LogEntry     `json:"logs"`
+	Logs                []LogEntry      `json:"logs"`
 }
 
 // HealthResponse is returned by GET /api/v1/health.
