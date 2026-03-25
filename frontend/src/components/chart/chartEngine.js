@@ -35,10 +35,25 @@ export function normalizeColor(color) {
 // Data extraction helpers
 // ---------------------------------------------------------------------------
 
-export function buildTimestamps(candleEntries) {
+/**
+ * Returns true when the timeFrame string represents a sub-day interval
+ * (minutes or hours), e.g. "1m", "5m", "1h", "4h".
+ */
+function isSubDayTimeFrame(timeFrame) {
+  return typeof timeFrame === 'string' && /^\d+[mh]$/.test(timeFrame);
+}
+
+export function buildTimestamps(candleEntries, timeFrame) {
+  const includeTime = isSubDayTimeFrame(timeFrame);
   return candleEntries.map((e) => {
     const d = new Date(e.timestamp);
-    return d.toISOString().split('T')[0];
+    const yyyy = d.getUTCFullYear();
+    const mo = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    if (!includeTime) return `${yyyy}-${mo}-${dd}`;
+    const hh = String(d.getUTCHours()).padStart(2, '0');
+    const mm = String(d.getUTCMinutes()).padStart(2, '0');
+    return `${yyyy}-${mo}-${dd} ${hh}:${mm}`;
   });
 }
 
@@ -276,7 +291,7 @@ function sortedChartIds(groups) {
 export function buildEchartsOption(renderData, isDark = true) {
   if (!renderData) return {};
 
-  const { candles, candleColors, indicators, activePair } = renderData;
+  const { candles, candleColors, indicators, activePair, activeTimeFrame } = renderData;
 
   // Use activePair from the response to find the correct candle series.
   // The backend may return data for multiple pairs; activePair identifies which
@@ -289,7 +304,7 @@ export function buildEchartsOption(renderData, isDark = true) {
   if (!activeSeries) return {};
 
   const candleEntries = activeSeries.entries ?? [];
-  const timestamps = buildTimestamps(candleEntries);
+  const timestamps = buildTimestamps(candleEntries, activeTimeFrame);
 
   const textColor = isDark ? '#aaa' : '#555';
   const lineColor = isDark ? '#444' : '#ddd';
