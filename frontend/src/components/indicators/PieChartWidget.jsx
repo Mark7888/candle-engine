@@ -38,7 +38,7 @@ export default function PieChartWidget({ collection, config }) {
   const option = {
     animation: false,
     backgroundColor: isDark ? '#1a202c' : '#fff',
-    tooltip: { trigger: 'item' },
+    tooltip: { trigger: 'item', appendToBody: true },
     series: [
       {
         type: 'pie',

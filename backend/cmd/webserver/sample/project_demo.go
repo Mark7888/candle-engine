@@ -6,6 +6,7 @@ import (
 "candle-engine/pkg/charting/sources"
 "candle-engine/pkg/charting/sources/binance"
 "candle-engine/pkg/indicators"
+"fmt"
 "math"
 "time"
 )
@@ -38,6 +39,7 @@ GetDemoAreaChartIndicator(),
 GetDemoCandleStickIndicator(),
 GetDemoTableIndicator(),
 GetDemoPieChartIndicator(),
+GetDemoPieChart2Indicator(),
 )
 return *project
 }
@@ -128,7 +130,7 @@ return handler, nil
 }
 
 // ---------------------------------------------------------------------------
-// BarChart – Volume
+// BarChart – Volume (logs when volume >= 50k)
 // ---------------------------------------------------------------------------
 
 func GetDemoBarChartIndicator() indicators.BaseIndicator {
@@ -157,8 +159,12 @@ Opacity:   0.8,
 }
 
 func (d *DemoBarChartIndicator) HandleEntry(points indicators.PlotPointCollectionHistory, chartsData sources.MultiSourceEntries, config indicators.ChartConfig, handler indicators.IndicatorOutputHandler) (indicators.IndicatorOutputHandler, error) {
+vol := chartsData.GetEntry(config.ActivePair, 0).Volume
+if vol >= 50000 {
+handler.LogInfo(fmt.Sprintf("High volume: %.2f", vol))
+}
 handler.SetSingleOutput(indicators.PlotPoint{
-Value: chartsData.GetEntry(config.ActivePair, 0).Volume,
+Value: vol,
 Color: "#ab47bc",
 })
 return handler, nil
@@ -283,7 +289,7 @@ return handler, nil
 }
 
 // ---------------------------------------------------------------------------
-// Table – OHLCV Stats (2x3)
+// Table – OHLC Snapshot (2 rows x 2 columns)
 // ---------------------------------------------------------------------------
 
 func GetDemoTableIndicator() indicators.BaseIndicator {
@@ -297,16 +303,16 @@ return indicators.IndicatorTypeTable
 }
 
 func (d *DemoTableIndicator) GetName() string {
-return "OHLCV Stats (Demo)"
+return "OHLC Snapshot (Demo)"
 }
 
 func (d *DemoTableIndicator) GetConfig() indicators.IndicatorConfig {
 return indicators.IndicatorConfig{
 TargetChart: "",
 TableIndicator: indicators.TableIndicatorConfig{
-DisplayName:        "OHLCV Stats",
+DisplayName:        "OHLC Snapshot",
 RowTitles:          []string{"Current", "Previous"},
-ColumnTitles:       []string{"Open", "Hi-Lo Spread", "Close"},
+ColumnTitles:       []string{"Open", "Close"},
 ValueDisplayFormat: "%.2f",
 },
 }
@@ -331,11 +337,9 @@ return "#ef5350"
 coll := indicators.NewPlotPointCollection(
 // Row 0: current
 indicators.PlotPoint{Value: current.Open, Color: "#ffffff"},
-indicators.PlotPoint{Value: current.High - current.Low, Color: "#26a69a"},
 indicators.PlotPoint{Value: current.Close, Color: closeColor(current)},
 // Row 1: previous
 indicators.PlotPoint{Value: previous.Open, Color: "#ffffff"},
-indicators.PlotPoint{Value: previous.High - previous.Low, Color: "#26a69a"},
 indicators.PlotPoint{Value: previous.Close, Color: closeColor(previous)},
 )
 handler.SetOutput(coll)
@@ -343,7 +347,7 @@ return handler, nil
 }
 
 // ---------------------------------------------------------------------------
-// PieChart – Market Snapshot (3 slices)
+// PieChart – Market Snapshot (3 slices, main chart)
 // ---------------------------------------------------------------------------
 
 func GetDemoPieChartIndicator() indicators.BaseIndicator {
@@ -390,6 +394,58 @@ handler.SetOutput(indicators.NewPlotPointCollection(
 indicators.PlotPoint{Value: v0, Color: "#42a5f5"},
 indicators.PlotPoint{Value: v1, Color: "#66bb6a"},
 indicators.PlotPoint{Value: v2, Color: "#ffa726"},
+))
+return handler, nil
+}
+
+// ---------------------------------------------------------------------------
+// PieChart 2 – Candle Structure (3 slices, separate chart group)
+// ---------------------------------------------------------------------------
+
+func GetDemoPieChart2Indicator() indicators.BaseIndicator {
+return &DemoPieChart2Indicator{}
+}
+
+type DemoPieChart2Indicator struct{}
+
+func (d *DemoPieChart2Indicator) GetType() indicators.IndicatorType {
+return indicators.IndicatorTypePieChart
+}
+
+func (d *DemoPieChart2Indicator) GetName() string {
+return "Candle Structure (Demo)"
+}
+
+func (d *DemoPieChart2Indicator) GetConfig() indicators.IndicatorConfig {
+return indicators.IndicatorConfig{
+TargetChart: "demo-pie2",
+PieChartIndicator: indicators.PieChartIndicatorConfig{
+DisplayName: "Candle Structure",
+SliceTitles: []string{"Upper Shadow", "Body", "Lower Shadow"},
+},
+}
+}
+
+func (d *DemoPieChart2Indicator) HandleEntry(points indicators.PlotPointCollectionHistory, chartsData sources.MultiSourceEntries, config indicators.ChartConfig, handler indicators.IndicatorOutputHandler) (indicators.IndicatorOutputHandler, error) {
+entry := chartsData.GetEntry(config.ActivePair, 0)
+if entry == nil || !entry.IsValid() {
+handler.SetOutput(indicators.NewInvalidPlotPointCollection())
+return handler, nil
+}
+
+upperShadow := math.Max(0, entry.High-math.Max(entry.Open, entry.Close))
+body := math.Max(0, math.Abs(entry.Open-entry.Close))
+lowerShadow := math.Max(0, math.Min(entry.Open, entry.Close)-entry.Low)
+
+if upperShadow == 0 && body == 0 && lowerShadow == 0 {
+handler.SetOutput(indicators.NewInvalidPlotPointCollection())
+return handler, nil
+}
+
+handler.SetOutput(indicators.NewPlotPointCollection(
+indicators.PlotPoint{Value: upperShadow, Color: "#ef5350"},
+indicators.PlotPoint{Value: body, Color: "#29b6f6"},
+indicators.PlotPoint{Value: lowerShadow, Color: "#66bb6a"},
 ))
 return handler, nil
 }

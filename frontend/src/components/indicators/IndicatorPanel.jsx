@@ -57,6 +57,8 @@ function FloatingWidget({ indicator, collection, position, onSnapBack, onStop })
       <Box
         ref={nodeRef}
         position="fixed"
+        top={0}
+        left={0}
         zIndex={9999}
         minW="220px"
         maxW="400px"

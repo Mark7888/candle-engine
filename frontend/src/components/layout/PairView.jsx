@@ -49,6 +49,7 @@ export default function PairView({ renderData, loading, error, projectId }) {
           flex={logsOpen ? '2' : '1'}
           minW={0}
           overflowY="auto"
+          sx={{ scrollbarGutter: 'stable' }}
           transition="flex 0.3s ease"
         >
           <ChartContainer renderData={renderData} loading={loading} error={error} />
