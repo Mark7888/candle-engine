@@ -46,6 +46,19 @@ export const useUIStore = create(
         set((s) => ({
           floatingWidgets: { ...s.floatingWidgets, [projectId]: widgets },
         })),
+
+      // Per-project chart settings (timeFrame, rangeFrom, rangeTo).
+      // null means "use the project default from the backend".
+      // Persisted so selections survive page reloads and are synced across pairs
+      // within the same project.
+      projectSettings: {},
+      setProjectSetting: (projectId, patch) =>
+        set((s) => ({
+          projectSettings: {
+            ...s.projectSettings,
+            [projectId]: { ...(s.projectSettings[projectId] ?? {}), ...patch },
+          },
+        })),
     }),
     {
       name: 'candle-engine-ui',
@@ -55,6 +68,7 @@ export const useUIStore = create(
         hiddenLogLevels: s.hiddenLogLevels,
         indicatorPanelOpen: s.indicatorPanelOpen,
         indicatorPanelHeight: s.indicatorPanelHeight,
+        projectSettings: s.projectSettings,
       }),
     }
   )

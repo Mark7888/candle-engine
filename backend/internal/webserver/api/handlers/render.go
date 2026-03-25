@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"candle-engine/internal/chartmanager"
 	"candle-engine/internal/webserver/api/models"
@@ -64,11 +65,16 @@ func indicatorConfig(t indicators.IndicatorType, cfg indicators.IndicatorConfig)
 //	@Description	Fetches OHLCV data and computes all configured indicators for the requested trading pair.
 //	@Description	The response contains raw candle and indicator data for the frontend to render.
 //	@Description	Indicator PlotPoints arrays are index-aligned with the active pair's candle entries.
+//	@Description	Optional query parameters timeFrame, rangeFrom, and rangeTo override the project defaults
+//	@Description	for this request only; no server-side state is mutated.
 //	@Tags			projects
 //	@Produce		json
-//	@Param			id		path		int		true	"Project ID (zero-based index)"
-//	@Param			source	query		string	true	"Data source name (e.g. 'Binance')"
-//	@Param			pair	query		string	true	"Trading pair ID (e.g. 'BTCUSDC')"
+//	@Param			id			path		int		true	"Project ID (zero-based index)"
+//	@Param			source		query		string	true	"Data source name (e.g. 'Binance')"
+//	@Param			pair		query		string	true	"Trading pair ID (e.g. 'BTCUSDC')"
+//	@Param			timeFrame	query		string	false	"Override time frame (e.g. '1h', '4h', '1d')"
+//	@Param			rangeFrom	query		string	false	"Override range start as RFC3339 timestamp"
+//	@Param			rangeTo		query		string	false	"Override range end as RFC3339 timestamp"
 //	@Success		200		{object}	models.ProjectRenderResponse
 //	@Failure		400		{object}	models.ErrorResponse
 //	@Failure		404		{object}	models.ErrorResponse
@@ -96,6 +102,31 @@ func RenderProject(c *gin.Context) {
 		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "project not found"})
 		return
 	}
+
+	// Apply optional client-side overrides (no server state is mutated – we
+	// operate on the value copy returned by GetChartProject).
+	if tf := c.Query("timeFrame"); tf != "" {
+		project.SetTimeFrame(tf)
+	}
+
+	tr := project.GetTimeRange()
+	if rangeFromStr := c.Query("rangeFrom"); rangeFromStr != "" {
+		t, parseErr := time.Parse(time.RFC3339, rangeFromStr)
+		if parseErr != nil {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "invalid rangeFrom", Details: "rangeFrom must be an RFC3339 timestamp (e.g. 2024-01-01T00:00:00Z)"})
+			return
+		}
+		tr.Start = t
+	}
+	if rangeToStr := c.Query("rangeTo"); rangeToStr != "" {
+		t, parseErr := time.Parse(time.RFC3339, rangeToStr)
+		if parseErr != nil {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "invalid rangeTo", Details: "rangeTo must be an RFC3339 timestamp (e.g. 2024-12-31T23:59:59Z)"})
+			return
+		}
+		tr.End = t
+	}
+	project.SetTimeRange(tr)
 
 	render, err := project.GetRender(sources.SourcePairId{SourceName: source, PairId: pair})
 	if err != nil {
@@ -200,13 +231,13 @@ func RenderProject(c *gin.Context) {
 	}
 
 	ap := render.ActivePair
-	tr := render.TimeRange
+	renderTr := render.TimeRange
 
 	c.JSON(http.StatusOK, models.ProjectRenderResponse{
 		Title: render.Title,
 		TimeRange: models.TimeRange{
-			Start: tr.Start,
-			End:   tr.End,
+			Start: renderTr.Start,
+			End:   renderTr.End,
 		},
 		AvailableTimeFrames: render.AvailableTimeFrames,
 		ActiveTimeFrame:     render.ActiveTimeFrame,
