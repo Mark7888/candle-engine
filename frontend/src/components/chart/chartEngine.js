@@ -424,23 +424,23 @@ export function buildEchartsOption(renderData, isDark = true) {
 
   const DEFAULT_CANDLES = 90;
   const total = candleEntries.length;
-  const zoomStart = total > DEFAULT_CANDLES ? Math.floor(((total - DEFAULT_CANDLES) / total) * 100) : 0;
-  const zoomEnd = 100;
+  const zoomStartValue = total > DEFAULT_CANDLES ? total - DEFAULT_CANDLES : 0;
+  const zoomEndValue = Math.max(0, total - 1);
 
   const dataZoom = [
     {
       type: 'inside',
       xAxisIndex: allXAxisIndices,
-      start: zoomStart,
-      end: zoomEnd,
+      startValue: zoomStartValue,
+      endValue: zoomEndValue,
     },
     {
       type: 'slider',
       xAxisIndex: allXAxisIndices,
       bottom: 10,
       height: LAYOUT.dataZoomHeight,
-      start: zoomStart,
-      end: zoomEnd,
+      startValue: zoomStartValue,
+      endValue: zoomEndValue,
       handleStyle: { color: isDark ? '#6366f1' : '#4f46e5' },
       fillerColor: isDark ? 'rgba(99,102,241,0.15)' : 'rgba(79,70,229,0.1)',
       borderColor: isDark ? '#444' : '#ddd',
