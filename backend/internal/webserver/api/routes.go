@@ -24,6 +24,7 @@ func RegisterRoutes(router *gin.Engine, corsOrigin string) {
 		{
 			projects.GET("", handlers.ListProjects)
 			projects.GET("/:id", handlers.GetProject)
+			projects.PATCH("/:id/settings", handlers.UpdateProjectSettings)
 			projects.GET("/:id/render", handlers.RenderProject)
 		}
 	}

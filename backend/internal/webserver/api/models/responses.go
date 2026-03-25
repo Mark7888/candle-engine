@@ -112,6 +112,13 @@ type ProjectRenderResponse struct {
 	Logs                []LogEntry      `json:"logs"`
 }
 
+// UpdateSettingsRequest is the body for PATCH /api/v1/projects/:id/settings.
+// Both fields are optional; only non-null fields are applied.
+type UpdateSettingsRequest struct {
+	TimeFrame *string    `json:"timeFrame,omitempty"`
+	TimeRange *TimeRange `json:"timeRange,omitempty"`
+}
+
 // HealthResponse is returned by GET /api/v1/health.
 type HealthResponse struct {
 	Status     string    `json:"status"`

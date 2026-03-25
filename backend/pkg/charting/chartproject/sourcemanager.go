@@ -124,9 +124,15 @@ func (c *ChartSourceManager) intersectTimeFrameSeconds(commonSeconds map[int64]b
 }
 
 func (c *ChartSourceManager) convertSecondsToStrings(source sources.Source, seconds map[int64]bool) []string {
-	result := make([]string, 0, len(seconds))
-
+	// Sort seconds ascending so timeframes go from smallest to largest.
+	sortedSeconds := make([]int64, 0, len(seconds))
 	for sec := range seconds {
+		sortedSeconds = append(sortedSeconds, sec)
+	}
+	slices.Sort(sortedSeconds)
+
+	result := make([]string, 0, len(sortedSeconds))
+	for _, sec := range sortedSeconds {
 		result = append(result, source.GetTimeFrameString(sec))
 	}
 

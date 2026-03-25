@@ -18,4 +18,7 @@ export const fetchRender = (id, source, pair) =>
     .get(`/api/v1/projects/${id}/render`, { params: { source, pair } })
     .then((r) => r.data);
 
+export const patchProjectSettings = (id, settings) =>
+  api.patch(`/api/v1/projects/${id}/settings`, settings).then((r) => r.data);
+
 export default api;

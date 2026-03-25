@@ -2,6 +2,7 @@ package chartmanager
 
 import (
 	"candle-engine/pkg/charting/chartproject"
+	"candle-engine/pkg/charting/sources"
 	"sync"
 )
 
@@ -77,6 +78,25 @@ func (cm *ChartManager) Count() int {
 	defer cm.mu.RUnlock()
 
 	return len(cm.chartProjects)
+}
+
+// UpdateProjectSettings updates the timeFrame and/or timeRange of a chart project in place.
+// Only non-nil pointers are applied. Returns false if the index is out of bounds.
+func (cm *ChartManager) UpdateProjectSettings(index int, timeFrame *string, timeRange *sources.TimeRange) bool {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+
+	if index < 0 || index >= len(cm.chartProjects) {
+		return false
+	}
+
+	if timeFrame != nil {
+		cm.chartProjects[index].SetTimeFrame(*timeFrame)
+	}
+	if timeRange != nil {
+		cm.chartProjects[index].SetTimeRange(*timeRange)
+	}
+	return true
 }
 
 // Clear removes all chart projects

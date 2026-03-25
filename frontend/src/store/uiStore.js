@@ -31,6 +31,17 @@ export const useUIStore = create(
           },
         })),
 
+      // Per-project settings overrides (persisted): { [projectId]: { timeFrame, timeRangeStart, timeRangeEnd } }
+      // timeRangeStart / timeRangeEnd are ISO date strings (YYYY-MM-DD).
+      projectSettings: {},
+      setProjectSettings: (projectId, settings) =>
+        set((s) => ({
+          projectSettings: {
+            ...s.projectSettings,
+            [projectId]: { ...(s.projectSettings[projectId] ?? {}), ...settings },
+          },
+        })),
+
       // Indicator panel open/closed — global, same behaviour as logsPanelOpen
       indicatorPanelOpen: true,
       setIndicatorPanelOpen: (value) => set({ indicatorPanelOpen: value }),
@@ -55,6 +66,7 @@ export const useUIStore = create(
         hiddenLogLevels: s.hiddenLogLevels,
         indicatorPanelOpen: s.indicatorPanelOpen,
         indicatorPanelHeight: s.indicatorPanelHeight,
+        projectSettings: s.projectSettings,
       }),
     }
   )
