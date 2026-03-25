@@ -424,7 +424,7 @@ export function buildEchartsOption(renderData, isDark = true) {
 
   const DEFAULT_CANDLES = 90;
   const total = candleEntries.length;
-  const zoomStart = total > DEFAULT_CANDLES ? Math.round(((total - DEFAULT_CANDLES) / total) * 100) : 0;
+  const zoomStart = total > DEFAULT_CANDLES ? Math.floor(((total - DEFAULT_CANDLES) / total) * 100) : 0;
   const zoomEnd = 100;
 
   const dataZoom = [
