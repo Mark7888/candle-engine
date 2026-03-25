@@ -27,7 +27,12 @@ export default function ProjectView({ projectId }) {
   const activePairs = useUIStore((s) => s.activePairs);
   const setActivePair = useUIStore((s) => s.setActivePair);
 
-  const projectSettings = useUIStore((s) => s.projectSettings[projectId] ?? {});
+  // Select each setting individually so selectors always return a stable
+  // primitive (string | null), avoiding the infinite-loop that `?? {}` causes
+  // when the project key is not yet present in the store.
+  const settingsTimeFrame = useUIStore((s) => s.projectSettings[projectId]?.timeFrame ?? null);
+  const settingsRangeFrom = useUIStore((s) => s.projectSettings[projectId]?.rangeFrom ?? null);
+  const settingsRangeTo = useUIStore((s) => s.projectSettings[projectId]?.rangeTo ?? null);
   const setProjectSetting = useUIStore((s) => s.setProjectSetting);
 
   const activePairEntry = activePairs[projectId];
@@ -57,12 +62,16 @@ export default function ProjectView({ projectId }) {
     }
   }, [projectDetail, activePairEntry, projectId, setActivePair]);
 
-  // Load render data whenever active pair or settings change
+  // Load render data whenever active pair or any setting value changes
   useEffect(() => {
     if (activePairEntry) {
-      loadRender(projectId, activePairEntry.source, activePairEntry.pair, projectSettings);
+      loadRender(projectId, activePairEntry.source, activePairEntry.pair, {
+        timeFrame: settingsTimeFrame,
+        rangeFrom: settingsRangeFrom,
+        rangeTo: settingsRangeTo,
+      });
     }
-  }, [projectId, activePairEntry, projectSettings, loadRender]);
+  }, [projectId, activePairEntry, settingsTimeFrame, settingsRangeFrom, settingsRangeTo, loadRender]);
 
   const handleSelectPair = useCallback(
     (sourceName, pairId) => {
@@ -106,9 +115,9 @@ export default function ProjectView({ projectId }) {
         defaultTimeFrame={defaultTimeFrame}
         defaultRangeFrom={defaultRangeFrom}
         defaultRangeTo={defaultRangeTo}
-        timeFrame={projectSettings.timeFrame ?? null}
-        rangeFrom={projectSettings.rangeFrom ?? null}
-        rangeTo={projectSettings.rangeTo ?? null}
+        timeFrame={settingsTimeFrame}
+        rangeFrom={settingsRangeFrom}
+        rangeTo={settingsRangeTo}
         onTimeFrameChange={(tf) => handleSettingChange({ timeFrame: tf })}
         onRangeFromChange={(v) => handleSettingChange({ rangeFrom: v })}
         onRangeToChange={(v) => handleSettingChange({ rangeTo: v })}

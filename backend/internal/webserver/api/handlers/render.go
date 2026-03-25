@@ -103,32 +103,38 @@ func RenderProject(c *gin.Context) {
 		return
 	}
 
-	// Apply optional client-side overrides (no server state is mutated – we
-	// operate on the value copy returned by GetChartProject).
+	// Resolve optional client-side overrides. These are passed directly into
+	// GetRender so no project state is mutated, not even on the value copy.
+	var timeFrameOverride string
 	if tf := c.Query("timeFrame"); tf != "" {
-		project.SetTimeFrame(tf)
+		timeFrameOverride = tf
 	}
 
-	tr := project.GetTimeRange()
-	if rangeFromStr := c.Query("rangeFrom"); rangeFromStr != "" {
-		t, parseErr := time.Parse(time.RFC3339, rangeFromStr)
-		if parseErr != nil {
-			c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "invalid rangeFrom", Details: "rangeFrom must be an RFC3339 timestamp (e.g. 2024-01-01T00:00:00Z)"})
-			return
+	var timeRangeOverride *sources.TimeRange
+	if rangeFromStr, rangeToStr := c.Query("rangeFrom"), c.Query("rangeTo"); rangeFromStr != "" || rangeToStr != "" {
+		// Start from the project defaults and override only the supplied fields.
+		base := project.GetTimeRange()
+		override := base
+		if rangeFromStr != "" {
+			t, parseErr := time.Parse(time.RFC3339, rangeFromStr)
+			if parseErr != nil {
+				c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "invalid rangeFrom", Details: "rangeFrom must be an RFC3339 timestamp (e.g. 2024-01-01T00:00:00Z)"})
+				return
+			}
+			override.Start = t
 		}
-		tr.Start = t
-	}
-	if rangeToStr := c.Query("rangeTo"); rangeToStr != "" {
-		t, parseErr := time.Parse(time.RFC3339, rangeToStr)
-		if parseErr != nil {
-			c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "invalid rangeTo", Details: "rangeTo must be an RFC3339 timestamp (e.g. 2024-12-31T23:59:59Z)"})
-			return
+		if rangeToStr != "" {
+			t, parseErr := time.Parse(time.RFC3339, rangeToStr)
+			if parseErr != nil {
+				c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "invalid rangeTo", Details: "rangeTo must be an RFC3339 timestamp (e.g. 2024-12-31T23:59:59Z)"})
+				return
+			}
+			override.End = t
 		}
-		tr.End = t
+		timeRangeOverride = &override
 	}
-	project.SetTimeRange(tr)
 
-	render, err := project.GetRender(sources.SourcePairId{SourceName: source, PairId: pair})
+	render, err := project.GetRender(sources.SourcePairId{SourceName: source, PairId: pair}, timeFrameOverride, timeRangeOverride)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "failed to render chart", Details: err.Error()})
 		return
