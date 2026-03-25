@@ -11,7 +11,7 @@ import { MdOpenInNew, MdCallReceived } from 'react-icons/md';
  *   onSnapBack – callback to return the card to the drawer
  *   children   – widget body content
  */
-export default function WidgetCard({ title, floating = false, onFloat, onSnapBack, children }) {
+export default function WidgetCard({ title, floating = false, onFloat, onSnapBack, children, contentHeight }) {
   const { colorMode } = useColorMode();
   const isDark = colorMode === 'dark';
 
@@ -68,7 +68,11 @@ export default function WidgetCard({ title, floating = false, onFloat, onSnapBac
       </Flex>
 
       {/* Body */}
-      <Box overflowY="auto" flex={1}>
+      <Box
+        overflowY="auto"
+        flex={contentHeight !== undefined ? undefined : 1}
+        h={contentHeight !== undefined ? `${contentHeight}px` : undefined}
+      >
         {children}
       </Box>
     </Box>

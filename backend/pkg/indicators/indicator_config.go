@@ -13,13 +13,13 @@ type ChartConfig struct {
 type IndicatorType int
 
 const (
-	IndicatorTypeLine        IndicatorType = iota // 0 – existing
-	IndicatorTypeStepLine                         // 1 – existing
-	IndicatorTypeBarChart                         // 2 – existing
-	IndicatorTypeTable                            // 3 – existing
-	IndicatorTypeAreaChart                        // 4 – existing
-	IndicatorTypePieChart                         // 5 – pie/donut widget in indicator drawer
-	IndicatorTypeCandleStick                      // 6 – custom candlestick sub-chart in ECharts
+	IndicatorTypeLine        IndicatorType = iota
+	IndicatorTypeStepLine
+	IndicatorTypeBarChart
+	IndicatorTypeTable
+	IndicatorTypeAreaChart
+	IndicatorTypePieChart
+	IndicatorTypeCandleStick
 )
 
 // IndicatorConfig holds type-specific configuration for different indicator types

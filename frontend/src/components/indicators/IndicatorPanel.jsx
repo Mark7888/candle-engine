@@ -1,4 +1,4 @@
-import { useRef, useCallback, useMemo } from 'react';
+import { useRef, useCallback, useMemo, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Draggable from 'react-draggable';
 import {
@@ -29,13 +29,22 @@ function getLastValidCollection(plotPoints) {
   return null;
 }
 
+const FLOATING_HEADER_H = 36; // card header height in px
+const FLOATING_MIN_W = 220;
+const FLOATING_MIN_H = 160;
+const FLOATING_MIN_CONTENT_H = 60;
+const FLOATING_DEFAULT_W = 300;
+const FLOATING_DEFAULT_H = 280;
+const FLOATING_DEFAULT_X = 100;
+const FLOATING_DEFAULT_Y = 100;
+
 /** Render the correct widget body based on indicator type. */
-function WidgetBody({ indicator, collection }) {
+function WidgetBody({ indicator, collection, height }) {
   switch (indicator.type) {
     case 'table':
       return <TableWidget collection={collection} config={indicator.config} />;
     case 'pieChart':
-      return <PieChartWidget collection={collection} config={indicator.config} />;
+      return <PieChartWidget collection={collection} config={indicator.config} height={height} />;
     default:
       return null;
   }
@@ -45,8 +54,45 @@ function WidgetBody({ indicator, collection }) {
 // Floating widget portal
 // ---------------------------------------------------------------------------
 
-function FloatingWidget({ indicator, collection, position, onSnapBack, onStop }) {
+function FloatingWidget({ indicator, collection, position, size, onSnapBack, onStop, onResize }) {
   const nodeRef = useRef(null);
+  const { colorMode } = useColorMode();
+  const isDark = colorMode === 'dark';
+
+  const { w, h } = size;
+  const contentH = Math.max(FLOATING_MIN_CONTENT_H, h - FLOATING_HEADER_H);
+
+  // Use refs to avoid stale closure in resize handler
+  const wRef = useRef(w);
+  const hRef = useRef(h);
+  useEffect(() => { wRef.current = w; hRef.current = h; }, [w, h]);
+
+  const handleResizeMouseDown = useCallback(
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startW = wRef.current;
+      const startH = hRef.current;
+
+      const onMove = (moveEvt) => {
+        const newW = Math.max(FLOATING_MIN_W, startW + moveEvt.clientX - startX);
+        const newH = Math.max(FLOATING_MIN_H, startH + moveEvt.clientY - startY);
+        onResize(newW, newH);
+      };
+      const onUp = () => {
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+      };
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    },
+    [onResize]
+  );
+
+  const handleColor = isDark ? '#718096' : '#A0AEC0';
+
   return ReactDOM.createPortal(
     <Draggable
       handle=".drag-handle"
@@ -60,16 +106,37 @@ function FloatingWidget({ indicator, collection, position, onSnapBack, onStop })
         top={0}
         left={0}
         zIndex={9999}
-        minW="220px"
-        maxW="400px"
+        w={`${w}px`}
       >
         <WidgetCard
           title={indicator.config?.displayName || indicator.name}
           floating
           onSnapBack={onSnapBack}
+          contentHeight={contentH}
         >
-          <WidgetBody indicator={indicator} collection={collection} />
+          <WidgetBody indicator={indicator} collection={collection} height={contentH} />
         </WidgetCard>
+
+        {/* Resize handle — bottom-right corner */}
+        <Box
+          as="svg"
+          viewBox="0 0 10 10"
+          position="absolute"
+          bottom="4px"
+          right="4px"
+          w="10px"
+          h="10px"
+          cursor="se-resize"
+          zIndex={10001}
+          onMouseDown={handleResizeMouseDown}
+          opacity={0.5}
+          _hover={{ opacity: 1 }}
+          sx={{ color: handleColor, pointerEvents: 'all' }}
+        >
+          <line x1="2" y1="10" x2="10" y2="2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <line x1="5" y1="10" x2="10" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          <line x1="8" y1="10" x2="10" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </Box>
       </Box>
     </Draggable>,
     document.body
@@ -150,7 +217,7 @@ export default function IndicatorPanel({ renderData, projectId }) {
       if (existing) return;
       setFloatingWidgets(projectId, [
         ...floatingForProject,
-        { id: indicatorName, x: 100, y: 100 },
+        { id: indicatorName, x: FLOATING_DEFAULT_X, y: FLOATING_DEFAULT_Y, w: FLOATING_DEFAULT_W, h: FLOATING_DEFAULT_H },
       ]);
     },
     [floatingForProject, projectId, setFloatingWidgets]
@@ -171,6 +238,16 @@ export default function IndicatorPanel({ renderData, projectId }) {
       setFloatingWidgets(
         projectId,
         floatingForProject.map((w) => (w.id === indicatorName ? { ...w, x, y } : w))
+      );
+    },
+    [floatingForProject, projectId, setFloatingWidgets]
+  );
+
+  const updateWidgetSize = useCallback(
+    (indicatorName, w, h) => {
+      setFloatingWidgets(
+        projectId,
+        floatingForProject.map((fw) => (fw.id === indicatorName ? { ...fw, w, h } : fw))
       );
     },
     [floatingForProject, projectId, setFloatingWidgets]
@@ -211,8 +288,10 @@ export default function IndicatorPanel({ renderData, projectId }) {
         indicator={ind}
         collection={collection}
         position={{ x: fw.x, y: fw.y }}
+        size={{ w: fw.w ?? FLOATING_DEFAULT_W, h: fw.h ?? FLOATING_DEFAULT_H }}
         onSnapBack={() => snapBackWidget(fw.id)}
         onStop={(x, y) => updateWidgetPosition(fw.id, x, y)}
+        onResize={(w, h) => updateWidgetSize(fw.id, w, h)}
       />
     );
   });

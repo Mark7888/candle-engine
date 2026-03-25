@@ -10,7 +10,7 @@ import { normalizeColor } from '../chart/chartEngine';
  *
  * Each PlotPoint in the last valid collection is one slice.
  */
-export default function PieChartWidget({ collection, config }) {
+export default function PieChartWidget({ collection, config, height = 180 }) {
   const { colorMode } = useColorMode();
   const isDark = colorMode === 'dark';
 
@@ -21,7 +21,7 @@ export default function PieChartWidget({ collection, config }) {
 
   if (validPoints.length === 0) {
     return (
-      <Center h="180px">
+      <Center h={`${height}px`}>
         <Text fontSize="xs" color="gray.500">
           No data
         </Text>
@@ -53,7 +53,7 @@ export default function PieChartWidget({ collection, config }) {
     <Box>
       <ReactECharts
         option={option}
-        style={{ width: '100%', height: '180px' }}
+        style={{ width: '100%', height: `${height}px` }}
         notMerge
       />
     </Box>
