@@ -13,6 +13,14 @@ import { MdChevronLeft, MdClose } from 'react-icons/md';
 import LogEntry from './LogEntry';
 import LogLevelFilters from './LogLevelFilters';
 import { useUIStore } from '../../store/uiStore';
+import type { LogEntry as LogEntryType } from '../../types/api';
+
+interface LogPanelProps {
+  logs?: LogEntryType[];
+  isOpen: boolean;
+  onClose: () => void;
+  onOpen: () => void;
+}
 
 /**
  * LogPanel – right-side panel showing indicator logs.
@@ -23,7 +31,7 @@ import { useUIStore } from '../../store/uiStore';
  *   onClose – callback to close the panel
  *   onOpen  – callback to open the panel
  */
-export default function LogPanel({ logs = [], isOpen, onClose, onOpen }) {
+export default function LogPanel({ logs = [], isOpen, onClose, onOpen }: LogPanelProps) {
   const { colorMode } = useColorMode();
   const isDark = colorMode === 'dark';
 
@@ -35,7 +43,7 @@ export default function LogPanel({ logs = [], isOpen, onClose, onOpen }) {
   const toggleLevel = useUIStore((s) => s.toggleLogLevel);
 
   const channels = useMemo(() => {
-    const names = new Set(logs.map((l) => l.indicator).filter(Boolean));
+    const names = new Set(logs.map((l) => l.indicator).filter((x): x is string => Boolean(x)));
     return Array.from(names).sort();
   }, [logs]);
 

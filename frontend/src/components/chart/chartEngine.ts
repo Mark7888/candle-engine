@@ -11,6 +11,26 @@
  *  - A single DataZoom (inside + slider) controls all X-axes simultaneously.
  */
 
+import type {
+  CandleEntry,
+  CandleColors,
+  Indicator,
+  PlotPointCollection,
+  RenderResponse,
+  LineIndicatorConfig,
+  BarIndicatorConfig,
+  StepLineIndicatorConfig,
+  CandleStickIndicatorConfig,
+} from '../../types/api';
+
+// Use a flexible type for ECharts option objects since ECharts types
+// are complex and change across versions; we build them incrementally.
+type EchartsObj = Record<string, unknown>;
+
+export interface EchartsOptionWithHeight extends EchartsObj {
+  _totalHeight?: number;
+}
+
 // ---------------------------------------------------------------------------
 // Color utilities
 // ---------------------------------------------------------------------------
@@ -19,8 +39,8 @@
  * Converts #RRGGBBAA (8-char hex) to rgba().
  * Other color formats are returned as-is.
  */
-export function normalizeColor(color) {
-  if (!color) return color;
+export function normalizeColor(color: string | undefined | null): string | undefined {
+  if (!color) return undefined;
   if (color.length === 9 && color[0] === '#') {
     const r = parseInt(color.slice(1, 3), 16);
     const g = parseInt(color.slice(3, 5), 16);
@@ -39,11 +59,14 @@ export function normalizeColor(color) {
  * Returns true when the timeFrame string represents a sub-day interval
  * (minutes or hours), e.g. "1m", "5m", "1h", "4h".
  */
-function isSubDayTimeFrame(timeFrame) {
+function isSubDayTimeFrame(timeFrame: string | undefined): boolean {
   return typeof timeFrame === 'string' && /^\d+[mh]$/.test(timeFrame);
 }
 
-export function buildTimestamps(candleEntries, timeFrame) {
+export function buildTimestamps(
+  candleEntries: CandleEntry[],
+  timeFrame: string | undefined
+): string[] {
   const includeTime = isSubDayTimeFrame(timeFrame);
   return candleEntries.map((e) => {
     const d = new Date(e.timestamp);
@@ -59,7 +82,11 @@ export function buildTimestamps(candleEntries, timeFrame) {
 
 
 
-function getPointValue(plotPoints, timeIdx, lineIdx) {
+function getPointValue(
+  plotPoints: PlotPointCollection[],
+  timeIdx: number,
+  lineIdx: number
+): number | string {
   const collection = plotPoints[timeIdx];
   if (!collection || collection.invalid) return '-';
   const point = collection.points[lineIdx];
@@ -67,11 +94,17 @@ function getPointValue(plotPoints, timeIdx, lineIdx) {
   return point.value;
 }
 
-function extractSeriesData(plotPoints, lineIdx) {
+function extractSeriesData(
+  plotPoints: PlotPointCollection[],
+  lineIdx: number
+): (number | string)[] {
   return plotPoints.map((_, i) => getPointValue(plotPoints, i, lineIdx));
 }
 
-function findLineColor(plotPoints, lineIdx) {
+function findLineColor(
+  plotPoints: PlotPointCollection[],
+  lineIdx: number
+): string | undefined {
   for (const collection of plotPoints) {
     if (collection.invalid) continue;
     const point = collection.points[lineIdx];
@@ -82,7 +115,7 @@ function findLineColor(plotPoints, lineIdx) {
   return undefined;
 }
 
-function countLines(plotPoints) {
+function countLines(plotPoints: PlotPointCollection[]): number {
   for (const collection of plotPoints) {
     if (!collection.invalid && collection.points.length > 0) {
       return collection.points.length;
@@ -95,14 +128,18 @@ function countLines(plotPoints) {
 // Series builders per indicator type
 // ---------------------------------------------------------------------------
 
-function buildLineSeries(indicator, xAxisIndex, yAxisIndex) {
-  const cfg = indicator.config ?? {};
+function buildLineSeries(
+  indicator: Indicator,
+  xAxisIndex: number,
+  yAxisIndex: number
+): EchartsObj[] {
+  const cfg = (indicator.config ?? {}) as LineIndicatorConfig;
   const titles = cfg.lineTitles ?? [];
   const numLines = countLines(indicator.plotPoints);
   return Array.from({ length: numLines }, (_, i) => {
     const color = findLineColor(indicator.plotPoints, i);
     const name = titles[i] || `${indicator.name}-${i + 1}`;
-    const series = {
+    const series: EchartsObj = {
       name,
       type: 'line',
       xAxisIndex,
@@ -111,7 +148,7 @@ function buildLineSeries(indicator, xAxisIndex, yAxisIndex) {
       showSymbol: cfg.showSymbols ?? false,
       data: extractSeriesData(indicator.plotPoints, i),
     };
-    const lineStyle = {};
+    const lineStyle: EchartsObj = {};
     if (cfg.lineThickness) lineStyle.width = cfg.lineThickness;
     if (color) lineStyle.color = color;
     if (cfg.opacity) lineStyle.opacity = cfg.opacity;
@@ -121,16 +158,20 @@ function buildLineSeries(indicator, xAxisIndex, yAxisIndex) {
   });
 }
 
-function buildStepLineSeries(indicator, xAxisIndex, yAxisIndex) {
-  const cfg = indicator.config ?? {};
+function buildStepLineSeries(
+  indicator: Indicator,
+  xAxisIndex: number,
+  yAxisIndex: number
+): EchartsObj[] {
+  const cfg = (indicator.config ?? {}) as StepLineIndicatorConfig;
   const titles = cfg.lineTitles ?? [];
   const numLines = countLines(indicator.plotPoints);
-  const stepMap = { 0: 'start', 1: 'middle', 2: 'end' };
-  const step = stepMap[cfg.stepAlignment] ?? 'end';
+  const stepMap: Record<number, string> = { 0: 'start', 1: 'middle', 2: 'end' };
+  const step = (cfg.stepAlignment !== undefined ? stepMap[cfg.stepAlignment] : undefined) ?? 'end';
   return Array.from({ length: numLines }, (_, i) => {
     const color = findLineColor(indicator.plotPoints, i);
     const name = titles[i] || `${indicator.name}-${i + 1}`;
-    const series = {
+    const series: EchartsObj = {
       name,
       type: 'line',
       step,
@@ -138,7 +179,7 @@ function buildStepLineSeries(indicator, xAxisIndex, yAxisIndex) {
       yAxisIndex,
       data: extractSeriesData(indicator.plotPoints, i),
     };
-    const lineStyle = {};
+    const lineStyle: EchartsObj = {};
     if (cfg.lineThickness) lineStyle.width = cfg.lineThickness;
     if (color) lineStyle.color = color;
     if (cfg.opacity) lineStyle.opacity = cfg.opacity;
@@ -148,14 +189,18 @@ function buildStepLineSeries(indicator, xAxisIndex, yAxisIndex) {
   });
 }
 
-function buildBarSeries(indicator, xAxisIndex, yAxisIndex) {
-  const cfg = indicator.config ?? {};
+function buildBarSeries(
+  indicator: Indicator,
+  xAxisIndex: number,
+  yAxisIndex: number
+): EchartsObj[] {
+  const cfg = (indicator.config ?? {}) as BarIndicatorConfig;
   const titles = cfg.barTitles ?? [];
   const numBars = countLines(indicator.plotPoints);
   return Array.from({ length: numBars }, (_, i) => {
     const color = findLineColor(indicator.plotPoints, i);
     const name = titles[i] || `${indicator.name}-${i + 1}`;
-    const series = {
+    const series: EchartsObj = {
       name,
       type: 'bar',
       xAxisIndex,
@@ -164,7 +209,7 @@ function buildBarSeries(indicator, xAxisIndex, yAxisIndex) {
     };
     if (cfg.barWidth) series.barWidth = cfg.barWidth;
     if (cfg.stacked) series.stack = indicator.name;
-    const itemStyle = {};
+    const itemStyle: EchartsObj = {};
     if (color) itemStyle.color = color;
     if (cfg.opacity) itemStyle.opacity = cfg.opacity;
     if (Object.keys(itemStyle).length) series.itemStyle = itemStyle;
@@ -172,14 +217,18 @@ function buildBarSeries(indicator, xAxisIndex, yAxisIndex) {
   });
 }
 
-function buildAreaSeries(indicator, xAxisIndex, yAxisIndex) {
-  const cfg = indicator.config ?? {};
+function buildAreaSeries(
+  indicator: Indicator,
+  xAxisIndex: number,
+  yAxisIndex: number
+): EchartsObj[] {
+  const cfg = (indicator.config ?? {}) as LineIndicatorConfig;
   const titles = cfg.lineTitles ?? [];
   const numLines = countLines(indicator.plotPoints);
   return Array.from({ length: numLines }, (_, i) => {
     const color = findLineColor(indicator.plotPoints, i);
     const name = titles[i] || `${indicator.name}-${i + 1}`;
-    const series = {
+    const series: EchartsObj = {
       name,
       type: 'line',
       xAxisIndex,
@@ -189,7 +238,7 @@ function buildAreaSeries(indicator, xAxisIndex, yAxisIndex) {
       data: extractSeriesData(indicator.plotPoints, i),
       areaStyle: { opacity: cfg.opacity ?? 0.3, ...(color ? { color } : {}) },
     };
-    const lineStyle = {};
+    const lineStyle: EchartsObj = {};
     if (cfg.lineThickness) lineStyle.width = cfg.lineThickness;
     if (color) lineStyle.color = color;
     if (Object.keys(lineStyle).length) series.lineStyle = lineStyle;
@@ -198,7 +247,12 @@ function buildAreaSeries(indicator, xAxisIndex, yAxisIndex) {
   });
 }
 
-function buildCandlestickSeries(candleEntries, candleColors, xAxisIndex, yAxisIndex) {
+function buildCandlestickSeries(
+  candleEntries: CandleEntry[],
+  candleColors: CandleColors,
+  xAxisIndex: number,
+  yAxisIndex: number
+): EchartsObj {
   const data = candleEntries.map((e) => [e.open, e.close, e.low, e.high]);
   return {
     name: 'Candlestick',
@@ -215,8 +269,13 @@ function buildCandlestickSeries(candleEntries, candleColors, xAxisIndex, yAxisIn
   };
 }
 
-function buildCandleStickSubSeries(indicator, xAxisIndex, yAxisIndex, fallbackColors) {
-  const cfg = indicator.config ?? {};
+function buildCandleStickSubSeries(
+  indicator: Indicator,
+  xAxisIndex: number,
+  yAxisIndex: number,
+  fallbackColors: CandleColors
+): EchartsObj[] {
+  const cfg = (indicator.config ?? {}) as CandleStickIndicatorConfig;
   const bullish = cfg.bullishColor || fallbackColors.bullishColor;
   const bearish = cfg.bearishColor || fallbackColors.bearishColor;
 
@@ -258,8 +317,8 @@ const LAYOUT = {
   dataZoomGap: 10,
 };
 
-function groupIndicatorsByChart(indicators) {
-  const groups = {};
+function groupIndicatorsByChart(indicators: Indicator[]): Record<string, Indicator[]> {
+  const groups: Record<string, Indicator[]> = {};
   for (const ind of indicators) {
     const key = ind.targetChart ?? '';
     if (!groups[key]) groups[key] = [];
@@ -269,7 +328,7 @@ function groupIndicatorsByChart(indicators) {
   return groups;
 }
 
-function sortedChartIds(groups) {
+function sortedChartIds(groups: Record<string, Indicator[]>): string[] {
   return Object.keys(groups).sort((a, b) => {
     if (a === '') return -1;
     if (b === '') return 1;
@@ -284,11 +343,14 @@ function sortedChartIds(groups) {
 /**
  * Builds a complete ECharts option from API render data.
  *
- * @param {object} renderData - ProjectRenderResponse from the API
- * @param {boolean} isDark - current color mode
- * @returns {object} ECharts option object (includes _totalHeight for container sizing)
+ * @param renderData - ProjectRenderResponse from the API
+ * @param isDark - current color mode
+ * @returns ECharts option object (includes _totalHeight for container sizing)
  */
-export function buildEchartsOption(renderData, isDark = true) {
+export function buildEchartsOption(
+  renderData: RenderResponse | null | undefined,
+  isDark = true
+): EchartsOptionWithHeight {
   if (!renderData) return {};
 
   const { candles, candleColors, indicators, activePair, activeTimeFrame } = renderData;
@@ -320,10 +382,10 @@ export function buildEchartsOption(renderData, isDark = true) {
   const numCharts = chartIds.length;
 
   let currentTop = LAYOUT.topStart;
-  const grids = [];
-  const xAxes = [];
-  const yAxes = [];
-  const allXAxisIndices = [];
+  const grids: EchartsObj[] = [];
+  const xAxes: EchartsObj[] = [];
+  const yAxes: EchartsObj[] = [];
+  const allXAxisIndices: number[] = [];
 
   for (let idx = 0; idx < numCharts; idx++) {
     const chartId = chartIds[idx];
@@ -373,8 +435,8 @@ export function buildEchartsOption(renderData, isDark = true) {
   }
 
   // Build series
-  const allSeries = [];
-  const legendData = [];
+  const allSeries: EchartsObj[] = [];
+  const legendData: EchartsObj[] = [];
 
   for (let idx = 0; idx < numCharts; idx++) {
     const chartId = chartIds[idx];
@@ -387,7 +449,7 @@ export function buildEchartsOption(renderData, isDark = true) {
     }
 
     for (const ind of groups[chartId] ?? []) {
-      let built = [];
+      let built: EchartsObj[] = [];
       switch (ind.type) {
         case 'line':
           built = buildLineSeries(ind, idx, idx);

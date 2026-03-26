@@ -9,12 +9,18 @@ import {
   useColorMode,
 } from '@chakra-ui/react';
 import { normalizeColor } from '../chart/chartEngine';
+import type { PlotPointCollection, TableIndicatorConfig } from '../../types/api';
+
+interface TableWidgetProps {
+  collection: PlotPointCollection | null;
+  config?: TableIndicatorConfig;
+}
 
 /**
  * Parses a Go-style format string like "%.2f" and returns precision N.
  * Falls back to 4 if the string does not match.
  */
-function parseFormatPrecision(fmt) {
+function parseFormatPrecision(fmt: string | undefined): number {
   if (!fmt) return 4;
   const match = fmt.match(/^%\.(\d+)f$/);
   return match ? parseInt(match[1], 10) : 4;
@@ -28,7 +34,7 @@ function parseFormatPrecision(fmt) {
  *
  * Layout: row-major — point at [row][col] = points[row * columnCount + col].
  */
-export default function TableWidget({ collection, config }) {
+export default function TableWidget({ collection, config }: TableWidgetProps) {
   const { colorMode } = useColorMode();
   const isDark = colorMode === 'dark';
 
@@ -45,7 +51,7 @@ export default function TableWidget({ collection, config }) {
   const headerColor = isDark ? 'gray.300' : 'gray.600';
   const borderColor = isDark ? 'gray.700' : 'gray.200';
 
-  const renderValue = (pt) => {
+  const renderValue = (pt: (typeof points)[number] | undefined) => {
     if (!pt || pt.invalid) return '—';
     if (typeof pt.value !== 'number' || !isFinite(pt.value)) return '—';
     const color = pt.color ? normalizeColor(pt.color) : undefined;

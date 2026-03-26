@@ -1,5 +1,15 @@
 import { Box, Flex, Text, IconButton, useColorMode } from '@chakra-ui/react';
 import { MdOpenInNew, MdCallReceived } from 'react-icons/md';
+import type { ReactNode } from 'react';
+
+interface WidgetCardProps {
+  title: string;
+  floating?: boolean;
+  onFloat?: () => void;
+  onSnapBack?: () => void;
+  children?: ReactNode;
+  contentHeight?: number;
+}
 
 /**
  * WidgetCard – shared wrapper for all drawer widget types.
@@ -11,7 +21,14 @@ import { MdOpenInNew, MdCallReceived } from 'react-icons/md';
  *   onSnapBack – callback to return the card to the drawer
  *   children   – widget body content
  */
-export default function WidgetCard({ title, floating = false, onFloat, onSnapBack, children, contentHeight }) {
+export default function WidgetCard({
+  title,
+  floating = false,
+  onFloat,
+  onSnapBack,
+  children,
+  contentHeight,
+}: WidgetCardProps) {
   const { colorMode } = useColorMode();
   const isDark = colorMode === 'dark';
 

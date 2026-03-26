@@ -4,6 +4,14 @@ import ChartContainer from '../chart/ChartContainer';
 import LogPanel from '../logs/LogPanel';
 import IndicatorPanel from '../indicators/IndicatorPanel';
 import { useUIStore } from '../../store/uiStore';
+import type { RenderResponse } from '../../types/api';
+
+interface PairViewProps {
+  renderData: RenderResponse | null;
+  loading: boolean;
+  error: string | null;
+  projectId: number;
+}
 
 /**
  * PairView – the main content area for a selected trading pair.
@@ -18,7 +26,7 @@ import { useUIStore } from '../../store/uiStore';
  *  - The log panel is bounded to the same height as the chart area; long log
  *    lists scroll inside the panel independently of the page.
  */
-export default function PairView({ renderData, loading, error, projectId }) {
+export default function PairView({ renderData, loading, error, projectId }: PairViewProps) {
   // Log panel open/closed state is a single global flag synced across all pair tabs.
   const logsOpen = useUIStore((s) => s.logsPanelOpen);
   const setLogsPanelOpen = useUIStore((s) => s.setLogsPanelOpen);

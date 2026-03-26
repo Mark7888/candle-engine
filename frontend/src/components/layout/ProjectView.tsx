@@ -14,11 +14,15 @@ import { useUIStore } from '../../store/uiStore';
 import PairView from '../layout/PairView';
 import SettingsBar from '../layout/SettingsBar';
 
+interface ProjectViewProps {
+  projectId: number;
+}
+
 /**
  * ProjectView – renders the settings bar, the inner pair tabs (vertical
  * sidebar) and the PairView for the currently selected pair.
  */
-export default function ProjectView({ projectId }) {
+export default function ProjectView({ projectId }: ProjectViewProps) {
   const loadProject = useProjectStore((s) => s.loadProject);
   const loadRender = useProjectStore((s) => s.loadRender);
   const clearProjectRenderCache = useProjectStore((s) => s.clearProjectRenderCache);
@@ -74,7 +78,7 @@ export default function ProjectView({ projectId }) {
   }, [projectId, activePairEntry, settingsTimeFrame, settingsRangeFrom, settingsRangeTo, loadRender]);
 
   const handleSelectPair = useCallback(
-    (sourceName, pairId) => {
+    (sourceName: string, pairId: string) => {
       setActivePair(projectId, sourceName, pairId);
     },
     [projectId, setActivePair]
@@ -82,7 +86,7 @@ export default function ProjectView({ projectId }) {
 
   // When a setting changes: clear cached renders so the new request goes out
   const handleSettingChange = useCallback(
-    (patch) => {
+    (patch: { timeFrame?: string; rangeFrom?: string; rangeTo?: string }) => {
       clearProjectRenderCache(projectId);
       setProjectSetting(projectId, patch);
     },

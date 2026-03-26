@@ -1,16 +1,73 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export const useUIStore = create(
+interface FloatingWidget {
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+interface ActivePairEntry {
+  source: string;
+  pair: string;
+}
+
+interface ProjectSettings {
+  timeFrame?: string | null;
+  rangeFrom?: string | null;
+  rangeTo?: string | null;
+}
+
+interface UIStoreState {
+  // Logs panel open/closed state – global, synced across all pair tabs
+  logsPanelOpen: boolean;
+  setLogsPanelOpen: (value: boolean) => void;
+
+  // Log level filter: levels in this array are HIDDEN (persisted globally)
+  hiddenLogLevels: string[];
+  toggleLogLevel: (level: string) => void;
+
+  // Active project tab
+  activeProjectId: number | null;
+  setActiveProjectId: (id: number) => void;
+
+  // Active pair per project: { [projectId]: { source, pair } }
+  activePairs: Record<number, ActivePairEntry>;
+  setActivePair: (projectId: number, source: string, pair: string) => void;
+
+  // Indicator panel open/closed — global, same behaviour as logsPanelOpen
+  indicatorPanelOpen: boolean;
+  setIndicatorPanelOpen: (value: boolean) => void;
+
+  // Indicator panel height in pixels — remembered across open/close and page reloads
+  indicatorPanelHeight: number;
+  setIndicatorPanelHeight: (value: number) => void;
+
+  // Floating widgets per project: { [projectId]: [{ id, x, y }] }
+  // id is the indicator name. NOT persisted — session-only.
+  floatingWidgets: Record<number, FloatingWidget[]>;
+  setFloatingWidgets: (projectId: number, widgets: FloatingWidget[]) => void;
+
+  // Per-project chart settings (timeFrame, rangeFrom, rangeTo).
+  // null means "use the project default from the backend".
+  // Persisted so selections survive page reloads and are synced across pairs
+  // within the same project.
+  projectSettings: Record<number, ProjectSettings>;
+  setProjectSetting: (projectId: number, patch: Partial<ProjectSettings>) => void;
+}
+
+export const useUIStore = create<UIStoreState>()(
   persist(
     (set) => ({
       // Logs panel open/closed state – global, synced across all pair tabs
       logsPanelOpen: true,
-      setLogsPanelOpen: (value) => set({ logsPanelOpen: value }),
+      setLogsPanelOpen: (value: boolean) => set({ logsPanelOpen: value }),
 
       // Log level filter: levels in this array are HIDDEN (persisted globally)
       hiddenLogLevels: [],
-      toggleLogLevel: (level) =>
+      toggleLogLevel: (level: string) =>
         set((s) => ({
           hiddenLogLevels: s.hiddenLogLevels.includes(level)
             ? s.hiddenLogLevels.filter((l) => l !== level)
@@ -19,11 +76,11 @@ export const useUIStore = create(
 
       // Active project tab
       activeProjectId: null,
-      setActiveProjectId: (id) => set({ activeProjectId: id }),
+      setActiveProjectId: (id: number) => set({ activeProjectId: id }),
 
       // Active pair per project: { [projectId]: { source, pair } }
       activePairs: {},
-      setActivePair: (projectId, source, pair) =>
+      setActivePair: (projectId: number, source: string, pair: string) =>
         set((s) => ({
           activePairs: {
             ...s.activePairs,
@@ -33,16 +90,16 @@ export const useUIStore = create(
 
       // Indicator panel open/closed — global, same behaviour as logsPanelOpen
       indicatorPanelOpen: true,
-      setIndicatorPanelOpen: (value) => set({ indicatorPanelOpen: value }),
+      setIndicatorPanelOpen: (value: boolean) => set({ indicatorPanelOpen: value }),
 
       // Indicator panel height in pixels — remembered across open/close and page reloads
       indicatorPanelHeight: 280,
-      setIndicatorPanelHeight: (value) => set({ indicatorPanelHeight: value }),
+      setIndicatorPanelHeight: (value: number) => set({ indicatorPanelHeight: value }),
 
       // Floating widgets per project: { [projectId]: [{ id, x, y }] }
       // id is the indicator name. NOT persisted — session-only.
       floatingWidgets: {},
-      setFloatingWidgets: (projectId, widgets) =>
+      setFloatingWidgets: (projectId: number, widgets: FloatingWidget[]) =>
         set((s) => ({
           floatingWidgets: { ...s.floatingWidgets, [projectId]: widgets },
         })),
@@ -52,7 +109,7 @@ export const useUIStore = create(
       // Persisted so selections survive page reloads and are synced across pairs
       // within the same project.
       projectSettings: {},
-      setProjectSetting: (projectId, patch) =>
+      setProjectSetting: (projectId: number, patch: Partial<ProjectSettings>) =>
         set((s) => ({
           projectSettings: {
             ...s.projectSettings,
