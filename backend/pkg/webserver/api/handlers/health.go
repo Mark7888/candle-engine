@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"candle-engine/internal/webserver/api/models"
+	"candle-engine/pkg/webserver/api/models"
 
 	"github.com/gin-gonic/gin"
 )

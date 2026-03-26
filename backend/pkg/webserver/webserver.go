@@ -12,8 +12,8 @@ import (
 	"log"
 	"os"
 
-	"candle-engine/internal/webserver/api"
-	sse_handler "candle-engine/internal/webserver/sse"
+	"candle-engine/pkg/webserver/api"
+	sse_handler "candle-engine/pkg/webserver/sse"
 
 	_ "candle-engine/docs" // Swagger generated docs
 

@@ -2,8 +2,8 @@
 package api
 
 import (
-	"candle-engine/internal/webserver/api/handlers"
-	"candle-engine/internal/webserver/api/middleware"
+	"candle-engine/pkg/webserver/api/handlers"
+	"candle-engine/pkg/webserver/api/middleware"
 
 	"github.com/gin-gonic/gin"
 )

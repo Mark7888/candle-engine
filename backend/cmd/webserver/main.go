@@ -2,8 +2,8 @@ package main
 
 import (
 	"candle-engine/cmd/webserver/sample"
-	"candle-engine/internal/chartmanager"
-	"candle-engine/internal/webserver"
+	"candle-engine/pkg/chartmanager"
+	"candle-engine/pkg/webserver"
 )
 
 func main() {
