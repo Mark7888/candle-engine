@@ -240,6 +240,8 @@ paths:
         Fetches OHLCV data and computes all configured indicators for the requested trading pair.
         The response contains raw candle and indicator data for the frontend to render.
         Indicator PlotPoints arrays are index-aligned with the active pair's candle entries.
+        Optional query parameters timeFrame, rangeFrom, and rangeTo override the project defaults
+        for this request only; no server-side state is mutated.
       parameters:
       - description: Project ID (zero-based index)
         in: path
@@ -255,6 +257,18 @@ paths:
         in: query
         name: pair
         required: true
+        type: string
+      - description: Override time frame (e.g. '1h', '4h', '1d')
+        in: query
+        name: timeFrame
+        type: string
+      - description: Override range start as RFC3339 timestamp
+        in: query
+        name: rangeFrom
+        type: string
+      - description: Override range end as RFC3339 timestamp
+        in: query
+        name: rangeTo
         type: string
       produces:
       - application/json
