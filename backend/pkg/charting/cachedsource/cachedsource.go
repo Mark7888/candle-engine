@@ -58,11 +58,20 @@ func (c *CachedSource) GetData(pairId string, timeFrame string, timeRange source
 
 	if !exists {
 		// No cache for this pair/timeFrame, fetch all data
+		fmt.Printf("🌐 [CachedSource] No cache found for pair '%s' timeFrame '%s', fetching from source [%s - %s]\n",
+			pairId, timeFrame, timeRange.Start.Format(time.RFC3339), timeRange.End.Format(time.RFC3339))
 		return c.fetchAndCache(pairId, timeFrame, timeRange)
 	}
 
 	// Find what ranges we need to fetch
 	missingRanges := c.findMissingRanges(cachedRanges, timeRange)
+	if len(missingRanges) == 0 {
+		fmt.Printf("✅ [CachedSource] Serving fully from cache for pair '%s' timeFrame '%s' [%s - %s]\n",
+			pairId, timeFrame, timeRange.Start.Format(time.RFC3339), timeRange.End.Format(time.RFC3339))
+	} else {
+		fmt.Printf("⚠️  [CachedSource] Cache partial for pair '%s' timeFrame '%s': %d missing range(s) to fetch from source\n",
+			pairId, timeFrame, len(missingRanges))
+	}
 	// Fetch missing ranges
 	for _, missingRange := range missingRanges {
 		_, err := c.fetchAndCache(pairId, timeFrame, missingRange)
@@ -122,10 +131,15 @@ func (c *CachedSource) findMissingRanges(cachedRanges []cachedData, timeRange so
 
 // fetchAndCache fetches data from the source and adds it to the cache
 func (c *CachedSource) fetchAndCache(pairId string, timeFrame string, timeRange sources.TimeRange) ([]sources.ChartEntry, error) {
+	fmt.Printf("🌐 [CachedSource] Fetching from source: pair '%s', timeFrame '%s' [%s - %s]\n",
+		pairId, timeFrame, timeRange.Start.Format(time.RFC3339), timeRange.End.Format(time.RFC3339))
 	entries, err := c.Source.GetData(pairId, timeFrame, timeRange)
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Printf("📥 [CachedSource] Fetched %d entries from source for pair '%s' timeFrame '%s'\n",
+		len(entries), pairId, timeFrame)
 
 	if len(entries) == 0 {
 		return entries, nil
@@ -192,6 +206,9 @@ func (c *CachedSource) getFromCache(pairId string, timeFrame string, timeRange s
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].Timestamp.Before(result[j].Timestamp)
 	})
+
+	fmt.Printf("💾 [CachedSource] Loaded %d entries from cache for pair '%s' timeFrame '%s'\n",
+		len(result), pairId, timeFrame)
 
 	return result
 }
