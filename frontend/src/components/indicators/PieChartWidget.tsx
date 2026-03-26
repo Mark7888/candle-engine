@@ -1,6 +1,13 @@
 import { Box, Center, Text, useColorMode } from '@chakra-ui/react';
 import ReactECharts from 'echarts-for-react';
 import { normalizeColor } from '../chart/chartEngine';
+import type { PlotPointCollection, PieChartIndicatorConfig } from '../../types/api';
+
+interface PieChartWidgetProps {
+  collection: PlotPointCollection | null;
+  config?: PieChartIndicatorConfig;
+  height?: number;
+}
 
 /**
  * PieChartWidget – renders a pie/donut chart for a pieChart indicator.
@@ -10,7 +17,7 @@ import { normalizeColor } from '../chart/chartEngine';
  *
  * Each PlotPoint in the last valid collection is one slice.
  */
-export default function PieChartWidget({ collection, config, height = 180 }) {
+export default function PieChartWidget({ collection, config, height = 180 }: PieChartWidgetProps) {
   const { colorMode } = useColorMode();
   const isDark = colorMode === 'dark';
 

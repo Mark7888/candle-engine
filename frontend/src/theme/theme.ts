@@ -1,4 +1,5 @@
 import { extendTheme } from '@chakra-ui/react';
+import type { StyleFunctionProps } from '@chakra-ui/styled-system';
 
 const theme = extendTheme({
   config: {
@@ -25,7 +26,7 @@ const theme = extendTheme({
     mono: `'JetBrains Mono', 'Fira Code', monospace`,
   },
   styles: {
-    global: (props) => ({
+    global: (props: StyleFunctionProps) => ({
       body: {
         bg: props.colorMode === 'dark' ? 'gray.900' : 'gray.50',
         color: props.colorMode === 'dark' ? 'gray.100' : 'gray.900',

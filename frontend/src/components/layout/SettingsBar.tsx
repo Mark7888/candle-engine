@@ -9,6 +9,19 @@ import {
 } from '@chakra-ui/react';
 import { BsPlayCircle } from 'react-icons/bs';
 
+interface SettingsBarProps {
+  availableTimeFrames?: string[];
+  defaultTimeFrame?: string;
+  defaultRangeFrom?: string;
+  defaultRangeTo?: string;
+  timeFrame?: string | null;
+  rangeFrom?: string | null;
+  rangeTo?: string | null;
+  onTimeFrameChange?: (value: string) => void;
+  onRangeFromChange?: (value: string) => void;
+  onRangeToChange?: (value: string) => void;
+}
+
 /**
  * SettingsBar – a horizontal toolbar rendered inside a project, above the pair
  * selector and chart.  It lets the user override the project-level time frame
@@ -37,13 +50,13 @@ export default function SettingsBar({
   onTimeFrameChange,
   onRangeFromChange,
   onRangeToChange,
-}) {
+}: SettingsBarProps) {
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const labelColor = useColorModeValue('gray.600', 'gray.400');
   const inputBg = useColorModeValue('white', 'gray.800');
 
   // Convert ISO timestamp to the value expected by <input type="datetime-local">
-  const toDatetimeLocal = (iso) => {
+  const toDatetimeLocal = (iso: string): string => {
     if (!iso) return '';
     try {
       const d = new Date(iso);
@@ -55,7 +68,7 @@ export default function SettingsBar({
   };
 
   // Convert datetime-local value back to full ISO 8601 string for the API
-  const fromDatetimeLocal = (value) => {
+  const fromDatetimeLocal = (value: string): string => {
     if (!value) return '';
     return new Date(value).toISOString();
   };

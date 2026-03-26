@@ -7,6 +7,14 @@ import {
   useColorModeValue,
 } from '@chakra-ui/react';
 import ThemeToggle from './ThemeToggle';
+import type { Project } from '../../types/api';
+
+interface NavbarProps {
+  projects: Project[];
+  loading: boolean;
+  activeProjectId: number | null;
+  onSelectProject: (id: number) => void;
+}
 
 /**
  * Top navigation bar.
@@ -18,7 +26,7 @@ export default function Navbar({
   loading,
   activeProjectId,
   onSelectProject,
-}) {
+}: NavbarProps) {
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const activeColor = useColorModeValue('brand.600', 'brand.400');
   const inactiveColor = useColorModeValue('gray.500', 'gray.400');

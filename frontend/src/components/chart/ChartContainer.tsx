@@ -9,6 +9,13 @@ import {
   useColorMode,
 } from '@chakra-ui/react';
 import { buildEchartsOption } from './chartEngine';
+import type { RenderResponse } from '../../types/api';
+
+interface ChartContainerProps {
+  renderData: RenderResponse | null;
+  loading: boolean;
+  error: string | null;
+}
 
 /**
  * ChartContainer renders the full multi-grid ECharts chart from API render data.
@@ -17,14 +24,14 @@ import { buildEchartsOption } from './chartEngine';
  *  - Responsive resizing via ResizeObserver (React-idiomatic ref pattern)
  *  - Dark / light mode theming
  */
-export default function ChartContainer({ renderData, loading, error }) {
+export default function ChartContainer({ renderData, loading, error }: ChartContainerProps) {
   const { colorMode } = useColorMode();
   const isDark = colorMode === 'dark';
-  const echartsRef = useRef(null);
-  const containerRef = useRef(null);
+  const echartsRef = useRef<ReactECharts>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const option = buildEchartsOption(renderData, isDark);
-  const totalHeight = option._totalHeight ?? 600;
+  const totalHeight = typeof option._totalHeight === 'number' ? option._totalHeight : 600;
 
   // Resize chart when container width changes
   useEffect(() => {

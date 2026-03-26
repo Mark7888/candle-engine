@@ -1,6 +1,8 @@
 import { useRef, useCallback, useMemo, useEffect } from 'react';
+import type { MouseEvent as ReactMouseEvent } from 'react';
 import ReactDOM from 'react-dom';
 import Draggable from 'react-draggable';
+import type { DraggableData, DraggableEvent } from 'react-draggable';
 import {
   Box,
   Flex,
@@ -15,13 +17,20 @@ import { useUIStore } from '../../store/uiStore';
 import WidgetCard from './WidgetCard';
 import TableWidget from './TableWidget';
 import PieChartWidget from './PieChartWidget';
+import type {
+  Indicator,
+  PlotPointCollection,
+  RenderResponse,
+  TableIndicatorConfig,
+  PieChartIndicatorConfig,
+} from '../../types/api';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 /** Return the last valid PlotPointCollection from a plotPoints array, or null. */
-function getLastValidCollection(plotPoints) {
+function getLastValidCollection(plotPoints: PlotPointCollection[]): PlotPointCollection | null {
   if (!plotPoints) return null;
   for (let i = plotPoints.length - 1; i >= 0; i--) {
     if (!plotPoints[i].invalid) return plotPoints[i];
@@ -38,13 +47,30 @@ const FLOATING_DEFAULT_H = 280;
 const FLOATING_DEFAULT_X = 100;
 const FLOATING_DEFAULT_Y = 100;
 
+interface WidgetBodyProps {
+  indicator: Indicator;
+  collection: PlotPointCollection | null;
+  height?: number;
+}
+
 /** Render the correct widget body based on indicator type. */
-function WidgetBody({ indicator, collection, height }) {
+function WidgetBody({ indicator, collection, height }: WidgetBodyProps) {
   switch (indicator.type) {
     case 'table':
-      return <TableWidget collection={collection} config={indicator.config} />;
+      return (
+        <TableWidget
+          collection={collection}
+          config={indicator.config as TableIndicatorConfig | undefined}
+        />
+      );
     case 'pieChart':
-      return <PieChartWidget collection={collection} config={indicator.config} height={height} />;
+      return (
+        <PieChartWidget
+          collection={collection}
+          config={indicator.config as PieChartIndicatorConfig | undefined}
+          height={height}
+        />
+      );
     default:
       return null;
   }
@@ -54,8 +80,26 @@ function WidgetBody({ indicator, collection, height }) {
 // Floating widget portal
 // ---------------------------------------------------------------------------
 
-function FloatingWidget({ indicator, collection, position, size, onSnapBack, onStop, onResize }) {
-  const nodeRef = useRef(null);
+interface FloatingWidgetProps {
+  indicator: Indicator;
+  collection: PlotPointCollection | null;
+  position: { x: number; y: number };
+  size: { w: number; h: number };
+  onSnapBack: () => void;
+  onStop: (x: number, y: number) => void;
+  onResize: (w: number, h: number) => void;
+}
+
+function FloatingWidget({
+  indicator,
+  collection,
+  position,
+  size,
+  onSnapBack,
+  onStop,
+  onResize,
+}: FloatingWidgetProps) {
+  const nodeRef = useRef<HTMLDivElement>(null);
   const { colorMode } = useColorMode();
   const isDark = colorMode === 'dark';
 
@@ -68,7 +112,7 @@ function FloatingWidget({ indicator, collection, position, size, onSnapBack, onS
   useEffect(() => { wRef.current = w; hRef.current = h; }, [w, h]);
 
   const handleResizeMouseDown = useCallback(
-    (e) => {
+    (e: ReactMouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
       const startX = e.clientX;
@@ -76,7 +120,7 @@ function FloatingWidget({ indicator, collection, position, size, onSnapBack, onS
       const startW = wRef.current;
       const startH = hRef.current;
 
-      const onMove = (moveEvt) => {
+      const onMove = (moveEvt: MouseEvent) => {
         const newW = Math.max(FLOATING_MIN_W, startW + moveEvt.clientX - startX);
         const newH = Math.max(FLOATING_MIN_H, startH + moveEvt.clientY - startY);
         onResize(newW, newH);
@@ -98,7 +142,7 @@ function FloatingWidget({ indicator, collection, position, size, onSnapBack, onS
       handle=".drag-handle"
       defaultPosition={{ x: position.x, y: position.y }}
       nodeRef={nodeRef}
-      onStop={(_, data) => onStop(data.x, data.y)}
+      onStop={(_e: DraggableEvent, data: DraggableData) => onStop(data.x, data.y)}
     >
       <Box
         ref={nodeRef}
@@ -109,7 +153,10 @@ function FloatingWidget({ indicator, collection, position, size, onSnapBack, onS
         w={`${w}px`}
       >
         <WidgetCard
-          title={indicator.config?.displayName || indicator.name}
+          title={
+            (indicator.config as TableIndicatorConfig | PieChartIndicatorConfig | undefined)
+              ?.displayName || indicator.name
+          }
           floating
           onSnapBack={onSnapBack}
           contentHeight={contentH}
@@ -151,6 +198,11 @@ const MIN_HEIGHT = 120;
 const MAX_HEIGHT = 600;
 const HEADER_HEIGHT = 36;
 
+interface IndicatorPanelProps {
+  renderData: RenderResponse | null;
+  projectId: number;
+}
+
 /**
  * IndicatorPanel – collapsible, resizable bottom drawer that shows table and
  * pieChart indicator widgets. Other chart-rendered types are excluded.
@@ -159,7 +211,7 @@ const HEADER_HEIGHT = 36;
  *   renderData – ProjectRenderResponse from the API
  *   projectId  – used to scope floating widget state
  */
-export default function IndicatorPanel({ renderData, projectId }) {
+export default function IndicatorPanel({ renderData, projectId }: IndicatorPanelProps) {
   const { colorMode } = useColorMode();
   const isDark = colorMode === 'dark';
 
@@ -186,12 +238,12 @@ export default function IndicatorPanel({ renderData, projectId }) {
   // Resize handle
   // ---------------------------------------------------------------------------
   const handleResizeMouseDown = useCallback(
-    (e) => {
+    (e: ReactMouseEvent) => {
       e.preventDefault();
       const startY = e.clientY;
       const startH = panelHeight;
 
-      const onMove = (moveEvt) => {
+      const onMove = (moveEvt: MouseEvent) => {
         const delta = startY - moveEvt.clientY;
         const clamped = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, startH + delta));
         setPanelHeight(clamped);
@@ -212,7 +264,7 @@ export default function IndicatorPanel({ renderData, projectId }) {
   // Float / snap-back
   // ---------------------------------------------------------------------------
   const floatWidget = useCallback(
-    (indicatorName) => {
+    (indicatorName: string) => {
       const existing = floatingForProject.find((w) => w.id === indicatorName);
       if (existing) return;
       setFloatingWidgets(projectId, [
@@ -224,7 +276,7 @@ export default function IndicatorPanel({ renderData, projectId }) {
   );
 
   const snapBackWidget = useCallback(
-    (indicatorName) => {
+    (indicatorName: string) => {
       setFloatingWidgets(
         projectId,
         floatingForProject.filter((w) => w.id !== indicatorName)
@@ -234,7 +286,7 @@ export default function IndicatorPanel({ renderData, projectId }) {
   );
 
   const updateWidgetPosition = useCallback(
-    (indicatorName, x, y) => {
+    (indicatorName: string, x: number, y: number) => {
       setFloatingWidgets(
         projectId,
         floatingForProject.map((w) => (w.id === indicatorName ? { ...w, x, y } : w))
@@ -244,7 +296,7 @@ export default function IndicatorPanel({ renderData, projectId }) {
   );
 
   const updateWidgetSize = useCallback(
-    (indicatorName, w, h) => {
+    (indicatorName: string, w: number, h: number) => {
       setFloatingWidgets(
         projectId,
         floatingForProject.map((fw) => (fw.id === indicatorName ? { ...fw, w, h } : fw))
@@ -256,7 +308,7 @@ export default function IndicatorPanel({ renderData, projectId }) {
   // ---------------------------------------------------------------------------
   // Group widgets by targetChart
   // ---------------------------------------------------------------------------
-  const groups = {};
+  const groups: Record<string, Indicator[]> = {};
   for (const ind of drawerIndicators) {
     const key = ind.targetChart ?? '';
     if (!groups[key]) groups[key] = [];
@@ -382,7 +434,11 @@ export default function IndicatorPanel({ renderData, projectId }) {
                   <Flex flexWrap="wrap" gap={2}>
                     {dockedIndicators.map((ind) => {
                       const collection = getLastValidCollection(ind.plotPoints);
-                      const title = ind.config?.displayName || ind.name;
+                      const indConfig = ind.config as
+                        | TableIndicatorConfig
+                        | PieChartIndicatorConfig
+                        | undefined;
+                      const title = indConfig?.displayName || ind.name;
                       return (
                         <WidgetCard
                           key={ind.name}

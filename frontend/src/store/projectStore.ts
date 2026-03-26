@@ -1,7 +1,44 @@
 import { create } from 'zustand';
 import { fetchProjects, fetchProject, fetchRender } from '../api/client';
+import type { Project, ProjectDetail, RenderResponse } from '../types/api';
 
-export const useProjectStore = create((set, get) => ({
+interface RenderSettings {
+  timeFrame?: string | null;
+  rangeFrom?: string | null;
+  rangeTo?: string | null;
+}
+
+interface ProjectStoreState {
+  // List of { id, title }
+  projects: Project[];
+  projectsLoading: boolean;
+  projectsError: string | null;
+
+  // Per-project detail cache
+  projectDetails: Record<number, ProjectDetail>;
+
+  // Per-pair render cache key: `${projectId}-${source}-${pair}`
+  renderData: Record<string, RenderResponse>;
+  renderLoading: Record<string, boolean>;
+  renderErrors: Record<string, string | null>;
+
+  loadProjects: () => Promise<void>;
+  loadProject: (id: number) => Promise<void>;
+  clearProjectRenderCache: (projectId: number) => void;
+  loadRender: (
+    projectId: number,
+    source: string,
+    pair: string,
+    settings?: RenderSettings
+  ) => Promise<void>;
+  getRender: (
+    projectId: number,
+    source: string,
+    pair: string
+  ) => { data: RenderResponse | null; loading: boolean; error: string | null };
+}
+
+export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
   // List of { id, title }
   projects: [],
   projectsLoading: false,
@@ -21,11 +58,11 @@ export const useProjectStore = create((set, get) => ({
       const projects = await fetchProjects();
       set({ projects, projectsLoading: false });
     } catch (err) {
-      set({ projectsError: err.message, projectsLoading: false });
+      set({ projectsError: (err as Error).message, projectsLoading: false });
     }
   },
 
-  loadProject: async (id) => {
+  loadProject: async (id: number) => {
     if (get().projectDetails[id]) return;
     try {
       const detail = await fetchProject(id);
@@ -42,7 +79,7 @@ export const useProjectStore = create((set, get) => ({
    * Called when project-level settings (timeFrame/range) change so the next
    * loadRender() call fetches fresh data with the updated parameters.
    */
-  clearProjectRenderCache: (projectId) => {
+  clearProjectRenderCache: (projectId: number) => {
     set((s) => {
       const prefix = `${projectId}-`;
       const newRenderData = Object.fromEntries(
@@ -65,16 +102,23 @@ export const useProjectStore = create((set, get) => ({
   /**
    * Load (or re-fetch) render data for a pair.
    *
-   * @param {number} projectId
-   * @param {string} source
-   * @param {string} pair
-   * @param {object} [settings]  - Optional overrides forwarded to the API
+   * @param projectId
+   * @param source
+   * @param pair
+   * @param settings  - Optional overrides forwarded to the API
    *   { timeFrame, rangeFrom, rangeTo }
    */
-  loadRender: async (projectId, source, pair, settings = {}) => {
+  loadRender: async (
+    projectId: number,
+    source: string,
+    pair: string,
+    settings: RenderSettings = {}
+  ) => {
     const key = `${projectId}-${source}-${pair}`;
     // Skip if already cached and no settings override is active
-    const hasSettings = Object.values(settings).some((v) => v !== undefined && v !== null && v !== '');
+    const hasSettings = Object.values(settings).some(
+      (v) => v !== undefined && v !== null && v !== ''
+    );
     if (!hasSettings && get().renderData[key]) return;
 
     set((s) => ({
@@ -89,13 +133,13 @@ export const useProjectStore = create((set, get) => ({
       }));
     } catch (err) {
       set((s) => ({
-        renderErrors: { ...s.renderErrors, [key]: err.message },
+        renderErrors: { ...s.renderErrors, [key]: (err as Error).message },
         renderLoading: { ...s.renderLoading, [key]: false },
       }));
     }
   },
 
-  getRender: (projectId, source, pair) => {
+  getRender: (projectId: number, source: string, pair: string) => {
     const key = `${projectId}-${source}-${pair}`;
     return {
       data: get().renderData[key] ?? null,
