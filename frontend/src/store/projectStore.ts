@@ -115,11 +115,9 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
     settings: RenderSettings = {}
   ) => {
     const key = `${projectId}-${source}-${pair}`;
-    // Skip if already cached and no settings override is active
-    const hasSettings = Object.values(settings).some(
-      (v) => v !== undefined && v !== null && v !== ''
-    );
-    if (!hasSettings && get().renderData[key]) return;
+    // Skip if already cached. Cache invalidation when settings change is
+    // handled by clearProjectRenderCache, so the cache is always safe to use.
+    if (get().renderData[key]) return;
 
     set((s) => ({
       renderLoading: { ...s.renderLoading, [key]: true },
