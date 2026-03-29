@@ -30,6 +30,8 @@ type RenderableChartProject struct {
 
 	IndicatorCharts map[string][]RenderableIndicator
 
+	ProjectErrors []error // errors that prevented the project from rendering (e.g. source fetch failures)
+
 	// Other metadata
 }
 
@@ -40,6 +42,16 @@ func NewRenderableChartProject() RenderableChartProject {
 func (rcp *RenderableChartProject) GetLogs() map[string][]ProjectLogData {
 	var logList map[string][]ProjectLogData
 	logList = make(map[string][]ProjectLogData)
+
+	if len(rcp.ProjectErrors) > 0 {
+		logList["ProjectErrors"] = []ProjectLogData{}
+		for _, err := range rcp.ProjectErrors {
+			logList["ProjectErrors"] = append(logList["ProjectErrors"], ProjectLogData{
+				LogLevel: LogLevelError,
+				Message:  err.Error(),
+			})
+		}
+	}
 
 	for _, indicators := range rcp.IndicatorCharts {
 		for _, indicator := range indicators {

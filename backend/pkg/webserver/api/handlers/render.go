@@ -232,6 +232,15 @@ func RenderProject(c *gin.Context) {
 	if indicatorData == nil {
 		indicatorData = []models.IndicatorData{}
 	}
+
+	for _, projErr := range render.ProjectErrors {
+		logs = append(logs, models.LogEntry{
+			Indicator: "ProjectErrors",
+			Level:     "ERROR",
+			Message:   projErr.Error(),
+		})
+	}
+
 	if logs == nil {
 		logs = []models.LogEntry{}
 	}
