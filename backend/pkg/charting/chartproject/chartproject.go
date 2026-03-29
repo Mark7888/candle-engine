@@ -3,7 +3,6 @@ package chartproject
 import (
 	"candle-engine/pkg/charting/sources"
 	"candle-engine/pkg/indicators"
-	"fmt"
 	"time"
 )
 
@@ -97,8 +96,9 @@ func (c *ChartProject) GetRender(activePair sources.SourcePairId, timeFrameOverr
 
 	entries, width, err := c.sourceManager.FetchSources(timeRange, c.sourceManager.selectedPairs, timeFrame)
 	if err != nil {
-		fmt.Println("Error fetching sources:", err)
-		return RenderableChartProject{}, err
+		partial := NewRenderableChartProject()
+		partial.ProjectErrors = []error{err}
+		return partial, nil
 	}
 
 	chartConfig := c.assembleChartConfigWith(activePair, timeFrame)
