@@ -134,18 +134,6 @@ export default function PlaybackBar({
       flexShrink={0}
       flexWrap="wrap"
     >
-      {/* Exit button */}
-      <Tooltip label="Exit Playback mode" placement="bottom">
-        <IconButton
-          aria-label="Exit Playback mode"
-          icon={<BsX size={18} />}
-          size="sm"
-          variant="ghost"
-          colorScheme="red"
-          onClick={onDeactivate}
-        />
-      </Tooltip>
-
       {/* Current position info */}
       <Box minW="120px">
         <Text fontSize="xs" color={labelColor} lineHeight={1.3}>
@@ -231,10 +219,10 @@ export default function PlaybackBar({
         </Slider>
       </Flex>
 
-      {/* Step size (N) */}
+      {/* Step size */}
       <Flex align="center" gap={1} flexShrink={0}>
         <Text fontSize="xs" color={labelColor} whiteSpace="nowrap">
-          Step (N)
+          Step
         </Text>
         <Input
           type="number"
@@ -251,7 +239,7 @@ export default function PlaybackBar({
         />
       </Flex>
 
-      {/* Play interval (M seconds) */}
+      {/* Play interval (seconds) */}
       <Flex align="center" gap={1} flexShrink={0}>
         <Text fontSize="xs" color={labelColor} whiteSpace="nowrap">
           Interval (s)
@@ -260,17 +248,29 @@ export default function PlaybackBar({
           type="number"
           size="xs"
           value={playInterval}
-          min={0.5}
-          step={0.5}
+          min={0.1}
+          step={0.1}
           onChange={(e) => {
             const v = parseFloat(e.target.value);
-            if (v >= 0.5) onPlayIntervalChange(v);
+            if (v >= 0.1) onPlayIntervalChange(v);
           }}
           w="60px"
           bg={inputBg}
           borderRadius="md"
         />
       </Flex>
+
+      {/* Exit button – placed on the right */}
+      <Tooltip label="Exit Playback mode" placement="bottom">
+        <IconButton
+          aria-label="Exit Playback mode"
+          icon={<BsX size={18} />}
+          size="sm"
+          variant="ghost"
+          colorScheme="red"
+          onClick={onDeactivate}
+        />
+      </Tooltip>
     </Flex>
   );
 }

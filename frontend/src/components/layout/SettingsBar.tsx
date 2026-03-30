@@ -156,10 +156,11 @@ export default function SettingsBar({
       <Tooltip
         label={
           playbackActive
-            ? 'Playback mode active – use × in the control bar to exit'
+            ? 'Playback active – use × to exit'
             : 'Start Playback mode'
         }
         placement="bottom"
+        shouldWrapChildren
       >
         <IconButton
           aria-label="PlayBack mode"

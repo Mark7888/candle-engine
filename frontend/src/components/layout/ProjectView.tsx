@@ -11,7 +11,7 @@ import {
 } from '@chakra-ui/react';
 import { useProjectStore } from '../../store/projectStore';
 import { useUIStore } from '../../store/uiStore';
-import { usePlaybackStore, buildPairKey } from '../../store/playbackStore';
+import { usePlaybackStore } from '../../store/playbackStore';
 import { sliceRenderData } from '../../utils/sliceRenderData';
 import PairView from '../layout/PairView';
 import SettingsBar from '../layout/SettingsBar';
@@ -49,19 +49,13 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
     ? `${projectId}-${activePairEntry.source}-${activePairEntry.pair}`
     : null;
 
-  // --- Playback store ---
+  // --- Playback store – all state is project-level so pair switches share position ---
   const playbackProjectState = usePlaybackStore((s) => s.projects[projectId]);
   const playbackIsActive = playbackProjectState?.isActive ?? false;
   const playbackStepSize = playbackProjectState?.stepSize ?? 1;
   const playbackPlayInterval = playbackProjectState?.playInterval ?? 1;
-
-  const pairKey = activePairEntry
-    ? buildPairKey(projectId, activePairEntry.source, activePairEntry.pair)
-    : null;
-
-  const playbackPairState = usePlaybackStore((s) => (pairKey ? s.pairs[pairKey] : undefined));
-  const playbackCurrentIndex = playbackPairState?.currentIndex ?? 0;
-  const playbackIsPlaying = playbackPairState?.isPlaying ?? false;
+  const playbackCurrentIndex = playbackProjectState?.currentIndex ?? 0;
+  const playbackIsPlaying = playbackProjectState?.isPlaying ?? false;
 
   const activateProject = usePlaybackStore((s) => s.activateProject);
   const deactivateProject = usePlaybackStore((s) => s.deactivateProject);
@@ -128,16 +122,16 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
 
   const handlePlaybackIndexChange = useCallback(
     (index: number) => {
-      if (pairKey) setPlaybackCurrentIndex(pairKey, index);
+      setPlaybackCurrentIndex(projectId, index);
     },
-    [pairKey, setPlaybackCurrentIndex]
+    [projectId, setPlaybackCurrentIndex]
   );
 
   const handlePlaybackPlayingChange = useCallback(
     (playing: boolean) => {
-      if (pairKey) setPlaybackIsPlaying(pairKey, playing);
+      setPlaybackIsPlaying(projectId, playing);
     },
-    [pairKey, setPlaybackIsPlaying]
+    [projectId, setPlaybackIsPlaying]
   );
 
   const handlePlaybackStepSizeChange = useCallback(
