@@ -20,6 +20,10 @@ interface SettingsBarProps {
   onTimeFrameChange?: (value: string) => void;
   onRangeFromChange?: (value: string) => void;
   onRangeToChange?: (value: string) => void;
+  /** Whether Playback mode is currently active for this project. */
+  playbackActive?: boolean;
+  /** Called when the user clicks the Playback mode toggle button. */
+  onPlaybackToggle?: () => void;
 }
 
 /**
@@ -38,6 +42,8 @@ interface SettingsBarProps {
  *   onTimeFrameChange    (value: string) => void
  *   onRangeFromChange    (value: string) => void
  *   onRangeToChange      (value: string) => void
+ *   playbackActive       boolean – whether Playback mode is currently active
+ *   onPlaybackToggle     () => void – called when the Playback button is clicked
  */
 export default function SettingsBar({
   availableTimeFrames = [],
@@ -50,6 +56,8 @@ export default function SettingsBar({
   onTimeFrameChange,
   onRangeFromChange,
   onRangeToChange,
+  playbackActive = false,
+  onPlaybackToggle,
 }: SettingsBarProps) {
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const labelColor = useColorModeValue('gray.600', 'gray.400');
@@ -144,14 +152,23 @@ export default function SettingsBar({
       {/* Spacer */}
       <Flex flex={1} />
 
-      {/* PlayBack mode button – out of scope, disabled */}
-      <Tooltip label="PlayBack mode" placement="bottom">
+      {/* PlayBack mode toggle button */}
+      <Tooltip
+        label={
+          playbackActive
+            ? 'Playback mode active – use × in the control bar to exit'
+            : 'Start Playback mode'
+        }
+        placement="bottom"
+      >
         <IconButton
           aria-label="PlayBack mode"
           icon={<BsPlayCircle />}
           size="sm"
-          variant="ghost"
-          isDisabled
+          variant={playbackActive ? 'solid' : 'ghost'}
+          colorScheme={playbackActive ? 'brand' : undefined}
+          isDisabled={playbackActive}
+          onClick={onPlaybackToggle}
         />
       </Tooltip>
     </Flex>

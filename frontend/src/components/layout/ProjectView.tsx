@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
 import {
   Flex,
   Box,
@@ -11,8 +11,11 @@ import {
 } from '@chakra-ui/react';
 import { useProjectStore } from '../../store/projectStore';
 import { useUIStore } from '../../store/uiStore';
+import { usePlaybackStore, buildPairKey } from '../../store/playbackStore';
+import { sliceRenderData } from '../../utils/sliceRenderData';
 import PairView from '../layout/PairView';
 import SettingsBar from '../layout/SettingsBar';
+import PlaybackBar from '../layout/PlaybackBar';
 
 interface ProjectViewProps {
   projectId: number;
@@ -45,6 +48,27 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
   const renderKey = activePairEntry
     ? `${projectId}-${activePairEntry.source}-${activePairEntry.pair}`
     : null;
+
+  // --- Playback store ---
+  const playbackProjectState = usePlaybackStore((s) => s.projects[projectId]);
+  const playbackIsActive = playbackProjectState?.isActive ?? false;
+  const playbackStepSize = playbackProjectState?.stepSize ?? 1;
+  const playbackPlayInterval = playbackProjectState?.playInterval ?? 1;
+
+  const pairKey = activePairEntry
+    ? buildPairKey(projectId, activePairEntry.source, activePairEntry.pair)
+    : null;
+
+  const playbackPairState = usePlaybackStore((s) => (pairKey ? s.pairs[pairKey] : undefined));
+  const playbackCurrentIndex = playbackPairState?.currentIndex ?? 0;
+  const playbackIsPlaying = playbackPairState?.isPlaying ?? false;
+
+  const activateProject = usePlaybackStore((s) => s.activateProject);
+  const deactivateProject = usePlaybackStore((s) => s.deactivateProject);
+  const setPlaybackCurrentIndex = usePlaybackStore((s) => s.setCurrentIndex);
+  const setPlaybackIsPlaying = usePlaybackStore((s) => s.setIsPlaying);
+  const setPlaybackStepSize = usePlaybackStore((s) => s.setStepSize);
+  const setPlaybackPlayInterval = usePlaybackStore((s) => s.setPlayInterval);
 
   // Subscribe directly to the data/loading/error slices so the component
   // re-renders when loadRender() updates them (subscribing to getRender — a
@@ -93,6 +117,65 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
     [projectId, clearProjectRenderCache, setProjectSetting]
   );
 
+  // --- Playback callbacks (stable references to prevent interval restarts) ---
+  const handlePlaybackToggle = useCallback(() => {
+    activateProject(projectId);
+  }, [projectId, activateProject]);
+
+  const handlePlaybackDeactivate = useCallback(() => {
+    deactivateProject(projectId);
+  }, [projectId, deactivateProject]);
+
+  const handlePlaybackIndexChange = useCallback(
+    (index: number) => {
+      if (pairKey) setPlaybackCurrentIndex(pairKey, index);
+    },
+    [pairKey, setPlaybackCurrentIndex]
+  );
+
+  const handlePlaybackPlayingChange = useCallback(
+    (playing: boolean) => {
+      if (pairKey) setPlaybackIsPlaying(pairKey, playing);
+    },
+    [pairKey, setPlaybackIsPlaying]
+  );
+
+  const handlePlaybackStepSizeChange = useCallback(
+    (size: number) => {
+      setPlaybackStepSize(projectId, size);
+    },
+    [projectId, setPlaybackStepSize]
+  );
+
+  const handlePlaybackPlayIntervalChange = useCallback(
+    (interval: number) => {
+      setPlaybackPlayInterval(projectId, interval);
+    },
+    [projectId, setPlaybackPlayInterval]
+  );
+
+  // --- Derive playback-sliced render data and candle metadata ---
+  const activeSeries = useMemo(() => {
+    if (!renderData) return null;
+    const { activePair } = renderData;
+    return activePair
+      ? renderData.candles.find(
+          (c) => c.sourceName === activePair.sourceName && c.pairId === activePair.pairId
+        ) ?? null
+      : renderData.candles[0] ?? null;
+  }, [renderData]);
+
+  const totalCandles = activeSeries?.entries.length ?? 0;
+
+  // Clamp index to valid range (e.g. after a data reload with fewer candles)
+  const safeIndex = Math.min(playbackCurrentIndex, Math.max(0, totalCandles - 1));
+  const currentTimestamp = activeSeries?.entries[safeIndex]?.timestamp ?? '';
+
+  const displayRenderData = useMemo(() => {
+    if (!renderData || !playbackIsActive) return renderData;
+    return sliceRenderData(renderData, safeIndex);
+  }, [renderData, playbackIsActive, safeIndex]);
+
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const activeBg = useColorModeValue('brand.50', 'brand.900');
   const activeColor = useColorModeValue('brand.700', 'brand.300');
@@ -125,7 +208,26 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
         onTimeFrameChange={(tf) => handleSettingChange({ timeFrame: tf })}
         onRangeFromChange={(v) => handleSettingChange({ rangeFrom: v })}
         onRangeToChange={(v) => handleSettingChange({ rangeTo: v })}
+        playbackActive={playbackIsActive}
+        onPlaybackToggle={handlePlaybackToggle}
       />
+
+      {/* Playback control bar – visible only when Playback mode is active */}
+      {playbackIsActive && (
+        <PlaybackBar
+          totalCandles={totalCandles}
+          currentIndex={safeIndex}
+          stepSize={playbackStepSize}
+          playInterval={playbackPlayInterval}
+          isPlaying={playbackIsPlaying}
+          currentTimestamp={currentTimestamp}
+          onDeactivate={handlePlaybackDeactivate}
+          onIndexChange={handlePlaybackIndexChange}
+          onStepSizeChange={handlePlaybackStepSizeChange}
+          onPlayIntervalChange={handlePlaybackPlayIntervalChange}
+          onPlayingChange={handlePlaybackPlayingChange}
+        />
+      )}
 
       {/* Pair selector + chart */}
       <Flex gap={0} flex={1} minH={0}>
@@ -181,7 +283,7 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
         {/* Main content */}
         <Box flex={1} minW={0} py={2} h="100%" overflow="hidden">
           <PairView
-            renderData={renderData}
+            renderData={displayRenderData}
             loading={loading}
             error={error}
             projectId={projectId}
