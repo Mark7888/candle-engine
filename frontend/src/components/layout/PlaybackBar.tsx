@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import {
   Flex,
   Box,
@@ -73,6 +73,20 @@ export default function PlaybackBar({
   const atEnd = currentIndex >= totalCandles - 1;
   const remaining = Math.max(0, totalCandles - 1 - currentIndex);
 
+  // Local draft state so the user can freely edit number inputs (backspace etc.)
+  // and we only propagate to the store when a valid value is entered.
+  const [stepSizeDraft, setStepSizeDraft] = useState(String(stepSize));
+  const [playIntervalDraft, setPlayIntervalDraft] = useState(String(playInterval));
+
+  // Sync draft from store when the value changes externally (e.g. store reset).
+  useEffect(() => {
+    setStepSizeDraft(String(stepSize));
+  }, [stepSize]);
+
+  useEffect(() => {
+    setPlayIntervalDraft(String(playInterval));
+  }, [playInterval]);
+
   // Keep mutable values in a ref so the interval callback never goes stale.
   const stateRef = useRef({ currentIndex, stepSize, totalCandles });
   useEffect(() => {
@@ -116,6 +130,18 @@ export default function PlaybackBar({
     },
     [onIndexChange, onPlayingChange]
   );
+
+  // Arrow key support: Left → Back, Right → Forward (skip when an input is focused).
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (e.key === 'ArrowLeft') handleBack();
+      if (e.key === 'ArrowRight') handleForward();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [handleBack, handleForward]);
 
   // Format timestamp for display: "YYYY-MM-DD HH:mm UTC"
   const displayDate = currentTimestamp
@@ -227,9 +253,10 @@ export default function PlaybackBar({
         <Input
           type="number"
           size="xs"
-          value={stepSize}
+          value={stepSizeDraft}
           min={1}
           onChange={(e) => {
+            setStepSizeDraft(e.target.value);
             const v = parseInt(e.target.value, 10);
             if (v > 0) onStepSizeChange(v);
           }}
@@ -242,15 +269,16 @@ export default function PlaybackBar({
       {/* Play interval (seconds) */}
       <Flex align="center" gap={1} flexShrink={0}>
         <Text fontSize="xs" color={labelColor} whiteSpace="nowrap">
-          Interval (s)
+          Play Interval (s)
         </Text>
         <Input
           type="number"
           size="xs"
-          value={playInterval}
+          value={playIntervalDraft}
           min={0.1}
           step={0.1}
           onChange={(e) => {
+            setPlayIntervalDraft(e.target.value);
             const v = parseFloat(e.target.value);
             if (v >= 0.1) onPlayIntervalChange(v);
           }}

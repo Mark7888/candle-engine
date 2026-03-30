@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Flex,
   Select,
@@ -85,6 +86,28 @@ export default function SettingsBar({
   const displayTo = rangeTo ?? defaultRangeTo;
   const displayTimeFrame = timeFrame ?? defaultTimeFrame;
 
+  // Local draft state for the datetime-local inputs so the user can freely edit
+  // them without the controlled value resetting mid-edit.
+  const [fromDraft, setFromDraft] = useState(() => toDatetimeLocal(displayFrom));
+  const [toDraft, setToDraft] = useState(() => toDatetimeLocal(displayTo));
+  const [fromFocused, setFromFocused] = useState(false);
+  const [toFocused, setToFocused] = useState(false);
+
+  // Sync from external prop changes only when the input is not focused.
+  // Using the "previous value in state" pattern (derived state) avoids calling
+  // setState inside a useEffect, which the linter flags as a cascade risk.
+  const [prevDisplayFrom, setPrevDisplayFrom] = useState(displayFrom);
+  const [prevDisplayTo, setPrevDisplayTo] = useState(displayTo);
+
+  if (displayFrom !== prevDisplayFrom) {
+    setPrevDisplayFrom(displayFrom);
+    if (!fromFocused) setFromDraft(toDatetimeLocal(displayFrom));
+  }
+  if (displayTo !== prevDisplayTo) {
+    setPrevDisplayTo(displayTo);
+    if (!toFocused) setToDraft(toDatetimeLocal(displayTo));
+  }
+
   return (
     <Flex
       align="center"
@@ -125,8 +148,13 @@ export default function SettingsBar({
         <Input
           type="datetime-local"
           size="xs"
-          value={toDatetimeLocal(displayFrom)}
-          onChange={(e) => onRangeFromChange?.(fromDatetimeLocal(e.target.value))}
+          value={fromDraft}
+          onChange={(e) => {
+            setFromDraft(e.target.value);
+            if (e.target.value) onRangeFromChange?.(fromDatetimeLocal(e.target.value));
+          }}
+          onFocus={() => setFromFocused(true)}
+          onBlur={() => setFromFocused(false)}
           w="180px"
           bg={inputBg}
           borderRadius="md"
@@ -141,8 +169,13 @@ export default function SettingsBar({
         <Input
           type="datetime-local"
           size="xs"
-          value={toDatetimeLocal(displayTo)}
-          onChange={(e) => onRangeToChange?.(fromDatetimeLocal(e.target.value))}
+          value={toDraft}
+          onChange={(e) => {
+            setToDraft(e.target.value);
+            if (e.target.value) onRangeToChange?.(fromDatetimeLocal(e.target.value));
+          }}
+          onFocus={() => setToFocused(true)}
+          onBlur={() => setToFocused(false)}
           w="180px"
           bg={inputBg}
           borderRadius="md"
