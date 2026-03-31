@@ -44,6 +44,7 @@ This guide provides comprehensive documentation for creating custom indicators i
 14. [Troubleshooting](#troubleshooting)
 15. [API Reference Summary](#api-reference-summary)
 16. [Indicator Development Checklist](#indicator-development-checklist)
+17. [Project Setup (Quick Reference)](#project-setup-quick-reference)
 
 ---
 
@@ -1006,20 +1007,20 @@ Indicators are registered by adding them to a `ChartProject`:
 
 ```go
 // Create your indicators
-smaIndicator := sample.NewSMAIndicator()
-rsiIndicator := sample.GetSampleRSIIndicator()
+smaIndicator := NewSMAIndicator()
+rsiIndicator := NewRSIIndicator()
 
 // Add them to your chart project (variadic — add as many as needed)
 chartProject.AddIndicators(smaIndicator, rsiIndicator)
 ```
 
-> **Note**: Chart project creation, source management, and project configuration are covered in separate documentation. This guide focuses solely on indicator development.
+> **Note**: For a minimal example of setting up a full project with sources, pairs, and indicators, see [Project Setup (Quick Reference)](#project-setup-quick-reference) at the end of this document.
 
 ---
 
 ## Type-Specific Examples
 
-These examples demonstrate how to correctly implement each of the seven indicator types. Each example is a complete, working implementation taken from or modeled after the codebase's sample indicators.
+These examples demonstrate how to correctly implement each of the seven indicator types.
 
 ---
 
@@ -1634,40 +1635,52 @@ Use this checklist when creating a new indicator:
 
 ---
 
-## File Structure Reference
+## Project Setup (Quick Reference)
 
-The indicator system source files are located in:
+This section shows the minimal steps to create a chart project, attach a data source, add trading pairs, and register your indicators. Detailed project configuration documentation is covered separately.
 
-```
-backend/
-├── pkg/indicators/
-│   ├── indicator_base.go      ← BaseIndicator interface
-│   ├── indicator_config.go    ← All config types, IndicatorType enum, ChartConfig
-│   └── indicator_models.go    ← PlotPoint, PlotPointCollection, PlotPointCollectionHistory,
-│                                 IndicatorOutputHandler, IndicatorLog
-├── pkg/charting/sources/
-│   ├── models.go              ← ChartEntry, SourcePairId, TradingPair
-│   └── multisource.go         ← MultiSourceEntries (data access)
-├── pkg/charting/chartproject/
-│   ├── chartproject.go        ← ChartProject (indicator lifecycle & rendering)
-│   └── renderable.go          ← RenderableIndicator, RenderableChartProject
-└── cmd/webserver/sample/
-    ├── indicator_ma.go        ← Sample: Moving Average (Line)
-    ├── indicator_rsi.go       ← Sample: RSI (Line)
-    ├── indicator_volume.go    ← Sample: Volume (BarChart)
-    ├── indicator_kama.go      ← Sample: KAMA (Line, stateful)
-    └── project_demo.go        ← Demos for all 7 chart types
+```go
+package main
+
+import (
+    "candle-engine/pkg/charting/chartproject"
+    "candle-engine/pkg/charting/sources"
+    "candle-engine/pkg/charting/sources/binance"
+    "time"
+)
+
+func main() {
+    // 1. Create a data source
+    sourceBinance := binance.NewBinanceSource()
+
+    // 2. Define the trading pairs to load
+    pairs := []sources.SourcePairId{
+        {SourceName: "Binance", PairId: "BTCUSDC"},
+        {SourceName: "Binance", PairId: "ETHUSDC"},
+    }
+
+    // 3. Set the time range
+    start, _ := time.Parse(time.RFC3339, "2024-01-01T00:00:00Z")
+    end, _ := time.Parse(time.RFC3339, "2025-01-01T00:00:00Z")
+
+    // 4. Build the project
+    project := chartproject.NewChartProject("My Project")
+    project.AddSources(sourceBinance)
+    project.AddTradingPairs(pairs...)
+    project.SetTimeFrame("1d")
+    project.SetTimeRange(sources.TimeRange{Start: start, End: end})
+
+    // 5. Register your custom indicators
+    project.AddIndicators(
+        NewSMAIndicator(),
+        NewRSIIndicator(),
+        NewVolumeIndicator(),
+    )
+
+    // The project is now ready to be rendered or served via the API.
+}
 ```
 
 ---
 
-## Additional Resources
-
-- Review existing indicators in `cmd/webserver/sample/` for real-world patterns
-- Test indicators with different timeframes and pairs to verify correctness
-- Use logging extensively during development, then reduce verbosity for production
-- Consider edge cases: missing data, invalid entries, first iteration, insufficient history
-
----
-
-**Last Updated**: March 30, 2026
+**Last Updated**: March 31, 2026
