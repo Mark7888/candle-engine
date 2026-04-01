@@ -192,6 +192,7 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
     <Flex direction="column" gap={0} h="100%">
       {/* Settings bar */}
       <SettingsBar
+        projectId={projectId}
         availableTimeFrames={projectDetail.availableTimeFrames ?? []}
         defaultTimeFrame={defaultTimeFrame}
         defaultRangeFrom={defaultRangeFrom}
