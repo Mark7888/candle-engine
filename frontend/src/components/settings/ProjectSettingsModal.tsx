@@ -82,8 +82,8 @@ export default function ProjectSettingsModal({
         sx={{
           width: '60vw',
           maxWidth: '60vw',
-          minHeight: '60vh',
-          maxHeight: '60vh',
+          minHeight: '80vh',
+          maxHeight: '80vh',
         }}
         display="flex"
         flexDirection="column"
@@ -165,15 +165,7 @@ export default function ProjectSettingsModal({
           <Button variant="ghost" size="sm" onClick={handleCancel}>
             Cancel
           </Button>
-          <Button
-            colorScheme="brand"
-            size="sm"
-            onClick={handleSave}
-            bgGradient="linear(to-r, brand.500, teal.400)"
-            _hover={{ bgGradient: 'linear(to-r, brand.600, teal.500)' }}
-            _active={{ bgGradient: 'linear(to-r, brand.700, teal.600)' }}
-            color="white"
-          >
+          <Button colorScheme="brand" size="sm" onClick={handleSave}>
             Save
           </Button>
         </ModalFooter>
