@@ -156,6 +156,7 @@ func RenderProject(c *gin.Context) {
 				Low:       e.Low,
 				Close:     e.Close,
 				Volume:    e.Volume,
+				Invalid:   !e.IsValid(),
 			}
 		}
 		candles = []models.CandleSeries{{

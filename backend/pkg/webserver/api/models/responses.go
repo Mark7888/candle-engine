@@ -38,6 +38,8 @@ type ProjectDetailResponse struct {
 }
 
 // CandleEntry is a single OHLCV data point.
+// Invalid is true when the entry represents a missing/placeholder candle (e.g.
+// a gap in the source data) and should be rendered as a gap in the chart.
 type CandleEntry struct {
 	Timestamp time.Time `json:"timestamp"`
 	Open      float64   `json:"open"`
@@ -45,6 +47,7 @@ type CandleEntry struct {
 	Low       float64   `json:"low"`
 	Close     float64   `json:"close"`
 	Volume    float64   `json:"volume"`
+	Invalid   bool      `json:"invalid"`
 }
 
 // CandleSeries holds the OHLCV data for one source/pair combination.
