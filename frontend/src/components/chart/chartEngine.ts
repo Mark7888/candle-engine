@@ -253,7 +253,14 @@ function buildCandlestickSeries(
   xAxisIndex: number,
   yAxisIndex: number
 ): EchartsObj {
-  const data = candleEntries.map((e) => [e.open, e.close, e.low, e.high]);
+  // The backend fills missing timestamps with GenerateInvalidEntry() which sets
+  // all OHLCV fields to -999.  Mirror the backend's IsValid() check (>= 0) and
+  // return null so ECharts renders a gap instead of a bogus candlestick.
+  const data = candleEntries.map((e) =>
+    e.open < 0 || e.close < 0 || e.high < 0 || e.low < 0
+      ? null
+      : [e.open, e.close, e.low, e.high]
+  );
   return {
     name: 'Candlestick',
     type: 'candlestick',
