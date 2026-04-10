@@ -253,8 +253,6 @@ function buildCandlestickSeries(
   xAxisIndex: number,
   yAxisIndex: number
 ): EchartsObj {
-  // Use the explicit invalid flag (set by the backend when a candle entry is a
-  // placeholder for a missing timestamp) so ECharts renders a gap there.
   const data = candleEntries.map((e) =>
     e.invalid ? null : [e.open, e.close, e.low, e.high]
   );
