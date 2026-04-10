@@ -215,7 +215,7 @@ func (c *ChartSourceManager) alignChartData(rawData map[sources.SourcePairId][]s
 
 	for pairId, entries := range rawData {
 		alignedEntries := c.createAlignedEntries(entries, timestampSet)
-		alignedData[pairId] = alignedEntries
+		alignedData[pairId] = sources.ForwardFillInvalidEntries(alignedEntries)
 	}
 
 	return alignedData, nil
