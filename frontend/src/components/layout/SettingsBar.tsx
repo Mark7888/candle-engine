@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   Flex,
   Select,
@@ -6,11 +6,16 @@ import {
   Text,
   IconButton,
   Tooltip,
+  Box,
   useColorModeValue,
 } from '@chakra-ui/react';
 import { BsPlayCircle } from 'react-icons/bs';
+import { LuSettings2 } from 'react-icons/lu';
+import ProjectSettingsModal from '../settings/ProjectSettingsModal';
 
 interface SettingsBarProps {
+  /** The ID of the project this bar belongs to (used for per-project settings). */
+  projectId: number;
   availableTimeFrames?: string[];
   defaultTimeFrame?: string;
   defaultRangeFrom?: string;
@@ -33,6 +38,7 @@ interface SettingsBarProps {
  * and date range without touching any backend state.
  *
  * Props:
+ *   projectId            number     – the owning project (required for per-project settings)
  *   availableTimeFrames  string[]   – ordered list of valid time frames
  *   defaultTimeFrame     string     – project default (used as placeholder)
  *   defaultRangeFrom     string     – project default range start (ISO)
@@ -47,6 +53,7 @@ interface SettingsBarProps {
  *   onPlaybackToggle     () => void – called when the Playback button is clicked
  */
 export default function SettingsBar({
+  projectId,
   availableTimeFrames = [],
   defaultTimeFrame = '',
   defaultRangeFrom = '',
@@ -63,6 +70,14 @@ export default function SettingsBar({
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const labelColor = useColorModeValue('gray.600', 'gray.400');
   const inputBg = useColorModeValue('white', 'gray.800');
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsKey, setSettingsKey] = useState(0);
+  const handleSettingsOpen = useCallback(() => {
+    setSettingsKey((k) => k + 1);
+    setSettingsOpen(true);
+  }, []);
+  const handleSettingsClose = useCallback(() => setSettingsOpen(false), []);
 
   // Convert ISO timestamp to the value expected by <input type="datetime-local">
   const toDatetimeLocal = (iso: string): string => {
@@ -205,6 +220,27 @@ export default function SettingsBar({
           onClick={onPlaybackToggle}
         />
       </Tooltip>
+
+      {/* Vertical divider */}
+      <Box w="1px" h="20px" bg={borderColor} mx={1} flexShrink={0} />
+
+      {/* Project settings button */}
+      <Tooltip label="Project settings" placement="bottom" shouldWrapChildren>
+        <IconButton
+          aria-label="Project settings"
+          icon={<LuSettings2 />}
+          size="sm"
+          variant="ghost"
+          onClick={handleSettingsOpen}
+        />
+      </Tooltip>
+
+      <ProjectSettingsModal
+        key={settingsKey}
+        projectId={projectId}
+        isOpen={settingsOpen}
+        onClose={handleSettingsClose}
+      />
     </Flex>
   );
 }
