@@ -25,6 +25,13 @@ export default function App() {
     }
   }, [projects, activeProjectId, setActiveProjectId]);
 
+  useEffect(() => {
+    const activeProject = projects.find((p) => p.id === activeProjectId);
+    document.title = activeProject
+      ? `Candle Engine - ${activeProject.title}`
+      : 'Candle Engine';
+  }, [activeProjectId, projects]);
+
   return (
     <Box h="100vh" bg={contentBg} display="flex" flexDirection="column" overflow="hidden">
       <Navbar
