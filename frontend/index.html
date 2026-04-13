@@ -5,6 +5,19 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>frontend</title>
+    <!-- Prevent white flash before React loads by applying the stored color mode immediately.
+         Chakra UI stores the user's choice under "chakra-ui-color-mode"; fall back to "dark"
+         which matches the app's initialColorMode. Color values mirror the Chakra gray scale
+         used in theme.ts (gray.900 / gray.50 for backgrounds, gray.100 / gray.900 for text). -->
+    <script>
+      (function () {
+        var saved = localStorage.getItem('chakra-ui-color-mode');
+        var mode = saved === 'light' ? 'light' : 'dark';
+        var isDark = mode === 'dark';
+        document.documentElement.style.background = isDark ? '#171923' : '#f7fafc';
+        document.documentElement.style.color = isDark ? '#edf2f7' : '#171923';
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
