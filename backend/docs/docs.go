@@ -197,6 +197,9 @@ const docTemplate = `{
                 "high": {
                     "type": "number"
                 },
+                "invalid": {
+                    "type": "boolean"
+                },
                 "low": {
                     "type": "number"
                 },
