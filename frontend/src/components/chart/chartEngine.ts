@@ -254,7 +254,7 @@ function buildCandlestickSeries(
   yAxisIndex: number
 ): EchartsObj {
   const data = candleEntries.map((e) =>
-    e.invalid ? null : [e.open, e.close, e.low, e.high]
+    e.invalid ? '-' : [e.open, e.close, e.low, e.high]
   );
   return {
     name: 'Candlestick',
@@ -282,9 +282,9 @@ function buildCandleStickSubSeries(
   const bearish = cfg.bearishColor || fallbackColors.bearishColor;
 
   const data = indicator.plotPoints.map((coll) => {
-    if (coll.invalid || coll.points.length < 4) return null;
+    if (coll.invalid || coll.points.length < 4) return '-';
     const [o, h, l, c] = coll.points;
-    if (o.invalid || h.invalid || l.invalid || c.invalid) return null;
+    if (o.invalid || h.invalid || l.invalid || c.invalid) return '-';
     // ECharts candlestick data format: [open, close, low, high]
     return [o.value, c.value, l.value, h.value];
   });
