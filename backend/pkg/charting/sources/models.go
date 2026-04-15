@@ -18,6 +18,8 @@ type ChartEntry struct {
 	Low    float64 `json:"low"`
 	Close  float64 `json:"close"`
 	Volume float64 `json:"volume"`
+
+	Invalid bool `json:"invalid"`
 }
 
 func GenerateInvalidEntry(timestamp time.Time) ChartEntry {
@@ -28,6 +30,7 @@ func GenerateInvalidEntry(timestamp time.Time) ChartEntry {
 		Low:       -999,
 		Close:     -999,
 		Volume:    -999,
+		Invalid:   true,
 	}
 }
 

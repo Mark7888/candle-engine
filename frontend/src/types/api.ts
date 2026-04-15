@@ -32,6 +32,7 @@ export interface CandleEntry {
   close: number;
   high: number;
   low: number;
+  invalid: boolean;
 }
 
 export interface CandleSeries {

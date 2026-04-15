@@ -45,6 +45,7 @@ type CandleEntry struct {
 	Low       float64   `json:"low"`
 	Close     float64   `json:"close"`
 	Volume    float64   `json:"volume"`
+	Invalid   bool      `json:"invalid"`
 }
 
 // CandleSeries holds the OHLCV data for one source/pair combination.
