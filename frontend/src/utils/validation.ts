@@ -5,7 +5,12 @@
  * invalid data is never sent to the backend.
  */
 
-/** The earliest date accepted as a valid range boundary. */
+/**
+ * The earliest date accepted as a valid range boundary.
+ *
+ * Must match the backend constant `MinDate` in
+ * `backend/pkg/webserver/api/validation/validation.go`.
+ */
 export const MIN_DATE = new Date('1900-01-01T00:00:00.000Z');
 
 export interface DateRangeValidation {

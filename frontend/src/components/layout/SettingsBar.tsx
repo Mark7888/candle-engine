@@ -187,8 +187,6 @@ export default function SettingsBar({
             bg={inputBg}
             borderRadius="md"
             isInvalid={!!rangeValidation.fromError}
-            borderColor={rangeValidation.fromError ? 'red.400' : undefined}
-            _invalid={{ borderColor: 'red.400', boxShadow: '0 0 0 1px var(--chakra-colors-red-400)' }}
           />
         </Tooltip>
       </Flex>
@@ -221,8 +219,6 @@ export default function SettingsBar({
             bg={inputBg}
             borderRadius="md"
             isInvalid={!!rangeValidation.toError}
-            borderColor={rangeValidation.toError ? 'red.400' : undefined}
-            _invalid={{ borderColor: 'red.400', boxShadow: '0 0 0 1px var(--chakra-colors-red-400)' }}
           />
         </Tooltip>
       </Flex>
