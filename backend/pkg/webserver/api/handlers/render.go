@@ -5,10 +5,12 @@ import (
 	"strconv"
 	"time"
 
+	"candle-engine/pkg/charting/chartproject"
 	"candle-engine/pkg/charting/sources"
 	"candle-engine/pkg/chartmanager"
 	"candle-engine/pkg/indicators"
 	"candle-engine/pkg/webserver/api/models"
+	apival "candle-engine/pkg/webserver/api/validation"
 
 	"github.com/gin-gonic/gin"
 )
@@ -56,6 +58,30 @@ func indicatorConfig(t indicators.IndicatorType, cfg indicators.IndicatorConfig)
 		return cfg.CandleStickIndicator
 	default:
 		return nil
+	}
+}
+
+// emptyRenderResponse converts a RenderableChartProject that contains only
+// ProjectErrors (no candle/indicator data) into a minimal ProjectRenderResponse.
+// This is used to surface validation or early-exit errors to the frontend
+// without returning an HTTP error status, so that callers always receive the
+// same response shape.
+func emptyRenderResponse(render chartproject.RenderableChartProject) models.ProjectRenderResponse {
+	var logs []models.LogEntry
+	for _, projErr := range render.ProjectErrors {
+		logs = append(logs, models.LogEntry{
+			Indicator: "ProjectErrors",
+			Level:     "ERROR",
+			Message:   projErr.Error(),
+		})
+	}
+	if logs == nil {
+		logs = []models.LogEntry{}
+	}
+	return models.ProjectRenderResponse{
+		Candles:    []models.CandleSeries{},
+		Indicators: []models.IndicatorData{},
+		Logs:       logs,
 	}
 }
 
@@ -131,6 +157,16 @@ func RenderProject(c *gin.Context) {
 			}
 			override.End = t
 		}
+
+		// Semantic validation: return an empty render with ProjectErrors rather
+		// than a hard HTTP 400, so the frontend can surface the reason.
+		if validationErrs := apival.ValidateTimeRange(override); len(validationErrs) != 0 {
+			partial := chartproject.NewRenderableChartProject()
+			partial.ProjectErrors = validationErrs
+			c.JSON(http.StatusOK, emptyRenderResponse(partial))
+			return
+		}
+
 		timeRangeOverride = &override
 	}
 

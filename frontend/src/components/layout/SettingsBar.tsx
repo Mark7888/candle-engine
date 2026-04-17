@@ -12,6 +12,7 @@ import {
 import { BsPlayCircle } from 'react-icons/bs';
 import { LuSettings2 } from 'react-icons/lu';
 import ProjectSettingsModal from '../settings/ProjectSettingsModal';
+import { validateDateRange, isDateRangeValid } from '../../utils/validation';
 
 interface SettingsBarProps {
   /** The ID of the project this bar belongs to (used for per-project settings). */
@@ -123,6 +124,9 @@ export default function SettingsBar({
     if (!toFocused) setToDraft(toDatetimeLocal(displayTo));
   }
 
+  // Validate the current draft values on every render (cheap, pure computation).
+  const rangeValidation = validateDateRange(fromDraft, toDraft);
+
   return (
     <Flex
       align="center"
@@ -160,20 +164,33 @@ export default function SettingsBar({
         <Text fontSize="xs" color={labelColor} whiteSpace="nowrap">
           From
         </Text>
-        <Input
-          type="datetime-local"
-          size="xs"
-          value={fromDraft}
-          onChange={(e) => {
-            setFromDraft(e.target.value);
-            if (e.target.value) onRangeFromChange?.(fromDatetimeLocal(e.target.value));
-          }}
-          onFocus={() => setFromFocused(true)}
-          onBlur={() => setFromFocused(false)}
-          w="180px"
-          bg={inputBg}
-          borderRadius="md"
-        />
+        <Tooltip
+          label={rangeValidation.fromError ?? ''}
+          isDisabled={!rangeValidation.fromError}
+          placement="bottom"
+          hasArrow
+        >
+          <Input
+            type="datetime-local"
+            size="xs"
+            value={fromDraft}
+            onChange={(e) => {
+              setFromDraft(e.target.value);
+              const next = validateDateRange(e.target.value, toDraft);
+              if (e.target.value && isDateRangeValid(next)) {
+                onRangeFromChange?.(fromDatetimeLocal(e.target.value));
+              }
+            }}
+            onFocus={() => setFromFocused(true)}
+            onBlur={() => setFromFocused(false)}
+            w="180px"
+            bg={inputBg}
+            borderRadius="md"
+            isInvalid={!!rangeValidation.fromError}
+            borderColor={rangeValidation.fromError ? 'red.400' : undefined}
+            _invalid={{ borderColor: 'red.400', boxShadow: '0 0 0 1px var(--chakra-colors-red-400)' }}
+          />
+        </Tooltip>
       </Flex>
 
       {/* Range To */}
@@ -181,20 +198,33 @@ export default function SettingsBar({
         <Text fontSize="xs" color={labelColor} whiteSpace="nowrap">
           To
         </Text>
-        <Input
-          type="datetime-local"
-          size="xs"
-          value={toDraft}
-          onChange={(e) => {
-            setToDraft(e.target.value);
-            if (e.target.value) onRangeToChange?.(fromDatetimeLocal(e.target.value));
-          }}
-          onFocus={() => setToFocused(true)}
-          onBlur={() => setToFocused(false)}
-          w="180px"
-          bg={inputBg}
-          borderRadius="md"
-        />
+        <Tooltip
+          label={rangeValidation.toError ?? ''}
+          isDisabled={!rangeValidation.toError}
+          placement="bottom"
+          hasArrow
+        >
+          <Input
+            type="datetime-local"
+            size="xs"
+            value={toDraft}
+            onChange={(e) => {
+              setToDraft(e.target.value);
+              const next = validateDateRange(fromDraft, e.target.value);
+              if (e.target.value && isDateRangeValid(next)) {
+                onRangeToChange?.(fromDatetimeLocal(e.target.value));
+              }
+            }}
+            onFocus={() => setToFocused(true)}
+            onBlur={() => setToFocused(false)}
+            w="180px"
+            bg={inputBg}
+            borderRadius="md"
+            isInvalid={!!rangeValidation.toError}
+            borderColor={rangeValidation.toError ? 'red.400' : undefined}
+            _invalid={{ borderColor: 'red.400', boxShadow: '0 0 0 1px var(--chakra-colors-red-400)' }}
+          />
+        </Tooltip>
       </Flex>
 
       {/* Spacer */}
