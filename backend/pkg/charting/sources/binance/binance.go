@@ -113,7 +113,7 @@ func (c *BinanceSource) fetchTradingPairsIfNeeded() {
 
 	url := c.BaseURL + "/exchangeInfo"
 
-	pairs, _, err := sources.GetRequestParse[[]BinanceTradingPair](url, nil, "symbols")
+	pairs, err := sources.GetRequestParse[[]BinanceTradingPair, BinanceAPIError](url, nil, "symbols")
 	if err != nil {
 		return
 	}
@@ -162,12 +162,10 @@ func (c *BinanceSource) fetchDataIfNeeded(pairId string, granularity int, timeRa
 			"limit":     strconv.Itoa(maxCandlesPerRequest),
 		}
 
-		candlesRaw, statusCode, err := sources.GetRequestParse[[][]interface{}](url, params)
+		candlesRaw, err := sources.GetRequestParse[[][]interface{}, BinanceAPIError](url, params)
 		if err != nil {
 			return nil, err
 		}
-
-		_ = statusCode // TODO - handle non-200 status codes
 
 		candles := make([]sources.ChartEntry, 0, len(*candlesRaw))
 

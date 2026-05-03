@@ -8,3 +8,7 @@ type Source interface {
 	GetTimeFrameString(timeFrameSeconds int64) string
 	GetData(pairId string, timeFrame string, timeRange TimeRange) ([]ChartEntry, error)
 }
+
+type SourceError interface {
+	Error() error
+}

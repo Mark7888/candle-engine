@@ -2,14 +2,15 @@ package sources
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 )
 
-func GetRequestParse[T any](url string, params map[string]string, jsonPath ...string) (v *T, statusCode int, err error) {
+func GetRequestParse[T any, E SourceError](url string, params map[string]string, jsonPath ...string) (v *T, err error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return nil, -1, err
+		return nil, err
 	}
 
 	q := req.URL.Query()
@@ -21,19 +22,28 @@ func GetRequestParse[T any](url string, params map[string]string, jsonPath ...st
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, -2, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, -3, err
+		return nil, err
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		var apiError E
+		if err := json.Unmarshal(body, &apiError); err != nil {
+			return nil, fmt.Errorf("Error why parsing API error response: %w; original body: %s", err, string(body))
+		}
+
+		return nil, apiError.Error()
 	}
 
 	// If jsonPath is provided, navigate to the nested field
 	var data interface{}
 	if err := json.Unmarshal(body, &data); err != nil {
-		return nil, -4, err
+		return nil, err
 	}
 
 	if len(jsonPath) > 0 {
@@ -41,19 +51,19 @@ func GetRequestParse[T any](url string, params map[string]string, jsonPath ...st
 			if m, ok := data.(map[string]interface{}); ok {
 				data = m[key]
 			} else {
-				return nil, -5, err
+				return nil, fmt.Errorf("invalid json path: %v", jsonPath)
 			}
 		}
 		// Re-marshal the nested data for final unmarshal
 		body, err = json.Marshal(data)
 		if err != nil {
-			return nil, -6, err
+			return nil, fmt.Errorf("error re-marshaling nested data: %w", err)
 		}
 	}
 
 	var result T
 	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, -4, err
+		return nil, fmt.Errorf("error unmarshaling final result: %w", err)
 	}
-	return &result, resp.StatusCode, nil
+	return &result, nil
 }
