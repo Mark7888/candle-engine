@@ -1,5 +1,16 @@
 package binance
 
+import "fmt"
+
+type BinanceAPIError struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+}
+
+func (e BinanceAPIError) Error() error {
+	return fmt.Errorf("Binance API error (code %d): %s", e.Code, e.Msg)
+}
+
 type BinanceTradingPair struct {
 	Symbol             string `json:"symbol"`
 	Pair               string `json:"pair"`

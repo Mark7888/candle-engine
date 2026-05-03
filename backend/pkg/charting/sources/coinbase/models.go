@@ -1,5 +1,15 @@
 package coinbase
 
+import "fmt"
+
+type CoinbaseAPIError struct {
+	Message string `json:"message"`
+}
+
+func (e CoinbaseAPIError) Error() error {
+	return fmt.Errorf("Coinbase API error: %s", e.Message)
+}
+
 type CoinbaseTradingPair struct {
 	Id                     string `json:"id"`
 	Name                   string `json:"display_name"`

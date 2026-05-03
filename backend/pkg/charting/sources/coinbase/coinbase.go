@@ -100,7 +100,7 @@ func (c *CoinbaseSource) fetchTradingPairsIfNeeded() {
 
 	url := c.BaseURL + "/products"
 
-	pairs, _, err := sources.GetRequestParse[[]CoinbaseTradingPair](url, nil)
+	pairs, err := sources.GetRequestParse[[]CoinbaseTradingPair, CoinbaseAPIError](url, nil)
 	if err != nil {
 		return
 	}
@@ -140,12 +140,10 @@ func (c *CoinbaseSource) fetchDataIfNeeded(pairId string, granularity int, timeR
 			"granularity": strconv.Itoa(granularity),
 		}
 
-		candlesRaw, statusCode, err := sources.GetRequestParse[[][]float64](url, params)
+		candlesRaw, err := sources.GetRequestParse[[][]float64, CoinbaseAPIError](url, params)
 		if err != nil {
 			return nil, err
 		}
-
-		_ = statusCode // TODO - handle non-200 status codes
 
 		candles := make([]sources.ChartEntry, 0, len(*candlesRaw))
 
