@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useLayoutEffect, useCallback } from 'react';
 import {
   Box,
   Flex,
@@ -6,7 +6,7 @@ import {
   Text,
   Select,
   IconButton,
-  VStack,
+  Spinner,
   useColorMode,
 } from '@chakra-ui/react';
 import { MdChevronLeft, MdClose } from 'react-icons/md';
@@ -15,32 +15,44 @@ import LogLevelFilters from './LogLevelFilters';
 import { useUIStore } from '../../store/uiStore';
 import type { LogEntry as LogEntryType } from '../../types/api';
 
+const ITEM_HEIGHT = 24;
+const BUFFER = 5;
+
 interface LogPanelProps {
   logs?: LogEntryType[];
   isOpen: boolean;
+  isLoading?: boolean;
   onClose: () => void;
   onOpen: () => void;
 }
 
-/**
- * LogPanel – right-side panel showing indicator logs.
- *
- * Props:
- *   logs    – LogEntry[] from the render API
- *   isOpen  – whether the panel is expanded
- *   onClose – callback to close the panel
- *   onOpen  – callback to open the panel
- */
-export default function LogPanel({ logs = [], isOpen, onClose, onOpen }: LogPanelProps) {
+export default function LogPanel({ logs = [], isOpen, isLoading = false, onClose, onOpen }: LogPanelProps) {
   const { colorMode } = useColorMode();
   const isDark = colorMode === 'dark';
 
-  // Channel selector is local UI state — no need to persist it.
   const [selectedChannel, setSelectedChannel] = useState('');
+  const [scrollTop, setScrollTop] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(400);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Log level filters are persisted in uiStore and synced across tabs.
   const hiddenLevels = useUIStore((s) => s.hiddenLogLevels);
   const toggleLevel = useUIStore((s) => s.toggleLogLevel);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      const h = el.clientHeight;
+      setContainerHeight((prev) => (prev !== h ? h : prev));
+    });
+    observer.observe(el);
+    setContainerHeight(el.clientHeight);
+    return () => observer.disconnect();
+  }, []);
+
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    setScrollTop(e.currentTarget.scrollTop);
+  }, []);
 
   const channels = useMemo(() => {
     const names = new Set(logs.map((l) => l.indicator).filter((x): x is string => Boolean(x)));
@@ -56,6 +68,14 @@ export default function LogPanel({ logs = [], isOpen, onClose, onOpen }: LogPane
       }),
     [logs, selectedChannel, hiddenLevels]
   );
+
+  const startIdx = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - BUFFER);
+  const endIdx = Math.min(
+    filteredLogs.length,
+    Math.ceil((scrollTop + containerHeight) / ITEM_HEIGHT) + BUFFER
+  );
+  const visibleItems = filteredLogs.slice(startIdx, endIdx);
+  const totalHeight = filteredLogs.length * ITEM_HEIGHT;
 
   const borderColor = isDark ? 'gray.700' : 'gray.200';
   const panelBg = isDark ? 'gray.800' : 'white';
@@ -139,20 +159,34 @@ export default function LogPanel({ logs = [], isOpen, onClose, onOpen }: LogPane
         <LogLevelFilters hiddenLevels={hiddenLevels} onToggle={toggleLevel} />
       </Box>
 
-      {/* Log list – scrolls independently */}
-      <Box flex={1} overflowY="auto" minH={0} p={2}>
-        {filteredLogs.length === 0 ? (
+      {/* Log list – virtual scrolling renders only visible rows */}
+      <Box
+        ref={containerRef}
+        flex={1}
+        overflowY="auto"
+        minH={0}
+        px={2}
+        py={1}
+        onScroll={handleScroll}
+      >
+        {isLoading ? (
+          <Flex h="80px" alignItems="center" justifyContent="center">
+            <Spinner size="sm" color="brand.400" />
+          </Flex>
+        ) : filteredLogs.length === 0 ? (
           <Flex h="80px" alignItems="center" justifyContent="center">
             <Text fontSize="sm" color="gray.500">
               No logs to display
             </Text>
           </Flex>
         ) : (
-          <VStack spacing={0.5} alignItems="stretch">
-            {filteredLogs.map((log, i) => (
-              <LogEntry key={i} log={log} isDark={isDark} />
-            ))}
-          </VStack>
+          <Box position="relative" height={`${totalHeight}px`}>
+            <Box position="absolute" top={`${startIdx * ITEM_HEIGHT}px`} left={0} right={0}>
+              {visibleItems.map((log, i) => (
+                <LogEntry key={`${startIdx + i}-${log.time ?? ''}-${log.level}-${log.indicator ?? ''}`} log={log} isDark={isDark} />
+              ))}
+            </Box>
+          </Box>
         )}
       </Box>
     </Flex>

@@ -64,7 +64,7 @@ const LogEntry = memo(function LogEntry({ log, isDark }: LogEntryProps) {
           {log.indicator}:
         </Text>
       )}
-      <Box color={text} flex={1} wordBreak="break-word">
+      <Box color={text} flex={1} overflow="hidden" whiteSpace="nowrap" textOverflow="ellipsis" title={log.message}>
         {log.message}
       </Box>
     </HStack>
