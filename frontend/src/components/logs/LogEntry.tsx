@@ -1,6 +1,6 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { HStack, Box, Text } from '@chakra-ui/react';
-import { MdError, MdWarning, MdInfo, MdBugReport } from 'react-icons/md';
+import { MdError, MdWarning, MdInfo, MdBugReport, MdChevronRight, MdExpandMore } from 'react-icons/md';
 import type { IconType } from 'react-icons';
 import type { LogEntry as LogEntryType } from '../../types/api';
 
@@ -37,37 +37,56 @@ interface LogEntryProps {
 }
 
 const LogEntry = memo(function LogEntry({ log, isDark }: LogEntryProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const palette = isDark ? LEVEL_STYLES_DARK : LEVEL_STYLES_LIGHT;
   const { bg, text, Icon } = palette[log.level] ?? palette['DEBUG'];
 
   return (
-    <HStack
-      spacing={2}
-      px={2}
-      py={0.5}
+    <Box
       borderRadius="sm"
       bg={bg}
-      alignItems="flex-start"
       fontFamily="mono"
       fontSize="xs"
+      cursor="pointer"
+      onClick={() => setIsExpanded((e) => !e)}
+      sx={{ contentVisibility: 'auto', containIntrinsicSize: '0 28px' }}
     >
-      <Box color={text} flexShrink={0} pt="1px">
-        <Icon size={12} />
-      </Box>
-      {log.time && (
-        <Text color={isDark ? 'gray.500' : 'gray.400'} flexShrink={0} whiteSpace="nowrap">
-          [{formatTime(log.time)}]
-        </Text>
+      {/* Header row: icon · time · indicator · (truncated message when collapsed) · triangle */}
+      <HStack spacing={2} px={2} py={0.5} alignItems="center">
+        <Box color={text} flexShrink={0}>
+          <Icon size={12} />
+        </Box>
+        {log.time && (
+          <Text color={isDark ? 'gray.500' : 'gray.400'} flexShrink={0} whiteSpace="nowrap">
+            [{formatTime(log.time)}]
+          </Text>
+        )}
+        {log.indicator && (
+          <Text color={isDark ? 'purple.400' : 'purple.600'} flexShrink={0} whiteSpace="nowrap">
+            {log.indicator}:
+          </Text>
+        )}
+        {/* Truncated message (collapsed) or flex spacer (expanded) to keep triangle on the right */}
+        {!isExpanded ? (
+          <Box color={text} flex={1} minW={0} overflow="hidden" whiteSpace="nowrap" textOverflow="ellipsis">
+            {log.message}
+          </Box>
+        ) : (
+          <Box flex={1} />
+        )}
+        {/* Expand / collapse triangle */}
+        <Box color={isDark ? 'gray.400' : 'gray.500'} flexShrink={0}>
+          {isExpanded ? <MdExpandMore size={14} /> : <MdChevronRight size={14} />}
+        </Box>
+      </HStack>
+
+      {/* Full message shown below header when expanded */}
+      {isExpanded && (
+        <Box px={2} pb={1} pl={8} color={text} wordBreak="break-word">
+          {log.message}
+        </Box>
       )}
-      {log.indicator && (
-        <Text color={isDark ? 'purple.400' : 'purple.600'} flexShrink={0} whiteSpace="nowrap">
-          {log.indicator}:
-        </Text>
-      )}
-      <Box color={text} flex={1} overflow="hidden" whiteSpace="nowrap" textOverflow="ellipsis" title={log.message}>
-        {log.message}
-      </Box>
-    </HStack>
+    </Box>
   );
 });
 

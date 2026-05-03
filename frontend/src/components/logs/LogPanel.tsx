@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useLayoutEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Box,
   Flex,
@@ -6,6 +6,7 @@ import {
   Text,
   Select,
   IconButton,
+  VStack,
   Spinner,
   useColorMode,
 } from '@chakra-ui/react';
@@ -14,9 +15,6 @@ import LogEntry from './LogEntry';
 import LogLevelFilters from './LogLevelFilters';
 import { useUIStore } from '../../store/uiStore';
 import type { LogEntry as LogEntryType } from '../../types/api';
-
-const ITEM_HEIGHT = 24;
-const BUFFER = 5;
 
 interface LogPanelProps {
   logs?: LogEntryType[];
@@ -31,28 +29,9 @@ export default function LogPanel({ logs = [], isOpen, isLoading = false, onClose
   const isDark = colorMode === 'dark';
 
   const [selectedChannel, setSelectedChannel] = useState('');
-  const [scrollTop, setScrollTop] = useState(0);
-  const [containerHeight, setContainerHeight] = useState(400);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const hiddenLevels = useUIStore((s) => s.hiddenLogLevels);
   const toggleLevel = useUIStore((s) => s.toggleLogLevel);
-
-  useLayoutEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver(() => {
-      const h = el.clientHeight;
-      setContainerHeight((prev) => (prev !== h ? h : prev));
-    });
-    observer.observe(el);
-    setContainerHeight(el.clientHeight);
-    return () => observer.disconnect();
-  }, []);
-
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    setScrollTop(e.currentTarget.scrollTop);
-  }, []);
 
   const channels = useMemo(() => {
     const names = new Set(logs.map((l) => l.indicator).filter((x): x is string => Boolean(x)));
@@ -68,14 +47,6 @@ export default function LogPanel({ logs = [], isOpen, isLoading = false, onClose
       }),
     [logs, selectedChannel, hiddenLevels]
   );
-
-  const startIdx = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - BUFFER);
-  const endIdx = Math.min(
-    filteredLogs.length,
-    Math.ceil((scrollTop + containerHeight) / ITEM_HEIGHT) + BUFFER
-  );
-  const visibleItems = filteredLogs.slice(startIdx, endIdx);
-  const totalHeight = filteredLogs.length * ITEM_HEIGHT;
 
   const borderColor = isDark ? 'gray.700' : 'gray.200';
   const panelBg = isDark ? 'gray.800' : 'white';
@@ -159,16 +130,8 @@ export default function LogPanel({ logs = [], isOpen, isLoading = false, onClose
         <LogLevelFilters hiddenLevels={hiddenLevels} onToggle={toggleLevel} />
       </Box>
 
-      {/* Log list – virtual scrolling renders only visible rows */}
-      <Box
-        ref={containerRef}
-        flex={1}
-        overflowY="auto"
-        minH={0}
-        px={2}
-        py={1}
-        onScroll={handleScroll}
-      >
+      {/* Log list – each row skips layout/paint when off-screen via content-visibility */}
+      <Box flex={1} overflowY="auto" minH={0} px={2} py={1}>
         {isLoading ? (
           <Flex h="80px" alignItems="center" justifyContent="center">
             <Spinner size="sm" color="brand.400" />
@@ -180,15 +143,18 @@ export default function LogPanel({ logs = [], isOpen, isLoading = false, onClose
             </Text>
           </Flex>
         ) : (
-          <Box position="relative" height={`${totalHeight}px`}>
-            <Box position="absolute" top={`${startIdx * ITEM_HEIGHT}px`} left={0} right={0}>
-              {visibleItems.map((log, i) => (
-                <LogEntry key={`${startIdx + i}-${log.time ?? ''}-${log.level}-${log.indicator ?? ''}`} log={log} isDark={isDark} />
-              ))}
-            </Box>
-          </Box>
+          <VStack spacing={0.5} alignItems="stretch">
+            {filteredLogs.map((log, i) => (
+              <LogEntry
+                key={`${i}-${log.time ?? ''}-${log.level}-${log.indicator ?? ''}`}
+                log={log}
+                isDark={isDark}
+              />
+            ))}
+          </VStack>
         )}
       </Box>
     </Flex>
   );
 }
+
