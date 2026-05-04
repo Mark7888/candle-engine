@@ -69,11 +69,19 @@ export default function LogPanel({ logs = [], isOpen, isLoading = false, onClose
   const toggleLevel = useUIStore((s) => s.toggleLogLevel);
 
   useLayoutEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      // Reset virtual-scroll state so the panel always starts at the top on the
+      // next open.  This must happen here (not lazily on open) so the state is
+      // correct for the very first render after isOpen flips to true, before any
+      // layout effect has a chance to run.
+      setScrollTop(0);
+      return;
+    }
     const el = containerRef.current;
     if (!el) return;
-    // Sync virtual-scroll state with the freshly-mounted DOM element (always 0).
-    setScrollTop(el.scrollTop);
+    // Explicitly zero the DOM scroll position so it always matches the reset
+    // state (guards against browser scroll-restoration on element remount).
+    el.scrollTop = 0;
     const observer = new ResizeObserver(() => {
       const h = el.clientHeight;
       setContainerHeight((prev) => (prev !== h ? h : prev));
