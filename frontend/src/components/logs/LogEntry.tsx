@@ -28,7 +28,8 @@ function formatTime(timeStr: string | undefined): string {
   if (!timeStr) return '';
   const d = new Date(timeStr);
   if (isNaN(d.getTime())) return timeStr;
-  return d.toLocaleTimeString(undefined, { hour12: false });
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
 interface LogEntryProps {
