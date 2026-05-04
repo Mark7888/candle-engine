@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { HStack, Box, Text } from '@chakra-ui/react';
 import { MdError, MdWarning, MdInfo, MdBugReport, MdChevronRight, MdExpandMore } from 'react-icons/md';
 import type { IconType } from 'react-icons';
@@ -34,10 +34,11 @@ function formatTime(timeStr: string | undefined): string {
 interface LogEntryProps {
   log: LogEntryType;
   isDark: boolean;
+  isExpanded: boolean;
+  onToggle: () => void;
 }
 
-const LogEntry = memo(function LogEntry({ log, isDark }: LogEntryProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+const LogEntry = memo(function LogEntry({ log, isDark, isExpanded, onToggle }: LogEntryProps) {
   const palette = isDark ? LEVEL_STYLES_DARK : LEVEL_STYLES_LIGHT;
   const { bg, text, Icon } = palette[log.level] ?? palette['DEBUG'];
 
@@ -48,8 +49,7 @@ const LogEntry = memo(function LogEntry({ log, isDark }: LogEntryProps) {
       fontFamily="mono"
       fontSize="xs"
       cursor="pointer"
-      onClick={() => setIsExpanded((e) => !e)}
-      sx={{ contentVisibility: 'auto', containIntrinsicSize: '0 28px' }}
+      onClick={onToggle}
     >
       {/* Header row: icon · time · indicator · (truncated message when collapsed) · triangle */}
       <HStack spacing={2} px={2} py={0.5} alignItems="center">
