@@ -11,7 +11,6 @@ type PlotPoint struct {
 func NewInvalidPlotPoint() PlotPoint {
 	return PlotPoint{
 		Value:   -999,
-		Color:   "red",
 		Invalid: true,
 	}
 }
