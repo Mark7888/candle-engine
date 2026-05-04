@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useDeferredValue } from 'react';
 import { Flex, Box } from '@chakra-ui/react';
 import ChartContainer from '../chart/ChartContainer';
 import LogPanel from '../logs/LogPanel';
@@ -41,6 +41,8 @@ export default function PairView({ renderData, loading, error, projectId }: Pair
   );
 
   const logs = renderData?.logs ?? [];
+  const deferredLogs = useDeferredValue(logs);
+  const isLogsStale = deferredLogs !== logs;
 
   return (
     <Flex direction="column" h="100%" w="100%" gap={0}>
@@ -71,7 +73,8 @@ export default function PairView({ renderData, loading, error, projectId }: Pair
           minW={0}
         >
           <LogPanel
-            logs={logs}
+            logs={deferredLogs}
+            isLoading={isLogsStale}
             isOpen={logsOpen}
             onClose={closePanel}
             onOpen={openPanel}
