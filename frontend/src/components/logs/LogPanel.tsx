@@ -69,6 +69,7 @@ export default function LogPanel({ logs = [], isOpen, isLoading = false, onClose
   const toggleLevel = useUIStore((s) => s.toggleLogLevel);
 
   useLayoutEffect(() => {
+    if (!isOpen) return;
     const el = containerRef.current;
     if (!el) return;
     const observer = new ResizeObserver(() => {
@@ -78,7 +79,7 @@ export default function LogPanel({ logs = [], isOpen, isLoading = false, onClose
     observer.observe(el);
     setContainerHeight(el.clientHeight);
     return () => observer.disconnect();
-  }, []);
+  }, [isOpen]);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     setScrollTop(e.currentTarget.scrollTop);
