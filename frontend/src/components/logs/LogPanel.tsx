@@ -72,6 +72,8 @@ export default function LogPanel({ logs = [], isOpen, isLoading = false, onClose
     if (!isOpen) return;
     const el = containerRef.current;
     if (!el) return;
+    // Sync virtual-scroll state with the freshly-mounted DOM element (always 0).
+    setScrollTop(el.scrollTop);
     const observer = new ResizeObserver(() => {
       const h = el.clientHeight;
       setContainerHeight((prev) => (prev !== h ? h : prev));
