@@ -15,32 +15,17 @@ import LogLevelFilters from './LogLevelFilters';
 import { useUIStore } from '../../store/uiStore';
 import type { LogEntry as LogEntryType } from '../../types/api';
 
-/** Pixel height of a collapsed row (content + natural spacing). */
 const ROW_HEIGHT = 24;
-/** Pixel height per wrapped line in the expanded message area. */
 const EXPANDED_LINE_HEIGHT = 18;
-/**
- * Conservative estimate: how many characters fit on one line of the expanded
- * message area (monospace xs font in a ~300-400 px column).
- */
+// ~characters that fit on one line of the expanded message area
 const CHARS_PER_LINE = 44;
-/** Extra pixels added to an expanded row (pb + slack for font metrics). */
 const EXPANDED_PADDING = 8;
-/** Rows rendered above and below the visible viewport window. */
 const BUFFER = 8;
 
-/** Stable string key for a log entry (does not rely on filtered index). */
 function rowKey(log: LogEntryType): string {
   return `${log.time ?? ''}\x00${log.level}\x00${log.indicator ?? ''}\x00${(log.message ?? '').slice(0, 32)}`;
 }
 
-/**
- * Estimate the pixel height of a row.
- *
- * Collapsed rows are fixed at ROW_HEIGHT.
- * Expanded rows get one header row plus one line per CHARS_PER_LINE characters
- * of the message, capped at a minimum of one message line.
- */
 function getRowHeight(log: LogEntryType, expanded: boolean): number {
   if (!expanded) return ROW_HEIGHT;
   const lines = Math.max(1, Math.ceil((log.message?.length ?? 0) / CHARS_PER_LINE));
@@ -69,8 +54,14 @@ export default function LogPanel({ logs = [], isOpen, isLoading = false, onClose
   const toggleLevel = useUIStore((s) => s.toggleLogLevel);
 
   useLayoutEffect(() => {
+    if (!isOpen) {
+      // Reset before next open so the first render already has scrollTop = 0.
+      setScrollTop(0);
+      return;
+    }
     const el = containerRef.current;
     if (!el) return;
+    el.scrollTop = 0;
     const observer = new ResizeObserver(() => {
       const h = el.clientHeight;
       setContainerHeight((prev) => (prev !== h ? h : prev));
@@ -78,7 +69,7 @@ export default function LogPanel({ logs = [], isOpen, isLoading = false, onClose
     observer.observe(el);
     setContainerHeight(el.clientHeight);
     return () => observer.disconnect();
-  }, []);
+  }, [isOpen]);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     setScrollTop(e.currentTarget.scrollTop);
@@ -108,11 +99,6 @@ export default function LogPanel({ logs = [], isOpen, isLoading = false, onClose
     [logs, selectedChannel, hiddenLevels]
   );
 
-  /**
-   * Cumulative pixel offsets for every row.
-   * offsets[i] = pixel top of row i.
-   * offsets[filteredLogs.length] = total scrollable height.
-   */
   const offsets = useMemo(() => {
     const arr = new Array<number>(filteredLogs.length + 1);
     arr[0] = 0;
@@ -124,7 +110,6 @@ export default function LogPanel({ logs = [], isOpen, isLoading = false, onClose
 
   const totalHeight = offsets[filteredLogs.length] ?? 0;
 
-  // Binary search: first row whose bottom edge is below scrollTop.
   const rawStart = useMemo(() => {
     let lo = 0;
     let hi = filteredLogs.length;
@@ -182,7 +167,6 @@ export default function LogPanel({ logs = [], isOpen, isLoading = false, onClose
       overflow="hidden"
       h="100%"
     >
-      {/* Header */}
       <HStack
         px={3}
         py={2}
@@ -222,12 +206,10 @@ export default function LogPanel({ logs = [], isOpen, isLoading = false, onClose
         />
       </HStack>
 
-      {/* Level filters */}
       <Box px={3} py={2} borderBottom="1px solid" borderColor={borderColor} flexShrink={0}>
         <LogLevelFilters hiddenLevels={hiddenLevels} onToggle={toggleLevel} />
       </Box>
 
-      {/* Log list – variable-height virtual scroll renders only rows in the viewport */}
       <Box
         ref={containerRef}
         flex={1}
