@@ -1,8 +1,8 @@
 package chartproject
 
 import (
-	"candle-engine/pkg/charting/sources"
 	"candle-engine/pkg/indicators"
+	"candle-engine/pkg/sources"
 	"time"
 )
 

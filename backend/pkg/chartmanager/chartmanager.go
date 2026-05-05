@@ -1,7 +1,7 @@
 package chartmanager
 
 import (
-	"candle-engine/pkg/charting/chartproject"
+	"candle-engine/pkg/chartproject"
 	"sync"
 )
 

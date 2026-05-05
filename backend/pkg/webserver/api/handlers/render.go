@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"time"
 
-	"candle-engine/pkg/charting/chartproject"
-	"candle-engine/pkg/charting/sources"
 	"candle-engine/pkg/chartmanager"
+	"candle-engine/pkg/chartproject"
 	"candle-engine/pkg/indicators"
+	"candle-engine/pkg/sources"
 	"candle-engine/pkg/webserver/api/models"
 	apival "candle-engine/pkg/webserver/api/validation"
 

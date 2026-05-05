@@ -1,7 +1,7 @@
 package chartproject
 
 import (
-	"candle-engine/pkg/charting/sources"
+	"candle-engine/pkg/sources"
 	"fmt"
 	"slices"
 	"sync"

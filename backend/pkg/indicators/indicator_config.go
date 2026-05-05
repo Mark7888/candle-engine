@@ -1,6 +1,6 @@
 package indicators
 
-import "candle-engine/pkg/charting/sources"
+import "candle-engine/pkg/sources"
 
 // ChartConfig holds general chart configuration applicable to all indicators
 type ChartConfig struct {
@@ -13,7 +13,7 @@ type ChartConfig struct {
 type IndicatorType int
 
 const (
-	IndicatorTypeLine        IndicatorType = iota
+	IndicatorTypeLine IndicatorType = iota
 	IndicatorTypeStepLine
 	IndicatorTypeBarChart
 	IndicatorTypeTable
@@ -61,9 +61,9 @@ type StepLineIndicatorConfig struct {
 
 type BarChartIndicatorConfig struct {
 	BarTitles []string `json:"barTitles"`
-	BarWidth  string   `json:"barWidth"`  // Bar width (e.g., "60%", "20", "auto")
-	Opacity   float64  `json:"opacity"`   // Bar opacity (0.0 to 1.0)
-	Stacked   bool     `json:"stacked"`   // Whether bars should be stacked
+	BarWidth  string   `json:"barWidth"` // Bar width (e.g., "60%", "20", "auto")
+	Opacity   float64  `json:"opacity"`  // Bar opacity (0.0 to 1.0)
+	Stacked   bool     `json:"stacked"`  // Whether bars should be stacked
 }
 
 type CandleStickIndicatorConfig struct {

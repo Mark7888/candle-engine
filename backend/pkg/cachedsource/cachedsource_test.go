@@ -1,7 +1,7 @@
 package cachedsource
 
 import (
-	"candle-engine/pkg/charting/sources"
+	"candle-engine/pkg/sources"
 	"encoding/json"
 	"errors"
 	"os"
@@ -31,10 +31,10 @@ func newMockSource(tfSeconds map[string]int64, entries []sources.ChartEntry) *mo
 	return &mockSource{tfSeconds: tfSeconds, dataStore: entries}
 }
 
-func (m *mockSource) GetName() string                            { return "mock" }
-func (m *mockSource) GetTradingPairs() []sources.TradingPair    { return nil }
-func (m *mockSource) GetValidTimeFrames() []string              { return nil }
-func (m *mockSource) GetTimeFrameString(secs int64) string      { return "" }
+func (m *mockSource) GetName() string                        { return "mock" }
+func (m *mockSource) GetTradingPairs() []sources.TradingPair { return nil }
+func (m *mockSource) GetValidTimeFrames() []string           { return nil }
+func (m *mockSource) GetTimeFrameString(secs int64) string   { return "" }
 func (m *mockSource) GetTimeFrameSeconds(tf string) int64 {
 	if m.tfSeconds != nil {
 		if v, ok := m.tfSeconds[tf]; ok {

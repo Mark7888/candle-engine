@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"candle-engine/pkg/charting/sources"
+	"candle-engine/pkg/sources"
 )
 
 func TestValidateTimeRange_Valid(t *testing.T) {

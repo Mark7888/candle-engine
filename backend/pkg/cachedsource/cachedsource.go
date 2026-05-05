@@ -6,7 +6,7 @@
 package cachedsource
 
 import (
-	"candle-engine/pkg/charting/sources"
+	"candle-engine/pkg/sources"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -63,7 +63,7 @@ type CachedSource struct {
 	source   sources.Source
 	filePath string
 
-	mu   sync.RWMutex       // protects data
+	mu   sync.RWMutex        // protects data
 	data map[string]*tfCache // key: cacheKey(pairId, timeFrame)
 
 	fetchMu    sync.Mutex            // protects fetchLocks map
@@ -100,11 +100,13 @@ func NewCachedSource(source sources.Source, filePath string) sources.Source {
 // sources.Source delegation
 // -----------------------------------------------------------------------------
 
-func (c *CachedSource) GetName() string                            { return c.source.GetName() }
-func (c *CachedSource) GetTradingPairs() []sources.TradingPair    { return c.source.GetTradingPairs() }
-func (c *CachedSource) GetValidTimeFrames() []string              { return c.source.GetValidTimeFrames() }
-func (c *CachedSource) GetTimeFrameSeconds(tf string) int64       { return c.source.GetTimeFrameSeconds(tf) }
-func (c *CachedSource) GetTimeFrameString(secs int64) string      { return c.source.GetTimeFrameString(secs) }
+func (c *CachedSource) GetName() string                        { return c.source.GetName() }
+func (c *CachedSource) GetTradingPairs() []sources.TradingPair { return c.source.GetTradingPairs() }
+func (c *CachedSource) GetValidTimeFrames() []string           { return c.source.GetValidTimeFrames() }
+func (c *CachedSource) GetTimeFrameSeconds(tf string) int64    { return c.source.GetTimeFrameSeconds(tf) }
+func (c *CachedSource) GetTimeFrameString(secs int64) string {
+	return c.source.GetTimeFrameString(secs)
+}
 
 // -----------------------------------------------------------------------------
 // GetData – the main entry point

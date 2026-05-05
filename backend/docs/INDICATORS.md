@@ -418,7 +418,7 @@ CandleStickIndicator: indicators.CandleStickIndicatorConfig{
 
 ### MultiSourceEntries
 
-The `chartsData` parameter provides access to all chart data from loaded sources. Defined in `pkg/charting/sources/multisource.go`.
+The `chartsData` parameter provides access to all chart data from loaded sources. Defined in `pkg/sources/multisource.go`.
 
 #### Key Methods
 
@@ -440,7 +440,7 @@ The `chartsData` parameter provides access to all chart data from loaded sources
 
 ### ChartEntry Structure
 
-Defined in `pkg/charting/sources/models.go`:
+Defined in `pkg/sources/models.go`:
 
 ```go
 type ChartEntry struct {
@@ -725,7 +725,7 @@ A simple line indicator that displays the closing price of the current candle on
 package sample
 
 import (
-    "candle-engine/pkg/charting/sources"
+    "candle-engine/pkg/sources"
     "candle-engine/pkg/indicators"
 )
 
@@ -774,7 +774,7 @@ Shows the difference between current and previous close prices on a separate pan
 package sample
 
 import (
-    "candle-engine/pkg/charting/sources"
+    "candle-engine/pkg/sources"
     "candle-engine/pkg/indicators"
 )
 
@@ -830,7 +830,7 @@ Displays the difference between high and low for each candle as a bar chart.
 package sample
 
 import (
-    "candle-engine/pkg/charting/sources"
+    "candle-engine/pkg/sources"
     "candle-engine/pkg/indicators"
 )
 
@@ -894,7 +894,7 @@ package sample
 
 import (
     "fmt"
-    "candle-engine/pkg/charting/sources"
+    "candle-engine/pkg/sources"
     "candle-engine/pkg/indicators"
 )
 
@@ -1643,9 +1643,9 @@ This section shows the minimal steps to create a chart project, attach a data so
 package main
 
 import (
-    "candle-engine/pkg/charting/chartproject"
-    "candle-engine/pkg/charting/sources"
-    "candle-engine/pkg/charting/sources/binance"
+    "candle-engine/pkg/chartproject"
+    "candle-engine/pkg/sources"
+    "candle-engine/pkg/sources/binance"
     "time"
 )
 

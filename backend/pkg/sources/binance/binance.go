@@ -1,7 +1,7 @@
 package binance
 
 import (
-	"candle-engine/pkg/charting/sources"
+	"candle-engine/pkg/sources"
 	"errors"
 	"maps"
 	"slices"

@@ -1,11 +1,11 @@
 package sample
 
 import (
-	"candle-engine/pkg/charting/cachedsource"
-	"candle-engine/pkg/charting/chartproject"
-	"candle-engine/pkg/charting/sources"
-	"candle-engine/pkg/charting/sources/binance"
+	"candle-engine/pkg/cachedsource"
+	"candle-engine/pkg/chartproject"
 	"candle-engine/pkg/indicators"
+	"candle-engine/pkg/sources"
+	"candle-engine/pkg/sources/binance"
 	"fmt"
 	"math"
 	"time"
