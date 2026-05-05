@@ -43,6 +43,12 @@ const LogEntry = memo(function LogEntry({ log, isDark, isExpanded, onToggle }: L
   const palette = isDark ? LEVEL_STYLES_DARK : LEVEL_STYLES_LIGHT;
   const { bg, text, Icon } = palette[log.level] ?? palette['DEBUG'];
 
+  const handleClick = () => {
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) return;
+    onToggle();
+  };
+
   return (
     <Box
       borderRadius="sm"
@@ -50,7 +56,7 @@ const LogEntry = memo(function LogEntry({ log, isDark, isExpanded, onToggle }: L
       fontFamily="mono"
       fontSize="xs"
       cursor="pointer"
-      onClick={onToggle}
+      onClick={handleClick}
     >
       {/* Header row: icon · time · indicator · (truncated message when collapsed) · triangle */}
       <HStack spacing={2} px={2} py={0.5} alignItems="center">
