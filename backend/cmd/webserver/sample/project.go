@@ -30,10 +30,6 @@ func GetSampleChartProject() chartproject.ChartProject {
 	// Time range to set
 	startTime, _ := time.Parse(time.RFC3339, "2024-12-01T00:00:00Z")
 	endTime, _ := time.Parse(time.RFC3339, "2025-12-01T00:00:00Z")
-	timeRange := sources.TimeRange{
-		Start: startTime,
-		End:   endTime,
-	}
 
 	// Indicators to add
 	indicatorsToAdd := []indicators.BaseIndicator{
@@ -48,12 +44,13 @@ func GetSampleChartProject() chartproject.ChartProject {
 		// GetSampleATRIndicator(),
 	}
 
-	chartProject1 := chartproject.NewChartProject("Sample Project")
-	chartProject1.SetCandleColors(sources.CandleColorConfig{BullishColor: "#ffffff", BearishColor: "#00c8ff"})
+	chartProject1 := chartproject.NewChartProject("Sample Project", chartproject.ChartProjectConfig{
+		TimeFrame:    "1d",
+		TimeRange:    sources.TimeRange{Start: startTime, End: endTime},
+		CandleColors: sources.CandleColorConfig{BullishColor: "#ffffff", BearishColor: "#00c8ff"},
+	})
 	chartProject1.AddSources(sourcesToAdd...)
 	chartProject1.AddTradingPairs(allPairsToAdd...)
-	chartProject1.SetTimeFrame("1d")
-	chartProject1.SetTimeRange(timeRange)
 	chartProject1.AddIndicators(indicatorsToAdd...)
 
 	return *chartProject1
@@ -74,10 +71,6 @@ func GetSampleChartProject2() chartproject.ChartProject {
 	// Time range to set
 	startTime, _ := time.Parse(time.RFC3339, "2024-12-01T00:00:00Z")
 	endTime, _ := time.Parse(time.RFC3339, "2025-12-01T00:00:00Z")
-	timeRange := sources.TimeRange{
-		Start: startTime,
-		End:   endTime,
-	}
 
 	// Indicators to add
 	indicatorsToAdd := []indicators.BaseIndicator{
@@ -85,12 +78,13 @@ func GetSampleChartProject2() chartproject.ChartProject {
 		GetSampleVolumeIndicator(),
 	}
 
-	chartProject1 := chartproject.NewChartProject("Second Project MA Only")
-	chartProject1.SetCandleColors(sources.CandleColorConfig{BullishColor: "#ffff51", BearishColor: "#b872ff"})
+	chartProject1 := chartproject.NewChartProject("Second Project MA Only", chartproject.ChartProjectConfig{
+		TimeFrame:    "1d",
+		TimeRange:    sources.TimeRange{Start: startTime, End: endTime},
+		CandleColors: sources.CandleColorConfig{BullishColor: "#ffff51", BearishColor: "#b872ff"},
+	})
 	chartProject1.AddSources(sourcesToAdd...)
 	chartProject1.AddTradingPairs(allPairsToAdd...)
-	chartProject1.SetTimeFrame("1d")
-	chartProject1.SetTimeRange(timeRange)
 	chartProject1.AddIndicators(indicatorsToAdd...)
 
 	return *chartProject1

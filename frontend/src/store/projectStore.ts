@@ -1,12 +1,7 @@
 import { create } from 'zustand';
 import { fetchProjects, fetchProject, fetchRender } from '../api/client';
+import type { RenderConfig } from '../api/client';
 import type { Project, ProjectDetail, RenderResponse } from '../types/api';
-
-interface RenderSettings {
-  timeFrame?: string | null;
-  rangeFrom?: string | null;
-  rangeTo?: string | null;
-}
 
 interface ProjectStoreState {
   // List of { id, title }
@@ -27,9 +22,7 @@ interface ProjectStoreState {
   clearProjectRenderCache: (projectId: number) => void;
   loadRender: (
     projectId: number,
-    source: string,
-    pair: string,
-    settings?: RenderSettings
+    config: RenderConfig
   ) => Promise<void>;
   getRender: (
     projectId: number,
@@ -103,18 +96,13 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
    * Load (or re-fetch) render data for a pair.
    *
    * @param projectId
-   * @param source
-   * @param pair
-   * @param settings  - Optional overrides forwarded to the API
-   *   { timeFrame, rangeFrom, rangeTo }
+   * @param config - Render configuration (source, pair, and optional overrides)
    */
   loadRender: async (
     projectId: number,
-    source: string,
-    pair: string,
-    settings: RenderSettings = {}
+    config: RenderConfig
   ) => {
-    const key = `${projectId}-${source}-${pair}`;
+    const key = `${projectId}-${config.source}-${config.pair}`;
     // Skip if already cached. Cache invalidation when settings change is
     // handled by clearProjectRenderCache, so the cache is always safe to use.
     if (get().renderData[key]) return;
@@ -124,7 +112,7 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
       renderErrors: { ...s.renderErrors, [key]: null },
     }));
     try {
-      const data = await fetchRender(projectId, source, pair, settings);
+      const data = await fetchRender(projectId, config);
       set((s) => ({
         renderData: { ...s.renderData, [key]: data },
         renderLoading: { ...s.renderLoading, [key]: false },

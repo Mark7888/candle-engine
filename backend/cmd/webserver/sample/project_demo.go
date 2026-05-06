@@ -23,12 +23,13 @@ func GetDemoChartProject() chartproject.ChartProject {
 	startTime, _ := time.Parse(time.RFC3339, "2024-12-01T00:00:00Z")
 	endTime, _ := time.Parse(time.RFC3339, "2025-12-01T00:00:00Z")
 
-	project := chartproject.NewChartProject("Demo Project")
-	project.SetCandleColors(sources.CandleColorConfig{BullishColor: "#26a69a", BearishColor: "#ef5350"})
+	project := chartproject.NewChartProject("Demo Project", chartproject.ChartProjectConfig{
+		TimeFrame:    "1d",
+		TimeRange:    sources.TimeRange{Start: startTime, End: endTime},
+		CandleColors: sources.CandleColorConfig{BullishColor: "#26a69a", BearishColor: "#ef5350"},
+	})
 	project.AddSources(cachedSourceBinance)
 	project.AddTradingPairs(allPairs...)
-	project.SetTimeFrame("1d")
-	project.SetTimeRange(sources.TimeRange{Start: startTime, End: endTime})
 	project.AddIndicators(
 		GetDemoLineIndicator(),
 		GetDemoStepLineIndicator(),

@@ -16,17 +16,42 @@ type ChartProject struct {
 	timeFrame string // TODO - we should be storing time frame in seconds internally
 }
 
-func NewChartProject(title string) *ChartProject {
+var defaultChartConfig = ChartProjectConfig{
+	TimeFrame: "1d",
+	CandleColors: sources.CandleColorConfig{
+		BullishColor: "#ff0000ff",
+		BearishColor: "#00ff00ff",
+	},
+}
+
+// NewChartProject creates a ChartProject with the given title and configuration.
+// Any zero-value field in cfg is replaced by a sensible built-in default:
+func NewChartProject(title string, cfg ChartProjectConfig) *ChartProject {
+	if cfg.TimeFrame == "" {
+		cfg.TimeFrame = defaultChartConfig.TimeFrame
+	}
+
+	if cfg.TimeRange.End.IsZero() {
+		cfg.TimeRange.End = time.Now()
+	}
+	if cfg.TimeRange.Start.IsZero() {
+		cfg.TimeRange.Start = cfg.TimeRange.End.AddDate(0, 0, -14)
+	}
+
+	if cfg.CandleColors.BullishColor == "" {
+		cfg.CandleColors.BullishColor = defaultChartConfig.CandleColors.BullishColor
+	}
+	if cfg.CandleColors.BearishColor == "" {
+		cfg.CandleColors.BearishColor = defaultChartConfig.CandleColors.BearishColor
+	}
+
 	return &ChartProject{
 		title:         title,
-		colors:        sources.CandleColorConfig{BullishColor: "#ff0000ff", BearishColor: "#00ff00ff"},
+		colors:        cfg.CandleColors,
 		sourceManager: NewChartSourceManager(),
 		indicators:    []indicators.BaseIndicator{},
-		timeRange: sources.TimeRange{
-			Start: time.Now().AddDate(0, 0, -14),
-			End:   time.Now(),
-		},
-		timeFrame: "1d",
+		timeRange:     cfg.TimeRange,
+		timeFrame:     cfg.TimeFrame,
 	}
 }
 
@@ -34,26 +59,12 @@ func (c *ChartProject) GetTitle() string {
 	return c.title
 }
 
-func (c *ChartProject) SetTimeFrame(timeFrame string) {
-	c.timeFrame = timeFrame
-}
-
 func (c *ChartProject) GetTimeFrame() string {
 	return c.timeFrame
 }
 
-func (c *ChartProject) SetCandleColors(colors sources.CandleColorConfig) {
-	c.colors = colors
-}
-
 func (c *ChartProject) GetAvailableTimeFrames() []string {
 	return c.sourceManager.GetCommonTimeFrames()
-}
-
-// TODO - somehow handle available time frames from sources (only list the ones that are common across all sources)
-
-func (c *ChartProject) SetTimeRange(timeRange sources.TimeRange) {
-	c.timeRange = timeRange
 }
 
 func (c *ChartProject) GetTimeRange() sources.TimeRange {
@@ -79,19 +90,25 @@ func (c *ChartProject) AddIndicators(indicator ...indicators.BaseIndicator) {
 // GetRender returns an object with all the info needed to render the chart in
 // the frontend.
 //
-// timeFrameOverride: if non-empty, it is used instead of the project's
-// configured timeFrame.
-// timeRangeOverride: if non-nil, it is used instead of the project's
-// configured timeRange.
-func (c *ChartProject) GetRender(activePair sources.SourcePairId, timeFrameOverride string, timeRangeOverride *sources.TimeRange) (RenderableChartProject, error) {
+// Fields in cfg that are at their zero value fall back to the project's
+// configured defaults (TimeFrame, TimeRange, CandleColors).
+func (c *ChartProject) GetRender(cfg RenderConfig) (RenderableChartProject, error) {
 	timeFrame := c.timeFrame
-	if timeFrameOverride != "" {
-		timeFrame = timeFrameOverride
+	if cfg.TimeFrame != "" {
+		timeFrame = cfg.TimeFrame
 	}
 
 	timeRange := c.timeRange
-	if timeRangeOverride != nil {
-		timeRange = *timeRangeOverride
+	if !cfg.RangeFrom.IsZero() {
+		timeRange.Start = cfg.RangeFrom
+	}
+	if !cfg.RangeTo.IsZero() {
+		timeRange.End = cfg.RangeTo
+	}
+
+	colors := c.colors
+	if cfg.CandleColors != nil {
+		colors = *cfg.CandleColors
 	}
 
 	entries, width, err := c.sourceManager.FetchSources(timeRange, c.sourceManager.selectedPairs, timeFrame)
@@ -101,7 +118,7 @@ func (c *ChartProject) GetRender(activePair sources.SourcePairId, timeFrameOverr
 		return partial, nil
 	}
 
-	chartConfig := c.assembleChartConfigWith(activePair, timeFrame)
+	chartConfig := c.assembleChartConfigWith(cfg.ActivePair, timeFrame)
 
 	var historyEntries map[sources.SourcePairId][]sources.ChartEntry = make(map[sources.SourcePairId][]sources.ChartEntry)
 	var currentMultiSourceEntries sources.MultiSourceEntries
@@ -129,10 +146,10 @@ func (c *ChartProject) GetRender(activePair sources.SourcePairId, timeFrameOverr
 	renderableChartProject.AvailableTimeFrames = c.sourceManager.GetCommonTimeFrames()
 	renderableChartProject.ActiveTimeFrame = timeFrame
 	renderableChartProject.LoadedPairs = c.sourceManager.GetLoadedPairs()
-	renderableChartProject.ActivePair = activePair
+	renderableChartProject.ActivePair = cfg.ActivePair
 
 	renderableChartProject.CandleData = entries
-	renderableChartProject.CandleColors = c.colors
+	renderableChartProject.CandleColors = colors
 	renderableChartProject.IndicatorCharts = make(map[string][]RenderableIndicator)
 
 	for _, indicator := range c.indicators {
@@ -154,10 +171,6 @@ func (c *ChartProject) GetRender(activePair sources.SourcePairId, timeFrameOverr
 	}
 
 	return renderableChartProject, nil
-}
-
-func (c *ChartProject) assembleChartConfig(activePair sources.SourcePairId) indicators.ChartConfig {
-	return c.assembleChartConfigWith(activePair, c.timeFrame)
 }
 
 func (c *ChartProject) assembleChartConfigWith(activePair sources.SourcePairId, timeFrame string) indicators.ChartConfig {

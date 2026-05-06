@@ -129,48 +129,57 @@ func RenderProject(c *gin.Context) {
 		return
 	}
 
-	// Resolve optional client-side overrides. These are passed directly into
-	// GetRender so no project state is mutated, not even on the value copy.
-	var timeFrameOverride string
-	if tf := c.Query("timeFrame"); tf != "" {
-		timeFrameOverride = tf
+	// Build a RenderConfig from query parameters; unset fields fall back to
+	// the project's configured defaults inside GetRender.
+	renderCfg := chartproject.RenderConfig{
+		ActivePair: sources.SourcePairId{SourceName: source, PairId: pair},
 	}
 
-	var timeRangeOverride *sources.TimeRange
-	if rangeFromStr, rangeToStr := c.Query("rangeFrom"), c.Query("rangeTo"); rangeFromStr != "" || rangeToStr != "" {
-		// Start from the project defaults and override only the supplied fields.
-		base := project.GetTimeRange()
-		override := base
-		if rangeFromStr != "" {
-			t, parseErr := time.Parse(time.RFC3339, rangeFromStr)
-			if parseErr != nil {
-				c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "invalid rangeFrom", Details: "rangeFrom must be an RFC3339 timestamp (e.g. 2024-01-01T00:00:00Z)"})
-				return
-			}
-			override.Start = t
-		}
-		if rangeToStr != "" {
-			t, parseErr := time.Parse(time.RFC3339, rangeToStr)
-			if parseErr != nil {
-				c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "invalid rangeTo", Details: "rangeTo must be an RFC3339 timestamp (e.g. 2024-12-31T23:59:59Z)"})
-				return
-			}
-			override.End = t
-		}
+	if tf := c.Query("timeFrame"); tf != "" {
+		renderCfg.TimeFrame = tf
+	}
 
-		// Semantic validation: return an empty render with ProjectErrors rather
-		// than a hard HTTP 400, so the frontend can surface the reason.
-		if validationErrs := apival.ValidateTimeRange(override); len(validationErrs) != 0 {
+	if rangeFromStr := c.Query("rangeFrom"); rangeFromStr != "" {
+		t, parseErr := time.Parse(time.RFC3339, rangeFromStr)
+		if parseErr != nil {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "invalid rangeFrom", Details: "rangeFrom must be an RFC3339 timestamp (e.g. 2024-01-01T00:00:00Z)"})
+			return
+		}
+		renderCfg.RangeFrom = t
+	}
+
+	if rangeToStr := c.Query("rangeTo"); rangeToStr != "" {
+		t, parseErr := time.Parse(time.RFC3339, rangeToStr)
+		if parseErr != nil {
+			c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "invalid rangeTo", Details: "rangeTo must be an RFC3339 timestamp (e.g. 2024-12-31T23:59:59Z)"})
+			return
+		}
+		renderCfg.RangeTo = t
+	}
+
+	// TODO - these values need to be implemented to render config: candleBullishColor, candleBearishColor
+
+	// Semantic validation of the resolved time range when at least one boundary
+	// was supplied. Start from the project defaults and merge in the overrides
+	// so the validator sees the complete range.
+	if !renderCfg.RangeFrom.IsZero() || !renderCfg.RangeTo.IsZero() {
+		base := project.GetTimeRange()
+		resolved := base
+		if !renderCfg.RangeFrom.IsZero() {
+			resolved.Start = renderCfg.RangeFrom
+		}
+		if !renderCfg.RangeTo.IsZero() {
+			resolved.End = renderCfg.RangeTo
+		}
+		if validationErrs := apival.ValidateTimeRange(resolved); len(validationErrs) != 0 {
 			partial := chartproject.NewRenderableChartProject()
 			partial.ProjectErrors = validationErrs
 			c.JSON(http.StatusOK, emptyRenderResponse(partial))
 			return
 		}
-
-		timeRangeOverride = &override
 	}
 
-	render, err := project.GetRender(sources.SourcePairId{SourceName: source, PairId: pair}, timeFrameOverride, timeRangeOverride)
+	render, err := project.GetRender(renderCfg)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "failed to render chart", Details: err.Error()})
 		return

@@ -87,7 +87,9 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
   // Load render data whenever active pair or any setting value changes
   useEffect(() => {
     if (activePairEntry) {
-      loadRender(projectId, activePairEntry.source, activePairEntry.pair, {
+      loadRender(projectId, {
+        source: activePairEntry.source,
+        pair: activePairEntry.pair,
         timeFrame: settingsTimeFrame,
         rangeFrom: settingsRangeFrom,
         rangeTo: settingsRangeTo,
