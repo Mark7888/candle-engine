@@ -102,7 +102,7 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
     projectId: number,
     config: RenderConfig
   ) => {
-    const key = `${projectId}-${config.source}-${config.pair}`;
+    const key = `${projectId}-${config.source}-${config.pair}-${config.candleBullishColor ?? ''}-${config.candleBearishColor ?? ''}`;
     // Skip if already cached. Cache invalidation when settings change is
     // handled by clearProjectRenderCache, so the cache is always safe to use.
     if (get().renderData[key]) return;

@@ -6,10 +6,13 @@
  */
 
 export interface ProjectSettingsConfig {
-  /** A dummy color setting used to demonstrate the settings persistence flow. */
-  testColor: string;
+  /** Candle bullish (up) color in CSS hex format (e.g. '#26a69a'). */
+  candleBullishColor: string;
+  /** Candle bearish (down) color in CSS hex format (e.g. '#ef5350'). */
+  candleBearishColor: string;
 }
 
 export const DEFAULT_PROJECT_SETTINGS: ProjectSettingsConfig = {
-  testColor: '#004040',
+  candleBullishColor: '#26a69a',
+  candleBearishColor: '#ef5350',
 };

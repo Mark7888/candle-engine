@@ -20,6 +20,8 @@ interface RenderParams {
   timeFrame?: string;
   rangeFrom?: string;
   rangeTo?: string;
+  candleBullishColor?: string;
+  candleBearishColor?: string;
 }
 
 /**
@@ -30,9 +32,11 @@ interface RenderParams {
  *   pair      – trading pair ID (e.g. 'BTCUSDC')
  *
  * Optional overrides (omit to use the project's configured defaults):
- *   timeFrame  – time frame string (e.g. '4h')
- *   rangeFrom  – range start as ISO 8601 / RFC 3339 string
- *   rangeTo    – range end as ISO 8601 / RFC 3339 string
+ *   timeFrame         – time frame string (e.g. '4h')
+ *   rangeFrom         – range start as ISO 8601 / RFC 3339 string
+ *   rangeTo           – range end as ISO 8601 / RFC 3339 string
+ *   candleBullishColor – bullish (up) candle color override (CSS hex, e.g. '#26a69a')
+ *   candleBearishColor – bearish (down) candle color override (CSS hex, e.g. '#ef5350')
  */
 export interface RenderConfig {
   source: string;
@@ -40,9 +44,9 @@ export interface RenderConfig {
   timeFrame?: string | null;
   rangeFrom?: string | null;
   rangeTo?: string | null;
+  candleBullishColor?: string | null;
+  candleBearishColor?: string | null;
 }
-
-// TODO - these values need to be implemented on UI: candleBullishColor, candleBearishColor
 
 /**
  * Fetch rendered chart data for a pair.
@@ -58,6 +62,8 @@ export const fetchRender = (
   if (config.timeFrame) params.timeFrame = config.timeFrame;
   if (config.rangeFrom) params.rangeFrom = config.rangeFrom;
   if (config.rangeTo) params.rangeTo = config.rangeTo;
+  if (config.candleBullishColor) params.candleBullishColor = config.candleBullishColor;
+  if (config.candleBearishColor) params.candleBearishColor = config.candleBearishColor;
   return api
     .get<RenderResponse>(`/api/v1/projects/${id}/render`, { params })
     .then((r) => r.data);

@@ -157,7 +157,19 @@ func RenderProject(c *gin.Context) {
 		renderCfg.RangeTo = t
 	}
 
-	// TODO - these values need to be implemented to render config: candleBullishColor, candleBearishColor
+	if bullish := c.Query("candleBullishColor"); bullish != "" {
+		if renderCfg.CandleColors == nil {
+			renderCfg.CandleColors = &sources.CandleColorConfig{}
+		}
+		renderCfg.CandleColors.BullishColor = bullish
+	}
+
+	if bearish := c.Query("candleBearishColor"); bearish != "" {
+		if renderCfg.CandleColors == nil {
+			renderCfg.CandleColors = &sources.CandleColorConfig{}
+		}
+		renderCfg.CandleColors.BearishColor = bearish
+	}
 
 	// Semantic validation of the resolved time range when at least one boundary
 	// was supplied. Start from the project defaults and merge in the overrides

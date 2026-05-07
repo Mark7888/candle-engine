@@ -12,6 +12,7 @@ import {
 import { useProjectStore } from '../../store/projectStore';
 import { useUIStore } from '../../store/uiStore';
 import { usePlaybackStore } from '../../store/playbackStore';
+import { useProjectSettingsStore } from '../../store/projectSettingsStore';
 import { sliceRenderData } from '../../utils/sliceRenderData';
 import PairView from '../layout/PairView';
 import SettingsBar from '../layout/SettingsBar';
@@ -42,11 +43,16 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
   const settingsRangeTo = useUIStore((s) => s.projectSettings[projectId]?.rangeTo ?? null);
   const setProjectSetting = useUIStore((s) => s.setProjectSetting);
 
+  // Per-project visual settings (candle colors) from the settings store.
+  const candleBullishColor = useProjectSettingsStore((s) => s.getSettings(projectId).candleBullishColor);
+  const candleBearishColor = useProjectSettingsStore((s) => s.getSettings(projectId).candleBearishColor);
+
   const activePairEntry = activePairs[projectId];
 
   // Derive the cache key outside hooks so it can be used in selectors below.
+  // Colors are included so that a color change triggers a fresh fetch.
   const renderKey = activePairEntry
-    ? `${projectId}-${activePairEntry.source}-${activePairEntry.pair}`
+    ? `${projectId}-${activePairEntry.source}-${activePairEntry.pair}-${candleBullishColor}-${candleBearishColor}`
     : null;
 
   // --- Playback store – all state is project-level so pair switches share position ---
@@ -84,7 +90,7 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
     }
   }, [projectDetail, activePairEntry, projectId, setActivePair]);
 
-  // Load render data whenever active pair or any setting value changes
+  // Load render data whenever active pair, any setting value, or color settings change
   useEffect(() => {
     if (activePairEntry) {
       loadRender(projectId, {
@@ -93,9 +99,11 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
         timeFrame: settingsTimeFrame,
         rangeFrom: settingsRangeFrom,
         rangeTo: settingsRangeTo,
+        candleBullishColor,
+        candleBearishColor,
       });
     }
-  }, [projectId, activePairEntry, settingsTimeFrame, settingsRangeFrom, settingsRangeTo, loadRender]);
+  }, [projectId, activePairEntry, settingsTimeFrame, settingsRangeFrom, settingsRangeTo, candleBullishColor, candleBearishColor, loadRender]);
 
   const handleSelectPair = useCallback(
     (sourceName: string, pairId: string) => {
