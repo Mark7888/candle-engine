@@ -6,12 +6,25 @@ import (
 	"time"
 )
 
+// TODO - move sourceManager and indicators into registry
+// * Registry will handle all the sources and indicators available in the application, and provide them to the ChartProject when needed
+// * We have to create, store, load, update or delete these ChartProject instances and their configurations, like added sources and indicators, default settings, etc.
+// * ChartProject will only be responsible for assembling the data for rendering, and calculating indicators based on the data and the chart configuration.
+// * It will not be responsible for storing the available sources and indicators in the application, or managing them in any way.
+// * It will simply call the registry when needs anything.
+// ! Have to rework how we handle project configurations and settings. Do we store everything on the backend?
+// ? What do we store on the frontend?
+// - Render settings (time frame, active pair, time range)
+// ? What to store on backend in config?
+// - Projects and their settings (title, added sources and indicators, default render settings like time frame, time range, candle colors, etc.)
+// - Whole-app settings
+
 type ChartProject struct {
 	title         string
-	colors        sources.CandleColorConfig
 	sourceManager *ChartSourceManager
 	indicators    []indicators.BaseIndicator
 
+	colors    sources.CandleColorConfig
 	timeRange sources.TimeRange
 	timeFrame string // TODO - we should be storing time frame in seconds internally
 }

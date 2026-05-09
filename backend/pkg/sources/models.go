@@ -39,13 +39,13 @@ func (c ChartEntry) IsValid() bool {
 }
 
 type TimeRange struct {
-	Start time.Time
-	End   time.Time
+	Start time.Time `json:"start"`
+	End   time.Time `json:"end"`
 }
 
 type SourcePairId struct {
-	SourceName string
-	PairId     string
+	SourceName string `json:"sourceName"`
+	PairId     string `json:"pairId"`
 }
 
 func (s SourcePairId) String() string {
@@ -53,6 +53,6 @@ func (s SourcePairId) String() string {
 }
 
 type CandleColorConfig struct {
-	BullishColor string
-	BearishColor string
+	BullishColor string `json:"bullishColor"`
+	BearishColor string `json:"bearishColor"`
 }

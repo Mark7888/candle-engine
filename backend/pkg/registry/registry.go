@@ -32,6 +32,14 @@ func (r *Registry) RegisterIndicators(indicators ...indicators.BaseIndicator) {
 	}
 }
 
+func (r *Registry) UnregisterIndicator(name string) {
+	delete(r.indicators, name)
+}
+
+func (r *Registry) ClearIndicators() {
+	r.indicators = make(map[string]indicators.BaseIndicator)
+}
+
 func (r *Registry) GetIndicator(name string) (indicators.BaseIndicator, bool) {
 	indicator, exists := r.indicators[name]
 	return indicator, exists
@@ -49,6 +57,14 @@ func (r *Registry) RegisterDataSources(sources ...sources.Source) {
 			r.dataSources[name] = source
 		}
 	}
+}
+
+func (r *Registry) UnregisterDataSource(name string) {
+	delete(r.dataSources, name)
+}
+
+func (r *Registry) ClearDataSources() {
+	r.dataSources = make(map[string]sources.Source)
 }
 
 func (r *Registry) GetDataSource(name string) (sources.Source, bool) {
