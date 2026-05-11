@@ -19,7 +19,7 @@ import SettingsBar from '../layout/SettingsBar';
 import PlaybackBar from '../layout/PlaybackBar';
 
 interface ProjectViewProps {
-  projectId: number;
+  projectId: string;
 }
 
 /**

@@ -10,7 +10,7 @@ interface ProjectStoreState {
   projectsError: string | null;
 
   // Per-project detail cache
-  projectDetails: Record<number, ProjectDetail>;
+  projectDetails: Record<string, ProjectDetail>;
 
   // Per-pair render cache key: `${projectId}-${source}-${pair}`
   renderData: Record<string, RenderResponse>;
@@ -18,14 +18,14 @@ interface ProjectStoreState {
   renderErrors: Record<string, string | null>;
 
   loadProjects: () => Promise<void>;
-  loadProject: (id: number) => Promise<void>;
-  clearProjectRenderCache: (projectId: number) => void;
+  loadProject: (id: string) => Promise<void>;
+  clearProjectRenderCache: (projectId: string) => void;
   loadRender: (
-    projectId: number,
+    projectId: string,
     config: RenderConfig
   ) => Promise<void>;
   getRender: (
-    projectId: number,
+    projectId: string,
     source: string,
     pair: string
   ) => { data: RenderResponse | null; loading: boolean; error: string | null };
@@ -55,7 +55,7 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
     }
   },
 
-  loadProject: async (id: number) => {
+  loadProject: async (id: string) => {
     if (get().projectDetails[id]) return;
     try {
       const detail = await fetchProject(id);
@@ -72,7 +72,7 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
    * Called when project-level settings (timeFrame/range) change so the next
    * loadRender() call fetches fresh data with the updated parameters.
    */
-  clearProjectRenderCache: (projectId: number) => {
+  clearProjectRenderCache: (projectId: string) => {
     set((s) => {
       const prefix = `${projectId}-`;
       const newRenderData = Object.fromEntries(
@@ -99,7 +99,7 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
    * @param config - Render configuration (source, pair, and optional overrides)
    */
   loadRender: async (
-    projectId: number,
+    projectId: string,
     config: RenderConfig
   ) => {
     const key = `${projectId}-${config.source}-${config.pair}-${config.candleBullishColor ?? ''}-${config.candleBearishColor ?? ''}`;
@@ -125,7 +125,7 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
     }
   },
 
-  getRender: (projectId: number, source: string, pair: string) => {
+  getRender: (projectId: string, source: string, pair: string) => {
     const key = `${projectId}-${source}-${pair}`;
     return {
       data: get().renderData[key] ?? null,

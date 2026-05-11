@@ -67,8 +67,8 @@ const docTemplate = `{
                 "summary": "Get project details",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Project ID (zero-based index)",
+                        "type": "string",
+                        "description": "Project UUID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -79,12 +79,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.ProjectDetailResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
@@ -338,7 +332,7 @@ const docTemplate = `{
                     }
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "pairs": {
                     "type": "array",
@@ -416,7 +410,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "title": {
                     "type": "string"

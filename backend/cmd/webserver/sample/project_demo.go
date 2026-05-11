@@ -1,20 +1,15 @@
 package sample
 
 import (
-	"candle-engine/pkg/cachedsource"
 	"candle-engine/pkg/chartproject"
 	"candle-engine/pkg/indicators"
 	"candle-engine/pkg/sources"
-	"candle-engine/pkg/sources/binance"
 	"fmt"
 	"math"
 	"time"
 )
 
-func GetDemoChartProject() chartproject.ChartProject {
-	sourceBinance := binance.NewBinanceSource()
-	cachedSourceBinance := cachedsource.NewCachedSource(sourceBinance, "./tmp/binance_cache.json")
-
+func GetDemoChartProject() *chartproject.ChartProject {
 	allPairs := []sources.SourcePairId{
 		{SourceName: "Binance", PairId: "BTCUSDC"},
 		{SourceName: "Binance", PairId: "ETHUSDC"},
@@ -23,24 +18,23 @@ func GetDemoChartProject() chartproject.ChartProject {
 	startTime, _ := time.Parse(time.RFC3339, "2024-12-01T00:00:00Z")
 	endTime, _ := time.Parse(time.RFC3339, "2025-12-01T00:00:00Z")
 
-	project := chartproject.NewChartProject("Demo Project", chartproject.ChartProjectConfig{
+	project := chartproject.NewChartProject("demo-project-01", "Demo Project", chartproject.ChartProjectConfig{
 		TimeFrame:    "1d",
 		TimeRange:    sources.TimeRange{Start: startTime, End: endTime},
 		CandleColors: sources.CandleColorConfig{BullishColor: "#26a69a", BearishColor: "#ef5350"},
 	})
-	project.AddSources(cachedSourceBinance)
-	project.AddTradingPairs(allPairs...)
-	project.AddIndicators(
-		GetDemoLineIndicator(),
-		GetDemoStepLineIndicator(),
-		GetDemoBarChartIndicator(),
-		GetDemoAreaChartIndicator(),
-		GetDemoCandleStickIndicator(),
-		GetDemoTableIndicator(),
-		GetDemoPieChartIndicator(),
-		GetDemoPieChart2Indicator(),
-	)
-	return *project
+	for _, pair := range allPairs {
+		project.AddPair(pair)
+	}
+	project.AddIndicatorByName(GetDemoLineIndicator().GetName())
+	project.AddIndicatorByName(GetDemoStepLineIndicator().GetName())
+	project.AddIndicatorByName(GetDemoBarChartIndicator().GetName())
+	project.AddIndicatorByName(GetDemoAreaChartIndicator().GetName())
+	project.AddIndicatorByName(GetDemoCandleStickIndicator().GetName())
+	project.AddIndicatorByName(GetDemoTableIndicator().GetName())
+	project.AddIndicatorByName(GetDemoPieChartIndicator().GetName())
+	project.AddIndicatorByName(GetDemoPieChart2Indicator().GetName())
+	return project
 }
 
 // ---------------------------------------------------------------------------

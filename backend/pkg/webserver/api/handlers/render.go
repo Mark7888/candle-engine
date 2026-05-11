@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
 	"time"
 
 	"candle-engine/pkg/chartmanager"
@@ -107,11 +106,7 @@ func emptyRenderResponse(render chartproject.RenderableChartProject) models.Proj
 //	@Failure		500		{object}	models.ErrorResponse
 //	@Router			/api/v1/projects/{id}/render [get]
 func RenderProject(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "invalid project id", Details: "id must be a non-negative integer"})
-		return
-	}
+	id := c.Param("id")
 
 	source := c.Query("source")
 	pair := c.Query("pair")
@@ -121,9 +116,7 @@ func RenderProject(c *gin.Context) {
 	}
 
 	cm := chartmanager.GetChartManager()
-	// GetChartProject returns a value copy so each request works on its own
-	// instance, making concurrent pair switching safe.
-	project, found := cm.GetChartProject(id)
+	project, found := cm.GetProjectByID(id)
 	if !found {
 		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "project not found"})
 		return

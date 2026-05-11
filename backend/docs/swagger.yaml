@@ -105,7 +105,7 @@ definitions:
           type: string
         type: array
       id:
-        type: integer
+        type: string
       pairs:
         items:
           $ref: '#/definitions/models.SourcePair'
@@ -156,7 +156,7 @@ definitions:
   models.ProjectSummary:
     properties:
       id:
-        type: integer
+        type: string
       title:
         type: string
     type: object
@@ -213,11 +213,11 @@ paths:
       description: Returns full details for a chart project, including available trading
         pairs and time frames.
       parameters:
-      - description: Project ID (zero-based index)
+      - description: Project UUID
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -225,10 +225,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ProjectDetailResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:

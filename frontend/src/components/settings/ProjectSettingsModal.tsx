@@ -20,7 +20,7 @@ import { useProjectSettingsStore } from '../../store/projectSettingsStore';
 import type { ProjectSettingsConfig } from '../../store/defaultSettings';
 
 interface ProjectSettingsModalProps {
-  projectId: number;
+  projectId: string;
   isOpen: boolean;
   onClose: () => void;
 }

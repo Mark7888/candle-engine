@@ -11,7 +11,7 @@ const api = axios.create({
 export const fetchProjects = (): Promise<Project[]> =>
   api.get<{ projects: Project[] }>('/api/v1/projects').then((r) => r.data.projects);
 
-export const fetchProject = (id: number): Promise<ProjectDetail> =>
+export const fetchProject = (id: string): Promise<ProjectDetail> =>
   api.get<ProjectDetail>(`/api/v1/projects/${id}`).then((r) => r.data);
 
 interface RenderParams {
@@ -55,7 +55,7 @@ export interface RenderConfig {
  * @param config - Render configuration (source, pair, and optional overrides)
  */
 export const fetchRender = (
-  id: number,
+  id: string,
   config: RenderConfig
 ): Promise<RenderResponse> => {
   const params: RenderParams = { source: config.source, pair: config.pair };

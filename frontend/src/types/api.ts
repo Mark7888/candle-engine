@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 export interface Project {
-  id: number;
+  id: string;
   title: string;
 }
 
@@ -18,7 +18,7 @@ export interface TimeRange {
 }
 
 export interface ProjectDetail {
-  id: number;
+  id: string;
   title: string;
   timeFrame: string;
   timeRange: TimeRange;

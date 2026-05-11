@@ -200,7 +200,7 @@ const HEADER_HEIGHT = 36;
 
 interface IndicatorPanelProps {
   renderData: RenderResponse | null;
-  projectId: number;
+  projectId: string;
 }
 
 /**

@@ -4,16 +4,16 @@ import { DEFAULT_PROJECT_SETTINGS, type ProjectSettingsConfig } from './defaultS
 
 interface ProjectSettingsStoreState {
   /** Saved settings keyed by project ID. */
-  settings: Record<number, ProjectSettingsConfig>;
+  settings: Record<string, ProjectSettingsConfig>;
 
   /**
    * Returns the saved settings for the given project, falling back to the
    * defaults when no record has been saved yet.
    */
-  getSettings: (projectId: number) => ProjectSettingsConfig;
+  getSettings: (projectId: string) => ProjectSettingsConfig;
 
   /** Persists the complete settings object for the given project. */
-  saveSettings: (projectId: number, config: ProjectSettingsConfig) => void;
+  saveSettings: (projectId: string, config: ProjectSettingsConfig) => void;
 }
 
 export const useProjectSettingsStore = create<ProjectSettingsStoreState>()(
@@ -21,10 +21,10 @@ export const useProjectSettingsStore = create<ProjectSettingsStoreState>()(
     (set, get) => ({
       settings: {},
 
-      getSettings: (projectId: number) =>
+      getSettings: (projectId: string) =>
         get().settings[projectId] ?? DEFAULT_PROJECT_SETTINGS,
 
-      saveSettings: (projectId: number, config: ProjectSettingsConfig) =>
+      saveSettings: (projectId: string, config: ProjectSettingsConfig) =>
         set((s) => ({
           settings: { ...s.settings, [projectId]: config },
         })),

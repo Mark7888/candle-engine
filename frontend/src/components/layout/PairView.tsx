@@ -10,7 +10,7 @@ interface PairViewProps {
   renderData: RenderResponse | null;
   loading: boolean;
   error: string | null;
-  projectId: number;
+  projectId: string;
 }
 
 /**
