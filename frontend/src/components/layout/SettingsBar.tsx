@@ -13,6 +13,7 @@ import { BsPlayCircle } from 'react-icons/bs';
 import { LuSettings2 } from 'react-icons/lu';
 import ProjectSettingsModal from '../settings/ProjectSettingsModal';
 import { validateDateRange, isDateRangeValid } from '../../utils/validation';
+import type { CandleColors } from '../../types/api';
 
 interface SettingsBarProps {
   /** The ID of the project this bar belongs to (used for per-project settings). */
@@ -27,6 +28,10 @@ interface SettingsBarProps {
   onTimeFrameChange?: (value: string) => void;
   onRangeFromChange?: (value: string) => void;
   onRangeToChange?: (value: string) => void;
+  /** Current candle colors (read from backend-owned project detail). */
+  candleColors?: CandleColors;
+  /** Called with new colors when the user saves the settings modal. */
+  onColorsChange?: (bullish: string, bearish: string) => void;
   /** Whether Playback mode is currently active for this project. */
   playbackActive?: boolean;
   /** Called when the user clicks the Playback mode toggle button. */
@@ -35,23 +40,9 @@ interface SettingsBarProps {
 
 /**
  * SettingsBar – a horizontal toolbar rendered inside a project, above the pair
- * selector and chart.  It lets the user override the project-level time frame
- * and date range without touching any backend state.
- *
- * Props:
- *   projectId            number     – the owning project (required for per-project settings)
- *   availableTimeFrames  string[]   – ordered list of valid time frames
- *   defaultTimeFrame     string     – project default (used as placeholder)
- *   defaultRangeFrom     string     – project default range start (ISO)
- *   defaultRangeTo       string     – project default range end (ISO)
- *   timeFrame            string|null  – current client-side override
- *   rangeFrom            string|null  – current client-side override
- *   rangeTo              string|null  – current client-side override
- *   onTimeFrameChange    (value: string) => void
- *   onRangeFromChange    (value: string) => void
- *   onRangeToChange      (value: string) => void
- *   playbackActive       boolean – whether Playback mode is currently active
- *   onPlaybackToggle     () => void – called when the Playback button is clicked
+ * selector and chart.  It lets the user change the time frame and date range
+ * (which are persisted on the backend), and open the Project Settings modal to
+ * change candle colors.
  */
 export default function SettingsBar({
   projectId,
@@ -65,6 +56,8 @@ export default function SettingsBar({
   onTimeFrameChange,
   onRangeFromChange,
   onRangeToChange,
+  candleColors,
+  onColorsChange,
   playbackActive = false,
   onPlaybackToggle,
 }: SettingsBarProps) {
@@ -126,6 +119,12 @@ export default function SettingsBar({
 
   // Validate the current draft values on every render (cheap, pure computation).
   const rangeValidation = validateDateRange(fromDraft, toDraft);
+
+  // Default colors for when the project detail hasn't loaded yet.
+  const effectiveCandleColors: CandleColors = candleColors ?? {
+    bullishColor: '#26a69a',
+    bearishColor: '#ef5350',
+  };
 
   return (
     <Flex
@@ -266,6 +265,11 @@ export default function SettingsBar({
         projectId={projectId}
         isOpen={settingsOpen}
         onClose={handleSettingsClose}
+        candleColors={effectiveCandleColors}
+        onColorsChange={(bullish, bearish) => {
+          handleSettingsClose();
+          onColorsChange?.(bullish, bearish);
+        }}
       />
     </Flex>
   );

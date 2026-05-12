@@ -9,17 +9,6 @@ interface FloatingWidget {
   h: number;
 }
 
-interface ActivePairEntry {
-  source: string;
-  pair: string;
-}
-
-interface ProjectSettings {
-  timeFrame?: string | null;
-  rangeFrom?: string | null;
-  rangeTo?: string | null;
-}
-
 interface UIStoreState {
   // Logs panel open/closed state – global, synced across all pair tabs
   logsPanelOpen: boolean;
@@ -33,10 +22,6 @@ interface UIStoreState {
   activeProjectId: string | null;
   setActiveProjectId: (id: string) => void;
 
-  // Active pair per project: { [projectId]: { source, pair } }
-  activePairs: Record<string, ActivePairEntry>;
-  setActivePair: (projectId: string, source: string, pair: string) => void;
-
   // Indicator panel open/closed — global, same behaviour as logsPanelOpen
   indicatorPanelOpen: boolean;
   setIndicatorPanelOpen: (value: boolean) => void;
@@ -49,13 +34,6 @@ interface UIStoreState {
   // id is the indicator name. NOT persisted — session-only.
   floatingWidgets: Record<string, FloatingWidget[]>;
   setFloatingWidgets: (projectId: string, widgets: FloatingWidget[]) => void;
-
-  // Per-project chart settings (timeFrame, rangeFrom, rangeTo).
-  // null means "use the project default from the backend".
-  // Persisted so selections survive page reloads and are synced across pairs
-  // within the same project.
-  projectSettings: Record<string, ProjectSettings>;
-  setProjectSetting: (projectId: string, patch: Partial<ProjectSettings>) => void;
 }
 
 export const useUIStore = create<UIStoreState>()(
@@ -78,16 +56,6 @@ export const useUIStore = create<UIStoreState>()(
       activeProjectId: null,
       setActiveProjectId: (id: string) => set({ activeProjectId: id }),
 
-      // Active pair per project: { [projectId]: { source, pair } }
-      activePairs: {},
-      setActivePair: (projectId: string, source: string, pair: string) =>
-        set((s) => ({
-          activePairs: {
-            ...s.activePairs,
-            [projectId]: { source, pair },
-          },
-        })),
-
       // Indicator panel open/closed — global, same behaviour as logsPanelOpen
       indicatorPanelOpen: true,
       setIndicatorPanelOpen: (value: boolean) => set({ indicatorPanelOpen: value }),
@@ -103,19 +71,6 @@ export const useUIStore = create<UIStoreState>()(
         set((s) => ({
           floatingWidgets: { ...s.floatingWidgets, [projectId]: widgets },
         })),
-
-      // Per-project chart settings (timeFrame, rangeFrom, rangeTo).
-      // null means "use the project default from the backend".
-      // Persisted so selections survive page reloads and are synced across pairs
-      // within the same project.
-      projectSettings: {},
-      setProjectSetting: (projectId: string, patch: Partial<ProjectSettings>) =>
-        set((s) => ({
-          projectSettings: {
-            ...s.projectSettings,
-            [projectId]: { ...(s.projectSettings[projectId] ?? {}), ...patch },
-          },
-        })),
     }),
     {
       name: 'candle-engine-ui',
@@ -125,7 +80,6 @@ export const useUIStore = create<UIStoreState>()(
         hiddenLogLevels: s.hiddenLogLevels,
         indicatorPanelOpen: s.indicatorPanelOpen,
         indicatorPanelHeight: s.indicatorPanelHeight,
-        projectSettings: s.projectSettings,
       }),
     }
   )

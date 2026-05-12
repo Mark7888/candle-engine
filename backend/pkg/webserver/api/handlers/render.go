@@ -2,14 +2,11 @@ package handlers
 
 import (
 	"net/http"
-	"time"
 
 	"candle-engine/pkg/chartmanager"
 	"candle-engine/pkg/chartproject"
 	"candle-engine/pkg/indicators"
-	"candle-engine/pkg/sources"
 	"candle-engine/pkg/webserver/api/models"
-	apival "candle-engine/pkg/webserver/api/validation"
 
 	"github.com/gin-gonic/gin"
 )
@@ -87,33 +84,19 @@ func emptyRenderResponse(render chartproject.RenderableChartProject) models.Proj
 // RenderProject godoc
 //
 //	@Summary		Render chart data for a project
-//	@Description	Fetches OHLCV data and computes all configured indicators for the requested trading pair.
+//	@Description	Fetches OHLCV data and computes all configured indicators using the project's stored settings.
 //	@Description	The response contains raw candle and indicator data for the frontend to render.
 //	@Description	Indicator PlotPoints arrays are index-aligned with the active pair's candle entries.
-//	@Description	Optional query parameters timeFrame, rangeFrom, rangeTo, candleBullishColor, and candleBearishColor
-//	@Description	override the project defaults for this request only; no server-side state is mutated.
+//	@Description	To change the active pair, time frame, date range, or candle colours, use PATCH /settings first.
 //	@Tags			projects
 //	@Produce		json
-//	@Param			id			path		string	true	"Project UUID"
-//	@Param			source		query		string	true	"Data source name (e.g. 'Binance')"
-//	@Param			pair		query		string	true	"Trading pair ID (e.g. 'BTCUSDC')"
-//	@Param			timeFrame	query		string	false	"Override time frame (e.g. '1h', '4h', '1d')"
-//	@Param			rangeFrom	query		string	false	"Override range start as RFC3339 timestamp"
-//	@Param			rangeTo		query		string	false	"Override range end as RFC3339 timestamp"
-//	@Success		200		{object}	models.ProjectRenderResponse
-//	@Failure		400		{object}	models.ErrorResponse
-//	@Failure		404		{object}	models.ErrorResponse
-//	@Failure		500		{object}	models.ErrorResponse
+//	@Param			id	path		string	true	"Project UUID"
+//	@Success		200	{object}	models.ProjectRenderResponse
+//	@Failure		404	{object}	models.ErrorResponse
+//	@Failure		500	{object}	models.ErrorResponse
 //	@Router			/api/v1/projects/{id}/render [get]
 func RenderProject(c *gin.Context) {
 	id := c.Param("id")
-
-	source := c.Query("source")
-	pair := c.Query("pair")
-	if source == "" || pair == "" {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "missing query parameters", Details: "both 'source' and 'pair' are required"})
-		return
-	}
 
 	cm := chartmanager.GetChartManager()
 	project, found := cm.GetProjectByID(id)
@@ -122,69 +105,8 @@ func RenderProject(c *gin.Context) {
 		return
 	}
 
-	// Build a RenderConfig from query parameters; unset fields fall back to
-	// the project's configured defaults inside GetRender.
-	renderCfg := chartproject.RenderConfig{
-		ActivePair: sources.SourcePairId{SourceName: source, PairId: pair},
-	}
-
-	if tf := c.Query("timeFrame"); tf != "" {
-		renderCfg.TimeFrame = tf
-	}
-
-	if rangeFromStr := c.Query("rangeFrom"); rangeFromStr != "" {
-		t, parseErr := time.Parse(time.RFC3339, rangeFromStr)
-		if parseErr != nil {
-			c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "invalid rangeFrom", Details: "rangeFrom must be an RFC3339 timestamp (e.g. 2024-01-01T00:00:00Z)"})
-			return
-		}
-		renderCfg.RangeFrom = t
-	}
-
-	if rangeToStr := c.Query("rangeTo"); rangeToStr != "" {
-		t, parseErr := time.Parse(time.RFC3339, rangeToStr)
-		if parseErr != nil {
-			c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "invalid rangeTo", Details: "rangeTo must be an RFC3339 timestamp (e.g. 2024-12-31T23:59:59Z)"})
-			return
-		}
-		renderCfg.RangeTo = t
-	}
-
-	if bullish := c.Query("candleBullishColor"); bullish != "" {
-		if renderCfg.CandleColors == nil {
-			renderCfg.CandleColors = &sources.CandleColorConfig{}
-		}
-		renderCfg.CandleColors.BullishColor = bullish
-	}
-
-	if bearish := c.Query("candleBearishColor"); bearish != "" {
-		if renderCfg.CandleColors == nil {
-			renderCfg.CandleColors = &sources.CandleColorConfig{}
-		}
-		renderCfg.CandleColors.BearishColor = bearish
-	}
-
-	// Semantic validation of the resolved time range when at least one boundary
-	// was supplied. Start from the project defaults and merge in the overrides
-	// so the validator sees the complete range.
-	if !renderCfg.RangeFrom.IsZero() || !renderCfg.RangeTo.IsZero() {
-		base := project.GetTimeRange()
-		resolved := base
-		if !renderCfg.RangeFrom.IsZero() {
-			resolved.Start = renderCfg.RangeFrom
-		}
-		if !renderCfg.RangeTo.IsZero() {
-			resolved.End = renderCfg.RangeTo
-		}
-		if validationErrs := apival.ValidateTimeRange(resolved); len(validationErrs) != 0 {
-			partial := chartproject.NewRenderableChartProject()
-			partial.ProjectErrors = validationErrs
-			c.JSON(http.StatusOK, emptyRenderResponse(partial))
-			return
-		}
-	}
-
-	render, err := project.GetRender(renderCfg)
+	// Use the project's stored settings — no per-request overrides.
+	render, err := project.GetRender(chartproject.RenderConfig{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "failed to render chart", Details: err.Error()})
 		return

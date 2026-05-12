@@ -11,6 +11,7 @@ type ChartProjectConfig struct {
 	TimeFrame    string                    `json:"timeFrame,omitempty"`
 	TimeRange    sources.TimeRange         `json:"timeRange,omitempty"`
 	CandleColors sources.CandleColorConfig `json:"candleColors,omitempty"`
+	ActivePair   sources.SourcePairId      `json:"activePair,omitempty"`
 }
 
 // RenderConfig holds per-request render parameters. Zero-value fields fall back to the project's configured defaults.

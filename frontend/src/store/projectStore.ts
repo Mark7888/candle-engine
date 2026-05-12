@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { fetchProjects, fetchProject, fetchRender } from '../api/client';
-import type { RenderConfig } from '../api/client';
+import { fetchProjects, fetchProject, fetchRender, updateProjectSettings } from '../api/client';
+import type { UpdateSettingsRequest } from '../types/api';
 import type { Project, ProjectDetail, RenderResponse } from '../types/api';
 
 interface ProjectStoreState {
@@ -12,22 +12,18 @@ interface ProjectStoreState {
   // Per-project detail cache
   projectDetails: Record<string, ProjectDetail>;
 
-  // Per-pair render cache key: `${projectId}-${source}-${pair}`
+  // Per-project render cache key: projectId
   renderData: Record<string, RenderResponse>;
   renderLoading: Record<string, boolean>;
   renderErrors: Record<string, string | null>;
 
   loadProjects: () => Promise<void>;
   loadProject: (id: string) => Promise<void>;
+  reloadProject: (id: string) => Promise<void>;
   clearProjectRenderCache: (projectId: string) => void;
-  loadRender: (
-    projectId: string,
-    config: RenderConfig
-  ) => Promise<void>;
-  getRender: (
-    projectId: number,
-    config: RenderConfig
-  ) => { data: RenderResponse | null; loading: boolean; error: string | null };
+  loadRender: (projectId: string) => Promise<void>;
+  getRender: (projectId: string) => { data: RenderResponse | null; loading: boolean; error: string | null };
+  updateSettings: (projectId: string, settings: UpdateSettingsRequest) => Promise<void>;
 }
 
 export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
@@ -39,7 +35,7 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
   // Per-project detail cache
   projectDetails: {},
 
-  // Per-pair render cache key: `${projectId}-${source}-${pair}`
+  // Per-project render cache key: projectId
   renderData: {},
   renderLoading: {},
   renderErrors: {},
@@ -66,23 +62,27 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
     }
   },
 
+  /** Re-fetch project detail unconditionally (e.g. after settings change). */
+  reloadProject: async (id: string) => {
+    try {
+      const detail = await fetchProject(id);
+      set((s) => ({
+        projectDetails: { ...s.projectDetails, [id]: detail },
+      }));
+    } catch (err) {
+      console.error('Failed to reload project', id, err);
+    }
+  },
+
   /**
-   * Clear all cached render data for a project (all pairs).
-   * Called when project-level settings (timeFrame/range) change so the next
-   * loadRender() call fetches fresh data with the updated parameters.
+   * Clear cached render data for a project.
+   * Called when settings change so the next loadRender() fetches fresh data.
    */
   clearProjectRenderCache: (projectId: string) => {
     set((s) => {
-      const prefix = `${projectId}-`;
-      const newRenderData = Object.fromEntries(
-        Object.entries(s.renderData).filter(([k]) => !k.startsWith(prefix))
-      );
-      const newRenderLoading = Object.fromEntries(
-        Object.entries(s.renderLoading).filter(([k]) => !k.startsWith(prefix))
-      );
-      const newRenderErrors = Object.fromEntries(
-        Object.entries(s.renderErrors).filter(([k]) => !k.startsWith(prefix))
-      );
+      const { [projectId]: _data, ...newRenderData } = s.renderData;
+      const { [projectId]: _loading, ...newRenderLoading } = s.renderLoading;
+      const { [projectId]: _error, ...newRenderErrors } = s.renderErrors;
       return {
         renderData: newRenderData,
         renderLoading: newRenderLoading,
@@ -92,44 +92,51 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
   },
 
   /**
-   * Load (or re-fetch) render data for a pair.
-   *
-   * @param projectId
-   * @param config - Render configuration (source, pair, and optional overrides)
+   * Load (or re-fetch) render data for a project using its stored backend settings.
    */
-  loadRender: async (
-    projectId: string,
-    config: RenderConfig
-  ) => {
-    const key = `${projectId}-${config.source}-${config.pair}-${config.candleBullishColor ?? ''}-${config.candleBearishColor ?? ''}`;
-    // Skip if already cached. Cache invalidation when settings change is
-    // handled by clearProjectRenderCache, so the cache is always safe to use.
-    if (get().renderData[key]) return;
+  loadRender: async (projectId: string) => {
+    if (get().renderData[projectId]) return;
 
     set((s) => ({
-      renderLoading: { ...s.renderLoading, [key]: true },
-      renderErrors: { ...s.renderErrors, [key]: null },
+      renderLoading: { ...s.renderLoading, [projectId]: true },
+      renderErrors: { ...s.renderErrors, [projectId]: null },
     }));
     try {
-      const data = await fetchRender(projectId, config);
+      const data = await fetchRender(projectId);
       set((s) => ({
-        renderData: { ...s.renderData, [key]: data },
-        renderLoading: { ...s.renderLoading, [key]: false },
+        renderData: { ...s.renderData, [projectId]: data },
+        renderLoading: { ...s.renderLoading, [projectId]: false },
       }));
     } catch (err) {
       set((s) => ({
-        renderErrors: { ...s.renderErrors, [key]: (err as Error).message },
-        renderLoading: { ...s.renderLoading, [key]: false },
+        renderErrors: { ...s.renderErrors, [projectId]: (err as Error).message },
+        renderLoading: { ...s.renderLoading, [projectId]: false },
       }));
     }
   },
 
-  getRender: (projectId: number, config: RenderConfig) => {
-    const key = `${projectId}-${config.source}-${config.pair}-${config.candleBullishColor ?? ''}-${config.candleBearishColor ?? ''}`;
-    return {
-      data: get().renderData[key] ?? null,
-      loading: get().renderLoading[key] ?? false,
-      error: get().renderErrors[key] ?? null,
-    };
+  getRender: (projectId: string) => ({
+    data: get().renderData[projectId] ?? null,
+    loading: get().renderLoading[projectId] ?? false,
+    error: get().renderErrors[projectId] ?? null,
+  }),
+
+  /**
+   * Update backend settings for a project, then clear the render cache so the
+   * next loadRender() fetches fresh data.  The updated project detail is stored
+   * so the UI reflects the new state immediately.
+   */
+  updateSettings: async (projectId: string, settings: UpdateSettingsRequest) => {
+    try {
+      const updatedDetail = await updateProjectSettings(projectId, settings);
+      set((s) => ({
+        projectDetails: { ...s.projectDetails, [projectId]: updatedDetail },
+      }));
+      // Invalidate render cache so the next render reflects the new settings.
+      get().clearProjectRenderCache(projectId);
+    } catch (err) {
+      console.error('Failed to update project settings', projectId, err);
+      throw err;
+    }
   },
 }));

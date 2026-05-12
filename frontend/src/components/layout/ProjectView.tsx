@@ -10,9 +10,7 @@ import {
   useColorModeValue,
 } from '@chakra-ui/react';
 import { useProjectStore } from '../../store/projectStore';
-import { useUIStore } from '../../store/uiStore';
 import { usePlaybackStore } from '../../store/playbackStore';
-import { useProjectSettingsStore } from '../../store/projectSettingsStore';
 import { sliceRenderData } from '../../utils/sliceRenderData';
 import PairView from '../layout/PairView';
 import SettingsBar from '../layout/SettingsBar';
@@ -25,35 +23,16 @@ interface ProjectViewProps {
 /**
  * ProjectView – renders the settings bar, the inner pair tabs (vertical
  * sidebar) and the PairView for the currently selected pair.
+ *
+ * All mutable settings (active pair, time frame, date range, candle colours)
+ * are owned by the backend.  The frontend reads them from the project detail
+ * response and calls PATCH /settings whenever the user changes them.
  */
 export default function ProjectView({ projectId }: ProjectViewProps) {
   const loadProject = useProjectStore((s) => s.loadProject);
   const loadRender = useProjectStore((s) => s.loadRender);
-  const clearProjectRenderCache = useProjectStore((s) => s.clearProjectRenderCache);
+  const updateSettings = useProjectStore((s) => s.updateSettings);
   const projectDetail = useProjectStore((s) => s.projectDetails[projectId]);
-
-  const activePairs = useUIStore((s) => s.activePairs);
-  const setActivePair = useUIStore((s) => s.setActivePair);
-
-  // Select each setting individually so selectors always return a stable
-  // primitive (string | null), avoiding the infinite-loop that `?? {}` causes
-  // when the project key is not yet present in the store.
-  const settingsTimeFrame = useUIStore((s) => s.projectSettings[projectId]?.timeFrame ?? null);
-  const settingsRangeFrom = useUIStore((s) => s.projectSettings[projectId]?.rangeFrom ?? null);
-  const settingsRangeTo = useUIStore((s) => s.projectSettings[projectId]?.rangeTo ?? null);
-  const setProjectSetting = useUIStore((s) => s.setProjectSetting);
-
-  // Per-project visual settings (candle colors) from the settings store.
-  const candleBullishColor = useProjectSettingsStore((s) => s.getSettings(projectId).candleBullishColor);
-  const candleBearishColor = useProjectSettingsStore((s) => s.getSettings(projectId).candleBearishColor);
-
-  const activePairEntry = activePairs[projectId];
-
-  // Derive the cache key outside hooks so it can be used in selectors below.
-  // Colors are included so that a color change triggers a fresh fetch.
-  const renderKey = activePairEntry
-    ? `${projectId}-${activePairEntry.source}-${activePairEntry.pair}-${candleBullishColor}-${candleBearishColor}`
-    : null;
 
   // --- Playback store – all state is project-level so pair switches share position ---
   const playbackProjectState = usePlaybackStore((s) => s.projects[projectId]);
@@ -71,54 +50,59 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
   const setPlaybackPlayInterval = usePlaybackStore((s) => s.setPlayInterval);
 
   // Subscribe directly to the data/loading/error slices so the component
-  // re-renders when loadRender() updates them (subscribing to getRender — a
-  // stable function reference — would never trigger a re-render).
-  const renderData = useProjectStore((s) => (renderKey ? (s.renderData[renderKey] ?? null) : null));
-  const loading = useProjectStore((s) => (renderKey ? (s.renderLoading[renderKey] ?? false) : false));
-  const error = useProjectStore((s) => (renderKey ? (s.renderErrors[renderKey] ?? null) : null));
+  // re-renders when loadRender() updates them.
+  const renderData = useProjectStore((s) => s.renderData[projectId] ?? null);
+  const loading = useProjectStore((s) => s.renderLoading[projectId] ?? false);
+  const error = useProjectStore((s) => s.renderErrors[projectId] ?? null);
 
   // Load project detail on mount
   useEffect(() => {
     loadProject(projectId);
   }, [projectId, loadProject]);
 
-  // Set default pair once project detail arrives
+  // Load render data once the project detail is available
   useEffect(() => {
-    if (projectDetail && !activePairEntry && projectDetail.pairs?.length > 0) {
-      const first = projectDetail.pairs[0];
-      setActivePair(projectId, first.sourceName, first.pairId);
+    if (projectDetail) {
+      loadRender(projectId);
     }
-  }, [projectDetail, activePairEntry, projectId, setActivePair]);
-
-  // Load render data whenever active pair, any setting value, or color settings change
-  useEffect(() => {
-    if (activePairEntry) {
-      loadRender(projectId, {
-        source: activePairEntry.source,
-        pair: activePairEntry.pair,
-        timeFrame: settingsTimeFrame,
-        rangeFrom: settingsRangeFrom,
-        rangeTo: settingsRangeTo,
-        candleBullishColor,
-        candleBearishColor,
-      });
-    }
-  }, [projectId, activePairEntry, settingsTimeFrame, settingsRangeFrom, settingsRangeTo, candleBullishColor, candleBearishColor, loadRender]);
+  }, [projectId, projectDetail, loadRender]);
 
   const handleSelectPair = useCallback(
-    (sourceName: string, pairId: string) => {
-      setActivePair(projectId, sourceName, pairId);
+    async (sourceName: string, pairId: string) => {
+      try {
+        await updateSettings(projectId, { activePair: { sourceName, pairId } });
+        loadRender(projectId);
+      } catch {
+        // error already logged in store
+      }
     },
-    [projectId, setActivePair]
+    [projectId, updateSettings, loadRender]
   );
 
-  // When a setting changes: clear cached renders so the new request goes out
+  // When a time-frame or range setting changes: update backend, then re-render
   const handleSettingChange = useCallback(
-    (patch: { timeFrame?: string; rangeFrom?: string; rangeTo?: string }) => {
-      clearProjectRenderCache(projectId);
-      setProjectSetting(projectId, patch);
+    async (patch: { timeFrame?: string; rangeFrom?: string; rangeTo?: string }) => {
+      try {
+        await updateSettings(projectId, patch);
+        loadRender(projectId);
+      } catch {
+        // error already logged in store
+      }
     },
-    [projectId, clearProjectRenderCache, setProjectSetting]
+    [projectId, updateSettings, loadRender]
+  );
+
+  // When candle colors change (from ProjectSettingsModal via the store)
+  const handleColorsChange = useCallback(
+    async (candleBullishColor: string, candleBearishColor: string) => {
+      try {
+        await updateSettings(projectId, { candleBullishColor, candleBearishColor });
+        loadRender(projectId);
+      } catch {
+        // error already logged in store
+      }
+    },
+    [projectId, updateSettings, loadRender]
   );
 
   // --- Playback callbacks (stable references to prevent interval restarts) ---
@@ -193,7 +177,8 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
     );
   }
 
-  // Use the first available time frame as the default when none is set yet
+  // Derive display values from the backend-owned project detail.
+  const activePairEntry = projectDetail.activePair;
   const defaultTimeFrame = projectDetail.timeFrame ?? '';
   const defaultRangeFrom = projectDetail.timeRange?.start ?? '';
   const defaultRangeTo = projectDetail.timeRange?.end ?? '';
@@ -207,12 +192,14 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
         defaultTimeFrame={defaultTimeFrame}
         defaultRangeFrom={defaultRangeFrom}
         defaultRangeTo={defaultRangeTo}
-        timeFrame={settingsTimeFrame}
-        rangeFrom={settingsRangeFrom}
-        rangeTo={settingsRangeTo}
+        timeFrame={projectDetail.timeFrame}
+        rangeFrom={projectDetail.timeRange?.start ?? null}
+        rangeTo={projectDetail.timeRange?.end ?? null}
+        candleColors={projectDetail.candleColors}
         onTimeFrameChange={(tf) => handleSettingChange({ timeFrame: tf })}
         onRangeFromChange={(v) => handleSettingChange({ rangeFrom: v })}
         onRangeToChange={(v) => handleSettingChange({ rangeTo: v })}
+        onColorsChange={handleColorsChange}
         playbackActive={playbackIsActive}
         onPlaybackToggle={handlePlaybackToggle}
       />
@@ -251,8 +238,8 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
         >
           {projectDetail.pairs.map((pair) => {
             const isActive =
-              activePairEntry?.source === pair.sourceName &&
-              activePairEntry?.pair === pair.pairId;
+              activePairEntry?.sourceName === pair.sourceName &&
+              activePairEntry?.pairId === pair.pairId;
             return (
               <Button
                 key={`${pair.sourceName}-${pair.pairId}`}

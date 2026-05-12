@@ -16,37 +16,34 @@ import {
   Text,
   useColorModeValue,
 } from '@chakra-ui/react';
-import { useProjectSettingsStore } from '../../store/projectSettingsStore';
-import type { ProjectSettingsConfig } from '../../store/defaultSettings';
+import type { CandleColors } from '../../types/api';
 
 interface ProjectSettingsModalProps {
   projectId: string;
   isOpen: boolean;
   onClose: () => void;
+  /** Current candle colors read from the backend-owned project detail. */
+  candleColors: CandleColors;
+  /** Called with the new colors when the user saves. */
+  onColorsChange: (bullish: string, bearish: string) => void;
 }
 
 /**
  * ProjectSettingsModal – a project-scoped settings dialog.
  *
- * The modal occupies 60 % of the viewport (20 % inset on each side) and
- * renders a semi-transparent overlay for the remaining area.  Clicking
- * Cancel discards any unsaved edits; Save persists them to localStorage via
- * the projectSettingsStore.
+ * Visual settings (candle colors) are owned by the backend.  Clicking Save
+ * calls onColorsChange, which the parent uses to PATCH the backend and
+ * re-fetch the render.  Clicking Cancel discards any unsaved edits.
  */
 export default function ProjectSettingsModal({
-  projectId,
   isOpen,
   onClose,
+  candleColors,
+  onColorsChange,
 }: ProjectSettingsModalProps) {
-  const getSettings = useProjectSettingsStore((s) => s.getSettings);
-  const saveSettings = useProjectSettingsStore((s) => s.saveSettings);
-
-  // Draft is initialised from the persisted settings when the component mounts.
-  // SettingsBar passes a new `key` prop every time the modal is opened, which
-  // remounts this component and re-runs this initialiser – no effect needed.
-  const [draft, setDraft] = useState<ProjectSettingsConfig>(() =>
-    getSettings(projectId)
-  );
+  // Draft is initialised from the current backend-owned colors each time the
+  // modal opens (SettingsBar passes a new key every time it opens).
+  const [draft, setDraft] = useState<CandleColors>(() => ({ ...candleColors }));
 
   const labelColor = useColorModeValue('gray.600', 'gray.400');
   const dividerColor = useColorModeValue('gray.200', 'gray.600');
@@ -54,25 +51,25 @@ export default function ProjectSettingsModal({
   const borderColor = useColorModeValue('gray.200', 'gray.600');
 
   const handleSave = useCallback(() => {
-    saveSettings(projectId, draft);
+    onColorsChange(draft.bullishColor, draft.bearishColor);
     onClose();
-  }, [projectId, draft, saveSettings, onClose]);
+  }, [draft, onColorsChange, onClose]);
 
   const handleCancel = useCallback(() => {
-    setDraft(getSettings(projectId));
+    setDraft({ ...candleColors });
     onClose();
-  }, [projectId, getSettings, onClose]);
+  }, [candleColors, onClose]);
 
   const handleBullishColorChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
-      setDraft((d) => ({ ...d, candleBullishColor: e.target.value }));
+      setDraft((d) => ({ ...d, bullishColor: e.target.value }));
     },
     []
   );
 
   const handleBearishColorChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
-      setDraft((d) => ({ ...d, candleBearishColor: e.target.value }));
+      setDraft((d) => ({ ...d, bearishColor: e.target.value }));
     },
     []
   );
@@ -139,7 +136,7 @@ export default function ProjectSettingsModal({
                 >
                   <input
                     type="color"
-                    value={draft.candleBullishColor}
+                    value={draft.bullishColor}
                     onChange={handleBullishColorChange}
                     style={{
                       width: '100%',
@@ -152,7 +149,7 @@ export default function ProjectSettingsModal({
                   />
                 </Box>
                 <Input
-                  value={draft.candleBullishColor}
+                  value={draft.bullishColor}
                   onChange={handleBullishColorChange}
                   size="sm"
                   maxW="120px"
@@ -181,7 +178,7 @@ export default function ProjectSettingsModal({
                 >
                   <input
                     type="color"
-                    value={draft.candleBearishColor}
+                    value={draft.bearishColor}
                     onChange={handleBearishColorChange}
                     style={{
                       width: '100%',
@@ -194,7 +191,7 @@ export default function ProjectSettingsModal({
                   />
                 </Box>
                 <Input
-                  value={draft.candleBearishColor}
+                  value={draft.bearishColor}
                   onChange={handleBearishColorChange}
                   size="sm"
                   maxW="120px"
