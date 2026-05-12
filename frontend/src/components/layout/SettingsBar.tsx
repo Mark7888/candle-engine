@@ -266,10 +266,7 @@ export default function SettingsBar({
         isOpen={settingsOpen}
         onClose={handleSettingsClose}
         candleColors={effectiveCandleColors}
-        onColorsChange={(bullish, bearish) => {
-          handleSettingsClose();
-          onColorsChange?.(bullish, bearish);
-        }}
+        onColorsChange={onColorsChange ?? (() => {})}
       />
     </Flex>
   );
