@@ -90,11 +90,11 @@ func emptyRenderResponse(render chartproject.RenderableChartProject) models.Proj
 //	@Description	Fetches OHLCV data and computes all configured indicators for the requested trading pair.
 //	@Description	The response contains raw candle and indicator data for the frontend to render.
 //	@Description	Indicator PlotPoints arrays are index-aligned with the active pair's candle entries.
-//	@Description	Optional query parameters timeFrame, rangeFrom, and rangeTo override the project defaults
-//	@Description	for this request only; no server-side state is mutated.
+//	@Description	Optional query parameters timeFrame, rangeFrom, rangeTo, candleBullishColor, and candleBearishColor
+//	@Description	override the project defaults for this request only; no server-side state is mutated.
 //	@Tags			projects
 //	@Produce		json
-//	@Param			id			path		int		true	"Project ID (zero-based index)"
+//	@Param			id			path		string	true	"Project UUID"
 //	@Param			source		query		string	true	"Data source name (e.g. 'Binance')"
 //	@Param			pair		query		string	true	"Trading pair ID (e.g. 'BTCUSDC')"
 //	@Param			timeFrame	query		string	false	"Override time frame (e.g. '1h', '4h', '1d')"

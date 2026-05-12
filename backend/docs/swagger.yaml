@@ -238,14 +238,14 @@ paths:
         Fetches OHLCV data and computes all configured indicators for the requested trading pair.
         The response contains raw candle and indicator data for the frontend to render.
         Indicator PlotPoints arrays are index-aligned with the active pair's candle entries.
-        Optional query parameters timeFrame, rangeFrom, and rangeTo override the project defaults
-        for this request only; no server-side state is mutated.
+        Optional query parameters timeFrame, rangeFrom, rangeTo, candleBullishColor, and candleBearishColor
+        override the project defaults for this request only; no server-side state is mutated.
       parameters:
-      - description: Project ID (zero-based index)
+      - description: Project UUID
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       - description: Data source name (e.g. 'Binance')
         in: query
         name: source

@@ -147,7 +147,7 @@ func (c *ChartProject) UpdateConfig(cfg ChartProjectConfig) {
 }
 
 // GetRender fetches and assembles all data needed to render the chart.
-// Non-zero cfg fields are written back to the project's settings before rendering.
+// Non-zero cfg fields are used for this render only; no project state is mutated.
 func (c *ChartProject) GetRender(cfg RenderConfig) (RenderableChartProject, error) {
 	if c.reg == nil {
 		partial := NewRenderableChartProject()
@@ -155,20 +155,23 @@ func (c *ChartProject) GetRender(cfg RenderConfig) (RenderableChartProject, erro
 		return partial, nil
 	}
 
+	timeFrame := c.TimeFrame
 	if cfg.TimeFrame != "" {
-		c.TimeFrame = cfg.TimeFrame
+		timeFrame = cfg.TimeFrame
 	}
+	timeRange := c.TimeRange
 	if !cfg.RangeFrom.IsZero() {
-		c.TimeRange.Start = cfg.RangeFrom
+		timeRange.Start = cfg.RangeFrom
 	}
 	if !cfg.RangeTo.IsZero() {
-		c.TimeRange.End = cfg.RangeTo
+		timeRange.End = cfg.RangeTo
 	}
+	colors := c.Colors
 	if cfg.CandleColors != nil {
-		c.Colors = *cfg.CandleColors
+		colors = *cfg.CandleColors
 	}
 
-	entries, width, err := c.reg.FetchSources(c.TimeRange, c.SelectedPairs, c.TimeFrame)
+	entries, width, err := c.reg.FetchSources(timeRange, c.SelectedPairs, timeFrame)
 	if err != nil {
 		partial := NewRenderableChartProject()
 		partial.ProjectErrors = []error{err}
@@ -177,7 +180,7 @@ func (c *ChartProject) GetRender(cfg RenderConfig) (RenderableChartProject, erro
 
 	sourceNames := c.uniqueSourceNames()
 	chartConfig := indicators.ChartConfig{
-		TimeFrameSeconds: c.reg.GetTimeFrameSeconds(sourceNames, c.TimeFrame),
+		TimeFrameSeconds: c.reg.GetTimeFrameSeconds(sourceNames, timeFrame),
 		ActivePair:       cfg.ActivePair,
 		LoadedPairs:      c.SelectedPairs,
 	}
@@ -202,13 +205,13 @@ func (c *ChartProject) GetRender(cfg RenderConfig) (RenderableChartProject, erro
 
 	renderableChartProject := NewRenderableChartProject()
 	renderableChartProject.Title = c.Title
-	renderableChartProject.TimeRange = c.TimeRange
+	renderableChartProject.TimeRange = timeRange
 	renderableChartProject.AvailableTimeFrames = c.reg.GetCommonTimeFrames(sourceNames)
-	renderableChartProject.ActiveTimeFrame = c.TimeFrame
+	renderableChartProject.ActiveTimeFrame = timeFrame
 	renderableChartProject.LoadedPairs = c.SelectedPairs
 	renderableChartProject.ActivePair = cfg.ActivePair
 	renderableChartProject.CandleData = entries
-	renderableChartProject.CandleColors = c.Colors
+	renderableChartProject.CandleColors = colors
 	renderableChartProject.IndicatorCharts = make(map[string][]RenderableIndicator)
 
 	for _, name := range c.IndicatorNames {

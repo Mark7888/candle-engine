@@ -92,7 +92,7 @@ const docTemplate = `{
         },
         "/api/v1/projects/{id}/render": {
             "get": {
-                "description": "Fetches OHLCV data and computes all configured indicators for the requested trading pair.\nThe response contains raw candle and indicator data for the frontend to render.\nIndicator PlotPoints arrays are index-aligned with the active pair's candle entries.\nOptional query parameters timeFrame, rangeFrom, and rangeTo override the project defaults\nfor this request only; no server-side state is mutated.",
+                "description": "Fetches OHLCV data and computes all configured indicators for the requested trading pair.\nThe response contains raw candle and indicator data for the frontend to render.\nIndicator PlotPoints arrays are index-aligned with the active pair's candle entries.\nOptional query parameters timeFrame, rangeFrom, rangeTo, candleBullishColor, and candleBearishColor\noverride the project defaults for this request only; no server-side state is mutated.",
                 "produces": [
                     "application/json"
                 ],
@@ -102,8 +102,8 @@ const docTemplate = `{
                 "summary": "Render chart data for a project",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Project ID (zero-based index)",
+                        "type": "string",
+                        "description": "Project UUID",
                         "name": "id",
                         "in": "path",
                         "required": true
