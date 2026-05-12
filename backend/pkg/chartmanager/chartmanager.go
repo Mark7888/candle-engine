@@ -4,6 +4,7 @@ import (
 	"candle-engine/pkg/chartproject"
 	"candle-engine/pkg/registry"
 	"candle-engine/pkg/sources"
+	"sort"
 	"sync"
 
 	"github.com/google/uuid"
@@ -76,6 +77,12 @@ func (cm *ChartManager) GetChartProjectsList() []ProjectSummary {
 	for _, project := range cm.chartProjects {
 		summaries = append(summaries, ProjectSummary{ID: project.GetID(), Title: project.GetTitle()})
 	}
+	sort.Slice(summaries, func(i, j int) bool {
+		if summaries[i].Title != summaries[j].Title {
+			return summaries[i].Title < summaries[j].Title
+		}
+		return summaries[i].ID < summaries[j].ID
+	})
 	return summaries
 }
 
