@@ -26,15 +26,15 @@ interface PlaybackProjectState {
 
 interface PlaybackStoreState {
   // Per-project settings
-  projects: Record<number, PlaybackProjectState>;
+  projects: Record<string, PlaybackProjectState>;
 
   // Project-level actions
-  activateProject: (projectId: number) => void;
-  deactivateProject: (projectId: number) => void;
-  setStepSize: (projectId: number, size: number) => void;
-  setPlayInterval: (projectId: number, interval: number) => void;
-  setCurrentIndex: (projectId: number, index: number) => void;
-  setIsPlaying: (projectId: number, playing: boolean) => void;
+  activateProject: (projectId: string) => void;
+  deactivateProject: (projectId: string) => void;
+  setStepSize: (projectId: string, size: number) => void;
+  setPlayInterval: (projectId: string, interval: number) => void;
+  setCurrentIndex: (projectId: string, index: number) => void;
+  setIsPlaying: (projectId: string, playing: boolean) => void;
 }
 
 const DEFAULT_PROJECT_STATE: PlaybackProjectState = {

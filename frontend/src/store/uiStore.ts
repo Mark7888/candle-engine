@@ -30,12 +30,12 @@ interface UIStoreState {
   toggleLogLevel: (level: string) => void;
 
   // Active project tab
-  activeProjectId: number | null;
-  setActiveProjectId: (id: number) => void;
+  activeProjectId: string | null;
+  setActiveProjectId: (id: string) => void;
 
   // Active pair per project: { [projectId]: { source, pair } }
-  activePairs: Record<number, ActivePairEntry>;
-  setActivePair: (projectId: number, source: string, pair: string) => void;
+  activePairs: Record<string, ActivePairEntry>;
+  setActivePair: (projectId: string, source: string, pair: string) => void;
 
   // Indicator panel open/closed — global, same behaviour as logsPanelOpen
   indicatorPanelOpen: boolean;
@@ -47,15 +47,15 @@ interface UIStoreState {
 
   // Floating widgets per project: { [projectId]: [{ id, x, y }] }
   // id is the indicator name. NOT persisted — session-only.
-  floatingWidgets: Record<number, FloatingWidget[]>;
-  setFloatingWidgets: (projectId: number, widgets: FloatingWidget[]) => void;
+  floatingWidgets: Record<string, FloatingWidget[]>;
+  setFloatingWidgets: (projectId: string, widgets: FloatingWidget[]) => void;
 
   // Per-project chart settings (timeFrame, rangeFrom, rangeTo).
   // null means "use the project default from the backend".
   // Persisted so selections survive page reloads and are synced across pairs
   // within the same project.
-  projectSettings: Record<number, ProjectSettings>;
-  setProjectSetting: (projectId: number, patch: Partial<ProjectSettings>) => void;
+  projectSettings: Record<string, ProjectSettings>;
+  setProjectSetting: (projectId: string, patch: Partial<ProjectSettings>) => void;
 }
 
 export const useUIStore = create<UIStoreState>()(
@@ -76,11 +76,11 @@ export const useUIStore = create<UIStoreState>()(
 
       // Active project tab
       activeProjectId: null,
-      setActiveProjectId: (id: number) => set({ activeProjectId: id }),
+      setActiveProjectId: (id: string) => set({ activeProjectId: id }),
 
       // Active pair per project: { [projectId]: { source, pair } }
       activePairs: {},
-      setActivePair: (projectId: number, source: string, pair: string) =>
+      setActivePair: (projectId: string, source: string, pair: string) =>
         set((s) => ({
           activePairs: {
             ...s.activePairs,
@@ -99,7 +99,7 @@ export const useUIStore = create<UIStoreState>()(
       // Floating widgets per project: { [projectId]: [{ id, x, y }] }
       // id is the indicator name. NOT persisted — session-only.
       floatingWidgets: {},
-      setFloatingWidgets: (projectId: number, widgets: FloatingWidget[]) =>
+      setFloatingWidgets: (projectId: string, widgets: FloatingWidget[]) =>
         set((s) => ({
           floatingWidgets: { ...s.floatingWidgets, [projectId]: widgets },
         })),
@@ -109,7 +109,7 @@ export const useUIStore = create<UIStoreState>()(
       // Persisted so selections survive page reloads and are synced across pairs
       // within the same project.
       projectSettings: {},
-      setProjectSetting: (projectId: number, patch: Partial<ProjectSettings>) =>
+      setProjectSetting: (projectId: string, patch: Partial<ProjectSettings>) =>
         set((s) => ({
           projectSettings: {
             ...s.projectSettings,

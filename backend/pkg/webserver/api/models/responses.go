@@ -6,7 +6,7 @@ import "time"
 
 // ProjectSummary is a brief representation of a chart project.
 type ProjectSummary struct {
-	ID    int    `json:"id"`
+	ID    string `json:"id"`
 	Title string `json:"title"`
 }
 
@@ -29,7 +29,7 @@ type TimeRange struct {
 
 // ProjectDetailResponse is returned by GET /api/v1/projects/:id.
 type ProjectDetailResponse struct {
-	ID                  int          `json:"id"`
+	ID                  string       `json:"id"`
 	Title               string       `json:"title"`
 	TimeFrame           string       `json:"timeFrame"`
 	AvailableTimeFrames []string     `json:"availableTimeFrames"`

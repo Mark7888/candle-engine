@@ -16,7 +16,7 @@ import { validateDateRange, isDateRangeValid } from '../../utils/validation';
 
 interface SettingsBarProps {
   /** The ID of the project this bar belongs to (used for per-project settings). */
-  projectId: number;
+  projectId: string;
   availableTimeFrames?: string[];
   defaultTimeFrame?: string;
   defaultRangeFrom?: string;

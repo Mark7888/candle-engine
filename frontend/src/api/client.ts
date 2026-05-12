@@ -11,14 +11,8 @@ const api = axios.create({
 export const fetchProjects = (): Promise<Project[]> =>
   api.get<{ projects: Project[] }>('/api/v1/projects').then((r) => r.data.projects);
 
-export const fetchProject = (id: number): Promise<ProjectDetail> =>
+export const fetchProject = (id: string): Promise<ProjectDetail> =>
   api.get<ProjectDetail>(`/api/v1/projects/${id}`).then((r) => r.data);
-
-interface RenderSettings {
-  timeFrame?: string | null;
-  rangeFrom?: string | null;
-  rangeTo?: string | null;
-}
 
 interface RenderParams {
   source: string;
@@ -26,29 +20,50 @@ interface RenderParams {
   timeFrame?: string;
   rangeFrom?: string;
   rangeTo?: string;
+  candleBullishColor?: string;
+  candleBearishColor?: string;
+}
+
+/**
+ * Per-request render configuration sent to the backend.
+ *
+ * Required fields:
+ *   source    – data source name (e.g. 'Binance')
+ *   pair      – trading pair ID (e.g. 'BTCUSDC')
+ *
+ * Optional overrides (omit to use the project's configured defaults):
+ *   timeFrame         – time frame string (e.g. '4h')
+ *   rangeFrom         – range start as ISO 8601 / RFC 3339 string
+ *   rangeTo           – range end as ISO 8601 / RFC 3339 string
+ *   candleBullishColor – bullish (up) candle color override (CSS hex, e.g. '#26a69a')
+ *   candleBearishColor – bearish (down) candle color override (CSS hex, e.g. '#ef5350')
+ */
+export interface RenderConfig {
+  source: string;
+  pair: string;
+  timeFrame?: string | null;
+  rangeFrom?: string | null;
+  rangeTo?: string | null;
+  candleBullishColor?: string | null;
+  candleBearishColor?: string | null;
 }
 
 /**
  * Fetch rendered chart data for a pair.
  *
- * @param id        - Project ID
- * @param source    - Data source name (e.g. 'Binance')
- * @param pair      - Trading pair ID (e.g. 'BTCUSDC')
- * @param settings  - Optional overrides: { timeFrame, rangeFrom, rangeTo }
- *   timeFrame  – override time frame string (e.g. '4h')
- *   rangeFrom  – override range start as ISO 8601 string
- *   rangeTo    – override range end as ISO 8601 string
+ * @param id     - Project ID
+ * @param config - Render configuration (source, pair, and optional overrides)
  */
 export const fetchRender = (
-  id: number,
-  source: string,
-  pair: string,
-  settings: RenderSettings = {}
+  id: string,
+  config: RenderConfig
 ): Promise<RenderResponse> => {
-  const params: RenderParams = { source, pair };
-  if (settings.timeFrame) params.timeFrame = settings.timeFrame;
-  if (settings.rangeFrom) params.rangeFrom = settings.rangeFrom;
-  if (settings.rangeTo) params.rangeTo = settings.rangeTo;
+  const params: RenderParams = { source: config.source, pair: config.pair };
+  if (config.timeFrame) params.timeFrame = config.timeFrame;
+  if (config.rangeFrom) params.rangeFrom = config.rangeFrom;
+  if (config.rangeTo) params.rangeTo = config.rangeTo;
+  if (config.candleBullishColor) params.candleBullishColor = config.candleBullishColor;
+  if (config.candleBearishColor) params.candleBearishColor = config.candleBearishColor;
   return api
     .get<RenderResponse>(`/api/v1/projects/${id}/render`, { params })
     .then((r) => r.data);

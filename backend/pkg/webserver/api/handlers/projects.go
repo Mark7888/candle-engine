@@ -3,7 +3,6 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
 
 	"candle-engine/pkg/chartmanager"
 	"candle-engine/pkg/webserver/api/models"
@@ -21,11 +20,11 @@ import (
 //	@Router			/api/v1/projects [get]
 func ListProjects(c *gin.Context) {
 	cm := chartmanager.GetChartManager()
-	titles := cm.GetChartProjectsList()
+	summaries := cm.GetChartProjectsList()
 
-	projects := make([]models.ProjectSummary, len(titles))
-	for i, title := range titles {
-		projects[i] = models.ProjectSummary{ID: i, Title: title}
+	projects := make([]models.ProjectSummary, len(summaries))
+	for i, s := range summaries {
+		projects[i] = models.ProjectSummary{ID: s.ID, Title: s.Title}
 	}
 
 	c.JSON(http.StatusOK, models.ProjectListResponse{Projects: projects})
@@ -37,20 +36,15 @@ func ListProjects(c *gin.Context) {
 //	@Description	Returns full details for a chart project, including available trading pairs and time frames.
 //	@Tags			projects
 //	@Produce		json
-//	@Param			id	path		int	true	"Project ID (zero-based index)"
+//	@Param			id	path		string	true	"Project UUID"
 //	@Success		200	{object}	models.ProjectDetailResponse
-//	@Failure		400	{object}	models.ErrorResponse
 //	@Failure		404	{object}	models.ErrorResponse
 //	@Router			/api/v1/projects/{id} [get]
 func GetProject(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.ErrorResponse{Error: "invalid project id", Details: "id must be a non-negative integer"})
-		return
-	}
+	id := c.Param("id")
 
 	cm := chartmanager.GetChartManager()
-	project, found := cm.GetChartProject(id)
+	project, found := cm.GetProjectByID(id)
 	if !found {
 		c.JSON(http.StatusNotFound, models.ErrorResponse{Error: "project not found"})
 		return

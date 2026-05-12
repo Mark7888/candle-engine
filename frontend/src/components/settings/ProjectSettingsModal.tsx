@@ -20,7 +20,7 @@ import { useProjectSettingsStore } from '../../store/projectSettingsStore';
 import type { ProjectSettingsConfig } from '../../store/defaultSettings';
 
 interface ProjectSettingsModalProps {
-  projectId: number;
+  projectId: string;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -63,9 +63,16 @@ export default function ProjectSettingsModal({
     onClose();
   }, [projectId, getSettings, onClose]);
 
-  const handleColorInputChange = useCallback(
+  const handleBullishColorChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
-      setDraft((d) => ({ ...d, testColor: e.target.value }));
+      setDraft((d) => ({ ...d, candleBullishColor: e.target.value }));
+    },
+    []
+  );
+
+  const handleBearishColorChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      setDraft((d) => ({ ...d, candleBearishColor: e.target.value }));
     },
     []
   );
@@ -93,7 +100,7 @@ export default function ProjectSettingsModal({
         </ModalHeader>
 
         <ModalBody flex={1} overflowY="auto" py={6} px={8}>
-          {/* ── Appearance section ─────────────────────────────────── */}
+          {/* ── Visual Settings section ─────────────────────────────── */}
           <Text
             fontSize="xs"
             fontWeight="semibold"
@@ -102,7 +109,7 @@ export default function ProjectSettingsModal({
             color={labelColor}
             mb={3}
           >
-            Appearance
+            Visual Settings
           </Text>
 
           <Box
@@ -113,12 +120,12 @@ export default function ProjectSettingsModal({
             px={5}
             py={4}
           >
-            <FormControl>
+            {/* Bullish candle color */}
+            <FormControl mb={4}>
               <FormLabel fontSize="sm" fontWeight="medium" mb={2}>
-                Test Color Change
+                Bullish Candle Color
               </FormLabel>
               <HStack spacing={3}>
-                {/* Native color swatch – wrapped in a Box so Chakra styles apply */}
                 <Box
                   as="label"
                   w="36px"
@@ -132,8 +139,8 @@ export default function ProjectSettingsModal({
                 >
                   <input
                     type="color"
-                    value={draft.testColor}
-                    onChange={handleColorInputChange}
+                    value={draft.candleBullishColor}
+                    onChange={handleBullishColorChange}
                     style={{
                       width: '100%',
                       height: '100%',
@@ -144,15 +151,55 @@ export default function ProjectSettingsModal({
                     }}
                   />
                 </Box>
-
-                {/* Hex value text input */}
                 <Input
-                  value={draft.testColor}
-                  onChange={handleColorInputChange}
+                  value={draft.candleBullishColor}
+                  onChange={handleBullishColorChange}
                   size="sm"
                   maxW="120px"
                   fontFamily="mono"
-                  placeholder="#004040"
+                  placeholder="#26a69a"
+                />
+              </HStack>
+            </FormControl>
+
+            {/* Bearish candle color */}
+            <FormControl>
+              <FormLabel fontSize="sm" fontWeight="medium" mb={2}>
+                Bearish Candle Color
+              </FormLabel>
+              <HStack spacing={3}>
+                <Box
+                  as="label"
+                  w="36px"
+                  h="36px"
+                  borderRadius="md"
+                  overflow="hidden"
+                  border="1px solid"
+                  borderColor={borderColor}
+                  cursor="pointer"
+                  flexShrink={0}
+                >
+                  <input
+                    type="color"
+                    value={draft.candleBearishColor}
+                    onChange={handleBearishColorChange}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      border: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                      display: 'block',
+                    }}
+                  />
+                </Box>
+                <Input
+                  value={draft.candleBearishColor}
+                  onChange={handleBearishColorChange}
+                  size="sm"
+                  maxW="120px"
+                  fontFamily="mono"
+                  placeholder="#ef5350"
                 />
               </HStack>
             </FormControl>

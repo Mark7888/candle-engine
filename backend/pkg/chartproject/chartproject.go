@@ -2,106 +2,188 @@ package chartproject
 
 import (
 	"candle-engine/pkg/indicators"
+	"candle-engine/pkg/registry"
 	"candle-engine/pkg/sources"
+	"fmt"
+	"slices"
 	"time"
 )
 
+// ChartProject is a serialisable config object describing a project's settings,
+// selected pairs, and indicator names. It holds a non-serialised registry reference
+// that must be injected (via SetRegistry) before calling GetRender.
 type ChartProject struct {
-	title         string
-	colors        sources.CandleColorConfig
-	sourceManager *ChartSourceManager
-	indicators    []indicators.BaseIndicator
+	ID             string                    `json:"id"`
+	Title          string                    `json:"title"`
+	SelectedPairs  []sources.SourcePairId    `json:"selectedPairs"`
+	IndicatorNames []string                  `json:"indicatorNames"`
+	TimeFrame      string                    `json:"timeFrame"`
+	TimeRange      sources.TimeRange         `json:"timeRange"`
+	Colors         sources.CandleColorConfig `json:"colors"`
 
-	timeRange sources.TimeRange
-	timeFrame string // TODO - we should be storing time frame in seconds internally
+	// Non-serialised – injected at startup or after load.
+	reg *registry.Registry `json:"-"`
 }
 
-func NewChartProject(title string) *ChartProject {
-	return &ChartProject{
-		title:         title,
-		colors:        sources.CandleColorConfig{BullishColor: "#ff0000ff", BearishColor: "#00ff00ff"},
-		sourceManager: NewChartSourceManager(),
-		indicators:    []indicators.BaseIndicator{},
-		timeRange: sources.TimeRange{
-			Start: time.Now().AddDate(0, 0, -14),
-			End:   time.Now(),
-		},
-		timeFrame: "1d",
+var defaultChartConfig = ChartProjectConfig{
+	TimeFrame: "1d",
+	CandleColors: sources.CandleColorConfig{
+		BullishColor: "#ff0000ff",
+		BearishColor: "#00ff00ff",
+	},
+}
+
+func NewChartProject(id, title string, cfg ChartProjectConfig) *ChartProject {
+	if cfg.TimeFrame == "" {
+		cfg.TimeFrame = defaultChartConfig.TimeFrame
 	}
+	if cfg.TimeRange.End.IsZero() {
+		cfg.TimeRange.End = time.Now()
+	}
+	if cfg.TimeRange.Start.IsZero() {
+		cfg.TimeRange.Start = cfg.TimeRange.End.AddDate(0, 0, -14)
+	}
+	if cfg.CandleColors.BullishColor == "" {
+		cfg.CandleColors.BullishColor = defaultChartConfig.CandleColors.BullishColor
+	}
+	if cfg.CandleColors.BearishColor == "" {
+		cfg.CandleColors.BearishColor = defaultChartConfig.CandleColors.BearishColor
+	}
+
+	return &ChartProject{
+		ID:             id,
+		Title:          title,
+		SelectedPairs:  []sources.SourcePairId{},
+		IndicatorNames: []string{},
+		TimeFrame:      cfg.TimeFrame,
+		TimeRange:      cfg.TimeRange,
+		Colors:         cfg.CandleColors,
+	}
+}
+
+func (c *ChartProject) SetRegistry(r *registry.Registry) {
+	c.reg = r
+}
+
+func (c *ChartProject) GetID() string {
+	return c.ID
 }
 
 func (c *ChartProject) GetTitle() string {
-	return c.title
-}
-
-func (c *ChartProject) SetTimeFrame(timeFrame string) {
-	c.timeFrame = timeFrame
+	return c.Title
 }
 
 func (c *ChartProject) GetTimeFrame() string {
-	return c.timeFrame
-}
-
-func (c *ChartProject) SetCandleColors(colors sources.CandleColorConfig) {
-	c.colors = colors
-}
-
-func (c *ChartProject) GetAvailableTimeFrames() []string {
-	return c.sourceManager.GetCommonTimeFrames()
-}
-
-// TODO - somehow handle available time frames from sources (only list the ones that are common across all sources)
-
-func (c *ChartProject) SetTimeRange(timeRange sources.TimeRange) {
-	c.timeRange = timeRange
+	return c.TimeFrame
 }
 
 func (c *ChartProject) GetTimeRange() sources.TimeRange {
-	return c.timeRange
+	return c.TimeRange
 }
 
 func (c *ChartProject) GetLoadedPairs() []sources.SourcePairId {
-	return c.sourceManager.GetLoadedPairs()
+	return c.SelectedPairs
 }
 
-func (c *ChartProject) AddSources(sources_ ...sources.Source) {
-	c.sourceManager.AddSources(sources_...)
+func (c *ChartProject) GetAvailableTimeFrames() []string {
+	if c.reg == nil {
+		return []string{}
+	}
+	return c.reg.GetCommonTimeFrames(c.uniqueSourceNames())
 }
 
-func (c *ChartProject) AddTradingPairs(pairs ...sources.SourcePairId) {
-	c.sourceManager.AddTradingPairs(pairs...)
+func (c *ChartProject) uniqueSourceNames() []string {
+	seen := make(map[string]bool)
+	var names []string
+	for _, p := range c.SelectedPairs {
+		if !seen[p.SourceName] {
+			seen[p.SourceName] = true
+			names = append(names, p.SourceName)
+		}
+	}
+	return names
 }
 
-func (c *ChartProject) AddIndicators(indicator ...indicators.BaseIndicator) {
-	c.indicators = append(c.indicators, indicator...)
+func (c *ChartProject) AddPair(pair sources.SourcePairId) {
+	if !slices.Contains(c.SelectedPairs, pair) {
+		c.SelectedPairs = append(c.SelectedPairs, pair)
+	}
 }
 
-// GetRender returns an object with all the info needed to render the chart in
-// the frontend.
-//
-// timeFrameOverride: if non-empty, it is used instead of the project's
-// configured timeFrame.
-// timeRangeOverride: if non-nil, it is used instead of the project's
-// configured timeRange.
-func (c *ChartProject) GetRender(activePair sources.SourcePairId, timeFrameOverride string, timeRangeOverride *sources.TimeRange) (RenderableChartProject, error) {
-	timeFrame := c.timeFrame
-	if timeFrameOverride != "" {
-		timeFrame = timeFrameOverride
+func (c *ChartProject) RemovePair(pair sources.SourcePairId) {
+	c.SelectedPairs = slices.DeleteFunc(c.SelectedPairs, func(p sources.SourcePairId) bool {
+		return p == pair
+	})
+}
+
+func (c *ChartProject) AddIndicatorByName(name string) {
+	if !slices.Contains(c.IndicatorNames, name) {
+		c.IndicatorNames = append(c.IndicatorNames, name)
+	}
+}
+
+func (c *ChartProject) RemoveIndicatorByName(name string) {
+	c.IndicatorNames = slices.DeleteFunc(c.IndicatorNames, func(n string) bool {
+		return n == name
+	})
+}
+
+func (c *ChartProject) UpdateConfig(cfg ChartProjectConfig) {
+	if cfg.TimeFrame != "" {
+		c.TimeFrame = cfg.TimeFrame
+	}
+	if !cfg.TimeRange.Start.IsZero() {
+		c.TimeRange.Start = cfg.TimeRange.Start
+	}
+	if !cfg.TimeRange.End.IsZero() {
+		c.TimeRange.End = cfg.TimeRange.End
+	}
+	if cfg.CandleColors.BullishColor != "" {
+		c.Colors.BullishColor = cfg.CandleColors.BullishColor
+	}
+	if cfg.CandleColors.BearishColor != "" {
+		c.Colors.BearishColor = cfg.CandleColors.BearishColor
+	}
+}
+
+// GetRender fetches and assembles all data needed to render the chart.
+// Non-zero cfg fields are used for this render only; no project state is mutated.
+func (c *ChartProject) GetRender(cfg RenderConfig) (RenderableChartProject, error) {
+	if c.reg == nil {
+		partial := NewRenderableChartProject()
+		partial.ProjectErrors = []error{fmt.Errorf("registry not set on project '%s'", c.Title)}
+		return partial, nil
 	}
 
-	timeRange := c.timeRange
-	if timeRangeOverride != nil {
-		timeRange = *timeRangeOverride
+	timeFrame := c.TimeFrame
+	if cfg.TimeFrame != "" {
+		timeFrame = cfg.TimeFrame
+	}
+	timeRange := c.TimeRange
+	if !cfg.RangeFrom.IsZero() {
+		timeRange.Start = cfg.RangeFrom
+	}
+	if !cfg.RangeTo.IsZero() {
+		timeRange.End = cfg.RangeTo
+	}
+	colors := c.Colors
+	if cfg.CandleColors != nil {
+		colors = *cfg.CandleColors
 	}
 
-	entries, width, err := c.sourceManager.FetchSources(timeRange, c.sourceManager.selectedPairs, timeFrame)
+	entries, width, err := c.reg.FetchSources(timeRange, c.SelectedPairs, timeFrame)
 	if err != nil {
 		partial := NewRenderableChartProject()
 		partial.ProjectErrors = []error{err}
 		return partial, nil
 	}
 
-	chartConfig := c.assembleChartConfigWith(activePair, timeFrame)
+	sourceNames := c.uniqueSourceNames()
+	chartConfig := indicators.ChartConfig{
+		TimeFrameSeconds: c.reg.GetTimeFrameSeconds(sourceNames, timeFrame),
+		ActivePair:       cfg.ActivePair,
+		LoadedPairs:      c.SelectedPairs,
+	}
 
 	var historyEntries map[sources.SourcePairId][]sources.ChartEntry = make(map[sources.SourcePairId][]sources.ChartEntry)
 	var currentMultiSourceEntries sources.MultiSourceEntries
@@ -116,69 +198,65 @@ func (c *ChartProject) GetRender(activePair sources.SourcePairId, timeFrameOverr
 			historyEntries[pairId] = append(historyEntries[pairId], pairEntries[i])
 			currentEntryTime = pairEntries[i].Timestamp
 		}
-
 		currentMultiSourceEntries = sources.NewMultiSourceEntries()
 		currentMultiSourceEntries.ParseEntriesMap(historyEntries)
-
 		indicatorPlotData, indicatorLogs, indicatorErrors = c.calculateIndicators(currentEntryTime, &indicatorPlotData, currentMultiSourceEntries, chartConfig, indicatorLogs, indicatorErrors)
 	}
 
 	renderableChartProject := NewRenderableChartProject()
-	renderableChartProject.Title = c.title
+	renderableChartProject.Title = c.Title
 	renderableChartProject.TimeRange = timeRange
-	renderableChartProject.AvailableTimeFrames = c.sourceManager.GetCommonTimeFrames()
+	renderableChartProject.AvailableTimeFrames = c.reg.GetCommonTimeFrames(sourceNames)
 	renderableChartProject.ActiveTimeFrame = timeFrame
-	renderableChartProject.LoadedPairs = c.sourceManager.GetLoadedPairs()
-	renderableChartProject.ActivePair = activePair
-
+	renderableChartProject.LoadedPairs = c.SelectedPairs
+	renderableChartProject.ActivePair = cfg.ActivePair
 	renderableChartProject.CandleData = entries
-	renderableChartProject.CandleColors = c.colors
+	renderableChartProject.CandleColors = colors
 	renderableChartProject.IndicatorCharts = make(map[string][]RenderableIndicator)
 
-	for _, indicator := range c.indicators {
-		isDataInconsistent := c.checkIndicatorDataConsistency(indicatorPlotData[indicator.GetName()])
-		// TODO - that would be also helpful to check if the number of points and the number of titles in the config match
+	for _, name := range c.IndicatorNames {
+		indicator, ok := c.reg.GetIndicator(name)
+		if !ok {
+			renderableChartProject.ProjectErrors = append(renderableChartProject.ProjectErrors, fmt.Errorf("indicator '%s' not found in registry", name))
+			continue
+		}
 
+		isDataInconsistent := c.checkIndicatorDataConsistency(indicatorPlotData[name])
 		renderableIndicator := RenderableIndicator{
 			Name:            indicator.GetName(),
 			Type:            indicator.GetType(),
 			IndicatorConfig: indicator.GetConfig(),
-			PlotPoints:      indicatorPlotData[indicator.GetName()],
-
+			PlotPoints:      indicatorPlotData[name],
 			DataError:       isDataInconsistent,
-			RenderingErrors: indicatorErrors[indicator.GetName()],
-			Logs:            indicatorLogs[indicator.GetName()],
+			RenderingErrors: indicatorErrors[name],
+			Logs:            indicatorLogs[name],
 		}
 
-		renderableChartProject.IndicatorCharts[indicator.GetConfig().TargetChart] = append(renderableChartProject.IndicatorCharts[indicator.GetConfig().TargetChart], renderableIndicator)
+		renderableChartProject.IndicatorCharts[indicator.GetConfig().TargetChart] = append(
+			renderableChartProject.IndicatorCharts[indicator.GetConfig().TargetChart],
+			renderableIndicator,
+		)
 	}
 
 	return renderableChartProject, nil
 }
 
-func (c *ChartProject) assembleChartConfig(activePair sources.SourcePairId) indicators.ChartConfig {
-	return c.assembleChartConfigWith(activePair, c.timeFrame)
-}
-
-func (c *ChartProject) assembleChartConfigWith(activePair sources.SourcePairId, timeFrame string) indicators.ChartConfig {
-	return indicators.ChartConfig{
-		TimeFrameSeconds: c.sourceManager.GetTimeFrameSeconds(timeFrame),
-		ActivePair:       activePair,
-		LoadedPairs:      c.sourceManager.GetLoadedPairs(),
-	}
-}
-
 func (c *ChartProject) calculateIndicators(timestamp time.Time, previousPlotData *map[string][]indicators.PlotPointCollection, entries sources.MultiSourceEntries, chartConfig indicators.ChartConfig, previousLogs map[string][]indicators.IndicatorLog, previousErrors map[string][]error) (plotData map[string][]indicators.PlotPointCollection, indicatorLogs map[string][]indicators.IndicatorLog, indicatorErrors map[string][]error) {
-	for _, indicator := range c.indicators {
-		outputHandler := indicators.NewIndicatorOutputHandler(timestamp)
-		outputHandler, err := indicator.HandleEntry(indicators.NewPlotPointCollectionHistory((*previousPlotData)[indicator.GetName()]), entries, chartConfig, outputHandler)
-		if err != nil {
-			outputHandler.SetOutput(indicators.NewInvalidPlotPointCollection())
-			previousErrors[indicator.GetName()] = append(previousErrors[indicator.GetName()], err)
+	for _, name := range c.IndicatorNames {
+		indicator, ok := c.reg.GetIndicator(name)
+		if !ok {
+			continue
 		}
 
-		(*previousPlotData)[indicator.GetName()] = append((*previousPlotData)[indicator.GetName()], outputHandler.GetOutput())
-		previousLogs[indicator.GetName()] = append(previousLogs[indicator.GetName()], outputHandler.GetLogs()...)
+		outputHandler := indicators.NewIndicatorOutputHandler(timestamp)
+		outputHandler, err := indicator.HandleEntry(indicators.NewPlotPointCollectionHistory((*previousPlotData)[name]), entries, chartConfig, outputHandler)
+		if err != nil {
+			outputHandler.SetOutput(indicators.NewInvalidPlotPointCollection())
+			previousErrors[name] = append(previousErrors[name], err)
+		}
+
+		(*previousPlotData)[name] = append((*previousPlotData)[name], outputHandler.GetOutput())
+		previousLogs[name] = append(previousLogs[name], outputHandler.GetLogs()...)
 	}
 
 	return *previousPlotData, previousLogs, previousErrors
@@ -186,16 +264,13 @@ func (c *ChartProject) calculateIndicators(timestamp time.Time, previousPlotData
 
 func (c *ChartProject) checkIndicatorDataConsistency(plotPoints []indicators.PlotPointCollection) bool {
 	pointLength := -1
-
 	for _, p := range plotPoints {
 		if pointLength == -1 {
 			pointLength = p.Length()
 		}
-
 		if p.Length() != pointLength {
 			return true
 		}
 	}
-
 	return false
 }

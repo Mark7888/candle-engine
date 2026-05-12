@@ -12,8 +12,8 @@ import type { Project } from '../../types/api';
 interface NavbarProps {
   projects: Project[];
   loading: boolean;
-  activeProjectId: number | null;
-  onSelectProject: (id: number) => void;
+  activeProjectId: string | null;
+  onSelectProject: (id: string) => void;
 }
 
 /**
