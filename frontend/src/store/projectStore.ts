@@ -25,9 +25,8 @@ interface ProjectStoreState {
     config: RenderConfig
   ) => Promise<void>;
   getRender: (
-    projectId: string,
-    source: string,
-    pair: string
+    projectId: number,
+    config: RenderConfig
   ) => { data: RenderResponse | null; loading: boolean; error: string | null };
 }
 
@@ -125,8 +124,8 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
     }
   },
 
-  getRender: (projectId: string, source: string, pair: string) => {
-    const key = `${projectId}-${source}-${pair}`;
+  getRender: (projectId: number, config: RenderConfig) => {
+    const key = `${projectId}-${config.source}-${config.pair}-${config.candleBullishColor ?? ''}-${config.candleBearishColor ?? ''}`;
     return {
       data: get().renderData[key] ?? null,
       loading: get().renderLoading[key] ?? false,
