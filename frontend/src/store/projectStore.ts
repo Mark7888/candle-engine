@@ -66,12 +66,22 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
    * after a settings change will always fetch fresh data.
    */
   loadRender: async (projectId: string) => {
-    if (get().renderData[projectId] || get().renderLoading[projectId]) return;
-
-    set((s) => ({
-      renderLoading: { ...s.renderLoading, [projectId]: true },
-      renderErrors: { ...s.renderErrors, [projectId]: null },
-    }));
+    // Atomically check-and-set the loading flag so concurrent callers
+    // (e.g. two React effects firing in the same batch) cannot both pass
+    // the guard before either has set loading = true.
+    let shouldFetch = false;
+    set((s) => {
+      if (s.renderData[projectId] || s.renderLoading[projectId]) {
+        return s; // already cached or in flight — no change
+      }
+      shouldFetch = true;
+      return {
+        ...s,
+        renderLoading: { ...s.renderLoading, [projectId]: true },
+        renderErrors: { ...s.renderErrors, [projectId]: null },
+      };
+    });
+    if (!shouldFetch) return;
     try {
       const data = await fetchRender(projectId);
       set((s) => ({
