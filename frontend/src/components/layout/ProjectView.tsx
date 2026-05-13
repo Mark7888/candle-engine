@@ -71,12 +71,11 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
     async (sourceName: string, pairId: string) => {
       try {
         await updateSettings(projectId, { activePair: { sourceName, pairId } });
-        loadRender(projectId);
       } catch {
         // error already logged in store
       }
     },
-    [projectId, updateSettings, loadRender]
+    [projectId, updateSettings]
   );
 
   // When a time-frame or range setting changes: update backend, then re-render
@@ -84,12 +83,11 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
     async (patch: { timeFrame?: string; rangeFrom?: string; rangeTo?: string }) => {
       try {
         await updateSettings(projectId, patch);
-        loadRender(projectId);
       } catch {
         // error already logged in store
       }
     },
-    [projectId, updateSettings, loadRender]
+    [projectId, updateSettings]
   );
 
   // When candle colors change (from ProjectSettingsModal via the store)
@@ -97,12 +95,11 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
     async (candleBullishColor: string, candleBearishColor: string) => {
       try {
         await updateSettings(projectId, { candleBullishColor, candleBearishColor });
-        loadRender(projectId);
       } catch {
         // error already logged in store
       }
     },
-    [projectId, updateSettings, loadRender]
+    [projectId, updateSettings]
   );
 
   // --- Playback callbacks (stable references to prevent interval restarts) ---
@@ -179,9 +176,6 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
 
   // Derive display values from the backend-owned project detail.
   const activePairEntry = projectDetail.activePair;
-  const defaultTimeFrame = projectDetail.timeFrame ?? '';
-  const defaultRangeFrom = projectDetail.timeRange?.start ?? '';
-  const defaultRangeTo = projectDetail.timeRange?.end ?? '';
 
   return (
     <Flex direction="column" gap={0} h="100%">
@@ -189,12 +183,9 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
       <SettingsBar
         projectId={projectId}
         availableTimeFrames={projectDetail.availableTimeFrames ?? []}
-        defaultTimeFrame={defaultTimeFrame}
-        defaultRangeFrom={defaultRangeFrom}
-        defaultRangeTo={defaultRangeTo}
-        timeFrame={projectDetail.timeFrame}
-        rangeFrom={projectDetail.timeRange?.start ?? null}
-        rangeTo={projectDetail.timeRange?.end ?? null}
+        timeFrame={projectDetail.timeFrame ?? ''}
+        rangeFrom={projectDetail.timeRange?.start ?? ''}
+        rangeTo={projectDetail.timeRange?.end ?? ''}
         candleColors={projectDetail.candleColors}
         onTimeFrameChange={(tf) => handleSettingChange({ timeFrame: tf })}
         onRangeFromChange={(v) => handleSettingChange({ rangeFrom: v })}

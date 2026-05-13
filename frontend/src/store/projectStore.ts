@@ -9,20 +9,17 @@ interface ProjectStoreState {
   projectsLoading: boolean;
   projectsError: string | null;
 
-  // Per-project detail cache
+  // Per-project detail cache (authoritative state from backend)
   projectDetails: Record<string, ProjectDetail>;
 
-  // Per-project render cache key: projectId
+  // Per-project render data cache
   renderData: Record<string, RenderResponse>;
   renderLoading: Record<string, boolean>;
   renderErrors: Record<string, string | null>;
 
   loadProjects: () => Promise<void>;
   loadProject: (id: string) => Promise<void>;
-  reloadProject: (id: string) => Promise<void>;
-  clearProjectRenderCache: (projectId: string) => void;
   loadRender: (projectId: string) => Promise<void>;
-  getRender: (projectId: string) => { data: RenderResponse | null; loading: boolean; error: string | null };
   updateSettings: (projectId: string, settings: UpdateSettingsRequest) => Promise<void>;
 }
 
@@ -35,7 +32,7 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
   // Per-project detail cache
   projectDetails: {},
 
-  // Per-project render cache key: projectId
+  // Per-project render data cache
   renderData: {},
   renderLoading: {},
   renderErrors: {},
@@ -62,40 +59,14 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
     }
   },
 
-  /** Re-fetch project detail unconditionally (e.g. after settings change). */
-  reloadProject: async (id: string) => {
-    try {
-      const detail = await fetchProject(id);
-      set((s) => ({
-        projectDetails: { ...s.projectDetails, [id]: detail },
-      }));
-    } catch (err) {
-      console.error('Failed to reload project', id, err);
-    }
-  },
-
   /**
-   * Clear cached render data for a project.
-   * Called when settings change so the next loadRender() fetches fresh data.
-   */
-  clearProjectRenderCache: (projectId: string) => {
-    set((s) => {
-      const { [projectId]: _data, ...newRenderData } = s.renderData;
-      const { [projectId]: _loading, ...newRenderLoading } = s.renderLoading;
-      const { [projectId]: _error, ...newRenderErrors } = s.renderErrors;
-      return {
-        renderData: newRenderData,
-        renderLoading: newRenderLoading,
-        renderErrors: newRenderErrors,
-      };
-    });
-  },
-
-  /**
-   * Load (or re-fetch) render data for a project using its stored backend settings.
+   * Load render data for a project using its current backend settings.
+   * Skips if a fetch is already in progress or data is already cached.
+   * The render cache is cleared by updateSettings, so calling this again
+   * after a settings change will always fetch fresh data.
    */
   loadRender: async (projectId: string) => {
-    if (get().renderData[projectId]) return;
+    if (get().renderData[projectId] || get().renderLoading[projectId]) return;
 
     set((s) => ({
       renderLoading: { ...s.renderLoading, [projectId]: true },
@@ -115,12 +86,6 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
     }
   },
 
-  getRender: (projectId: string) => ({
-    data: get().renderData[projectId] ?? null,
-    loading: get().renderLoading[projectId] ?? false,
-    error: get().renderErrors[projectId] ?? null,
-  }),
-
   /**
    * Update backend settings for a project, then clear the render cache so the
    * next loadRender() fetches fresh data.  The updated project detail is stored
@@ -129,11 +94,20 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
   updateSettings: async (projectId: string, settings: UpdateSettingsRequest) => {
     try {
       const updatedDetail = await updateProjectSettings(projectId, settings);
-      set((s) => ({
-        projectDetails: { ...s.projectDetails, [projectId]: updatedDetail },
-      }));
-      // Invalidate render cache so the next render reflects the new settings.
-      get().clearProjectRenderCache(projectId);
+      // Clear render cache first, then update project detail.
+      // Updating project detail triggers the useEffect in ProjectView which
+      // calls loadRender() to fetch fresh render data.
+      set((s) => {
+        const { [projectId]: _data, ...newRenderData } = s.renderData;
+        const { [projectId]: _loading, ...newRenderLoading } = s.renderLoading;
+        const { [projectId]: _error, ...newRenderErrors } = s.renderErrors;
+        return {
+          projectDetails: { ...s.projectDetails, [projectId]: updatedDetail },
+          renderData: newRenderData,
+          renderLoading: newRenderLoading,
+          renderErrors: newRenderErrors,
+        };
+      });
     } catch (err) {
       console.error('Failed to update project settings', projectId, err);
       throw err;

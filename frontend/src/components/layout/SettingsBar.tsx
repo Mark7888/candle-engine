@@ -19,12 +19,9 @@ interface SettingsBarProps {
   /** The ID of the project this bar belongs to (used for per-project settings). */
   projectId: string;
   availableTimeFrames?: string[];
-  defaultTimeFrame?: string;
-  defaultRangeFrom?: string;
-  defaultRangeTo?: string;
-  timeFrame?: string | null;
-  rangeFrom?: string | null;
-  rangeTo?: string | null;
+  timeFrame?: string;
+  rangeFrom?: string;
+  rangeTo?: string;
   onTimeFrameChange?: (value: string) => void;
   onRangeFromChange?: (value: string) => void;
   onRangeToChange?: (value: string) => void;
@@ -47,12 +44,9 @@ interface SettingsBarProps {
 export default function SettingsBar({
   projectId,
   availableTimeFrames = [],
-  defaultTimeFrame = '',
-  defaultRangeFrom = '',
-  defaultRangeTo = '',
-  timeFrame = null,
-  rangeFrom = null,
-  rangeTo = null,
+  timeFrame = '',
+  rangeFrom = '',
+  rangeTo = '',
   onTimeFrameChange,
   onRangeFromChange,
   onRangeToChange,
@@ -91,30 +85,26 @@ export default function SettingsBar({
     return new Date(value).toISOString();
   };
 
-  const displayFrom = rangeFrom ?? defaultRangeFrom;
-  const displayTo = rangeTo ?? defaultRangeTo;
-  const displayTimeFrame = timeFrame ?? defaultTimeFrame;
-
   // Local draft state for the datetime-local inputs so the user can freely edit
   // them without the controlled value resetting mid-edit.
-  const [fromDraft, setFromDraft] = useState(() => toDatetimeLocal(displayFrom));
-  const [toDraft, setToDraft] = useState(() => toDatetimeLocal(displayTo));
+  const [fromDraft, setFromDraft] = useState(() => toDatetimeLocal(rangeFrom));
+  const [toDraft, setToDraft] = useState(() => toDatetimeLocal(rangeTo));
   const [fromFocused, setFromFocused] = useState(false);
   const [toFocused, setToFocused] = useState(false);
 
   // Sync from external prop changes only when the input is not focused.
   // Using the "previous value in state" pattern (derived state) avoids calling
   // setState inside a useEffect, which the linter flags as a cascade risk.
-  const [prevDisplayFrom, setPrevDisplayFrom] = useState(displayFrom);
-  const [prevDisplayTo, setPrevDisplayTo] = useState(displayTo);
+  const [prevRangeFrom, setPrevRangeFrom] = useState(rangeFrom);
+  const [prevRangeTo, setPrevRangeTo] = useState(rangeTo);
 
-  if (displayFrom !== prevDisplayFrom) {
-    setPrevDisplayFrom(displayFrom);
-    if (!fromFocused) setFromDraft(toDatetimeLocal(displayFrom));
+  if (rangeFrom !== prevRangeFrom) {
+    setPrevRangeFrom(rangeFrom);
+    if (!fromFocused) setFromDraft(toDatetimeLocal(rangeFrom));
   }
-  if (displayTo !== prevDisplayTo) {
-    setPrevDisplayTo(displayTo);
-    if (!toFocused) setToDraft(toDatetimeLocal(displayTo));
+  if (rangeTo !== prevRangeTo) {
+    setPrevRangeTo(rangeTo);
+    if (!toFocused) setToDraft(toDatetimeLocal(rangeTo));
   }
 
   // Validate the current draft values on every render (cheap, pure computation).
@@ -144,7 +134,7 @@ export default function SettingsBar({
         </Text>
         <Select
           size="xs"
-          value={displayTimeFrame}
+          value={timeFrame}
           onChange={(e) => onTimeFrameChange?.(e.target.value)}
           w="80px"
           bg={inputBg}
