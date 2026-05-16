@@ -4,8 +4,6 @@ package models
 // UpdateSettingsRequest is the body for PATCH /api/v1/projects/:id/settings.
 // Only non-zero fields are applied; omitted fields leave the existing values unchanged.
 type UpdateSettingsRequest struct {
-	// ActivePair selects the trading pair to render. Both fields must be non-empty to apply.
-	ActivePair *SourcePair `json:"activePair,omitempty"`
 	// TimeFrame overrides the project's time frame (e.g. "1h", "4h", "1d").
 	TimeFrame string `json:"timeFrame,omitempty"`
 	// RangeFrom overrides the range start as an RFC3339 timestamp string.

@@ -87,10 +87,12 @@ func emptyRenderResponse(render chartproject.RenderableChartProject) models.Proj
 //	@Description	Fetches OHLCV data and computes all configured indicators using the project's stored settings.
 //	@Description	The response contains raw candle and indicator data for the frontend to render.
 //	@Description	Indicator PlotPoints arrays are index-aligned with the active pair's candle entries.
-//	@Description	To change the active pair, time frame, date range, or candle colours, use PATCH /settings first.
+//	@Description	To change the time frame, date range, or candle colours, use PATCH /settings first.
 //	@Tags			projects
 //	@Produce		json
-//	@Param			id	path		string	true	"Project UUID"
+//	@Param			id			path		string	true	"Project UUID"
+//	@Param			sourceName	query		string	false	"Source name of the pair to render (defaults to first loaded pair)"
+//	@Param			pairId		query		string	false	"Pair ID to render (defaults to first loaded pair)"
 //	@Success		200	{object}	models.ProjectRenderResponse
 //	@Failure		404	{object}	models.ErrorResponse
 //	@Failure		500	{object}	models.ErrorResponse
@@ -105,8 +107,11 @@ func RenderProject(c *gin.Context) {
 		return
 	}
 
-	// Use the project's stored settings — no per-request overrides.
-	render, err := project.GetRender(chartproject.RenderConfig{})
+	// Active pair is a frontend concern; the caller passes it as query params.
+	sourceName := c.Query("sourceName")
+	pairId := c.Query("pairId")
+
+	render, err := project.GetRender(sourceName, pairId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "failed to render chart", Details: err.Error()})
 		return

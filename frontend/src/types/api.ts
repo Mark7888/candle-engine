@@ -24,7 +24,6 @@ export interface ProjectDetail {
   timeRange: TimeRange;
   availableTimeFrames: string[];
   pairs: PairInfo[];
-  activePair: ActivePair;
   candleColors: CandleColors;
 }
 
@@ -145,7 +144,6 @@ export interface RenderResponse {
 }
 
 export interface UpdateSettingsRequest {
-  activePair?: ActivePair;
   timeFrame?: string;
   rangeFrom?: string;
   rangeTo?: string;

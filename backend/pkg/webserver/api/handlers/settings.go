@@ -6,7 +6,6 @@ import (
 
 	"candle-engine/pkg/chartproject"
 	"candle-engine/pkg/chartmanager"
-	"candle-engine/pkg/sources"
 	"candle-engine/pkg/webserver/api/models"
 	apival "candle-engine/pkg/webserver/api/validation"
 
@@ -16,7 +15,7 @@ import (
 // UpdateProjectSettings godoc
 //
 //	@Summary		Update session settings for a project
-//	@Description	Persists the active pair, time frame, date range, and candle colours for the project.
+//	@Description	Persists the time frame, date range, and candle colours for the project.
 //	@Description	Only non-empty fields in the request body are applied; omitted fields leave existing values unchanged.
 //	@Description	After updating, the frontend should re-fetch the render endpoint to get fresh chart data.
 //	@Tags			projects
@@ -45,13 +44,6 @@ func UpdateProjectSettings(c *gin.Context) {
 	}
 
 	cfg := chartproject.ChartProjectConfig{}
-
-	if req.ActivePair != nil {
-		cfg.ActivePair = sources.SourcePairId{
-			SourceName: req.ActivePair.SourceName,
-			PairId:     req.ActivePair.PairID,
-		}
-	}
 
 	if req.TimeFrame != "" {
 		cfg.TimeFrame = req.TimeFrame
@@ -112,7 +104,6 @@ func UpdateProjectSettings(c *gin.Context) {
 	}
 
 	tr := project.GetTimeRange()
-	ap := project.GetActivePair()
 	colors := project.GetColors()
 
 	c.JSON(http.StatusOK, models.ProjectDetailResponse{
@@ -122,7 +113,6 @@ func UpdateProjectSettings(c *gin.Context) {
 		AvailableTimeFrames: project.GetAvailableTimeFrames(),
 		Pairs:               pairs,
 		TimeRange:           models.TimeRange{Start: tr.Start, End: tr.End},
-		ActivePair:          models.SourcePair{SourceName: ap.SourceName, PairID: ap.PairId},
 		CandleColors: models.CandleColors{
 			BullishColor: colors.BullishColor,
 			BearishColor: colors.BearishColor,

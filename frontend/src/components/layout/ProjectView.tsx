@@ -10,6 +10,7 @@ import {
   useColorModeValue,
 } from '@chakra-ui/react';
 import { useProjectStore } from '../../store/projectStore';
+import { useUIStore } from '../../store/uiStore';
 import { usePlaybackStore } from '../../store/playbackStore';
 import { sliceRenderData } from '../../utils/sliceRenderData';
 import PairView from '../layout/PairView';
@@ -24,15 +25,35 @@ interface ProjectViewProps {
  * ProjectView – renders the settings bar, the inner pair tabs (vertical
  * sidebar) and the PairView for the currently selected pair.
  *
- * All mutable settings (active pair, time frame, date range, candle colours)
- * are owned by the backend.  The frontend reads them from the project detail
- * response and calls PATCH /settings whenever the user changes them.
+ * Active pair selection is frontend-only state (uiStore), cached per pair so
+ * switching between already-fetched pairs is instant.  Backend-owned settings
+ * (timeFrame, timeRange, candleColors) are updated via PATCH /settings which
+ * invalidates all per-pair render caches for the project and triggers a
+ * fresh render for the current pair.
  */
 export default function ProjectView({ projectId }: ProjectViewProps) {
   const loadProject = useProjectStore((s) => s.loadProject);
   const loadRender = useProjectStore((s) => s.loadRender);
   const updateSettings = useProjectStore((s) => s.updateSettings);
   const projectDetail = useProjectStore((s) => s.projectDetails[projectId]);
+
+  // Active pair lives in uiStore (frontend session state, not persisted).
+  const activePair = useUIStore((s) => s.activePairs[projectId]);
+  const setActivePair = useUIStore((s) => s.setActivePair);
+
+  // Render cache subscriptions are keyed by project + pair.
+  const renderCacheKey = activePair
+    ? `${projectId}:${activePair.sourceName}:${activePair.pairId}`
+    : null;
+  const renderData = useProjectStore((s) =>
+    renderCacheKey ? (s.renderData[renderCacheKey] ?? null) : null
+  );
+  const loading = useProjectStore((s) =>
+    renderCacheKey ? (s.renderLoading[renderCacheKey] ?? false) : false
+  );
+  const error = useProjectStore((s) =>
+    renderCacheKey ? (s.renderErrors[renderCacheKey] ?? null) : null
+  );
 
   // --- Playback store – all state is project-level so pair switches share position ---
   const playbackProjectState = usePlaybackStore((s) => s.projects[projectId]);
@@ -49,36 +70,42 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
   const setPlaybackStepSize = usePlaybackStore((s) => s.setStepSize);
   const setPlaybackPlayInterval = usePlaybackStore((s) => s.setPlayInterval);
 
-  // Subscribe directly to the data/loading/error slices so the component
-  // re-renders when loadRender() updates them.
-  const renderData = useProjectStore((s) => s.renderData[projectId] ?? null);
-  const loading = useProjectStore((s) => s.renderLoading[projectId] ?? false);
-  const error = useProjectStore((s) => s.renderErrors[projectId] ?? null);
-
-  // Load project detail on mount
+  // Load project detail on mount (guarded by the store).
   useEffect(() => {
     loadProject(projectId);
   }, [projectId, loadProject]);
 
-  // Load render data once the project detail is available
+  // Once we have the project detail and an active pair, load the render.
+  // This effect also fires when:
+  //  - activePair changes (user selected a different pair) → loadRender is
+  //    guarded so it's a no-op if the pair is already cached.
+  //  - projectDetail changes (after updateSettings cleared the cache) → loadRender
+  //    fetches fresh data because the cache was invalidated.
   useEffect(() => {
-    if (projectDetail) {
-      loadRender(projectId);
-    }
-  }, [projectId, projectDetail, loadRender]);
+    if (!projectDetail?.pairs?.length) return;
 
+    if (!activePair) {
+      // Default to the first pair on initial load.
+      const first = projectDetail.pairs[0];
+      setActivePair(projectId, first.sourceName, first.pairId);
+      return; // effect will re-run once activePair is set
+    }
+
+    loadRender(projectId, activePair.sourceName, activePair.pairId);
+  }, [projectId, projectDetail, activePair, loadRender, setActivePair]);
+
+  // Pair selection is purely frontend – update uiStore, then the effect above
+  // will call loadRender (cache hit = instant, cache miss = fetches from backend).
   const handleSelectPair = useCallback(
-    async (sourceName: string, pairId: string) => {
-      try {
-        await updateSettings(projectId, { activePair: { sourceName, pairId } });
-      } catch {
-        // error already logged in store
-      }
+    (sourceName: string, pairId: string) => {
+      setActivePair(projectId, sourceName, pairId);
     },
-    [projectId, updateSettings]
+    [projectId, setActivePair]
   );
 
-  // When a time-frame or range setting changes: update backend, then re-render
+  // When a backend-owned setting changes: PATCH, then the store clears all
+  // render caches for this project. The effect above re-triggers and fetches
+  // fresh render data for the current pair.
   const handleSettingChange = useCallback(
     async (patch: { timeFrame?: string; rangeFrom?: string; rangeTo?: string }) => {
       try {
@@ -90,7 +117,6 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
     [projectId, updateSettings]
   );
 
-  // When candle colors change (from ProjectSettingsModal via the store)
   const handleColorsChange = useCallback(
     async (candleBullishColor: string, candleBearishColor: string) => {
       try {
@@ -142,10 +168,10 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
   // --- Derive playback-sliced render data and candle metadata ---
   const activeSeries = useMemo(() => {
     if (!renderData) return null;
-    const { activePair } = renderData;
-    return activePair
+    const ap = renderData.activePair;
+    return ap
       ? renderData.candles.find(
-          (c) => c.sourceName === activePair.sourceName && c.pairId === activePair.pairId
+          (c) => c.sourceName === ap.sourceName && c.pairId === ap.pairId
         ) ?? null
       : renderData.candles[0] ?? null;
   }, [renderData]);
@@ -173,9 +199,6 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
       </Center>
     );
   }
-
-  // Derive display values from the backend-owned project detail.
-  const activePairEntry = projectDetail.activePair;
 
   return (
     <Flex direction="column" gap={0} h="100%">
@@ -229,8 +252,8 @@ export default function ProjectView({ projectId }: ProjectViewProps) {
         >
           {projectDetail.pairs.map((pair) => {
             const isActive =
-              activePairEntry?.sourceName === pair.sourceName &&
-              activePairEntry?.pairId === pair.pairId;
+              activePair?.sourceName === pair.sourceName &&
+              activePair?.pairId === pair.pairId;
             return (
               <Button
                 key={`${pair.sourceName}-${pair.pairId}`}

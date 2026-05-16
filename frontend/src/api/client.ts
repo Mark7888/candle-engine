@@ -27,11 +27,14 @@ export const updateProjectSettings = (
     .then((r) => r.data);
 
 /**
- * Fetch rendered chart data for a project using its stored settings.
+ * Fetch rendered chart data for a specific pair within a project.
+ * sourceName and pairId identify the trading pair to render; both are required.
  */
-export const fetchRender = (id: string): Promise<RenderResponse> =>
+export const fetchRender = (id: string, sourceName: string, pairId: string): Promise<RenderResponse> =>
   api
-    .get<RenderResponse>(`/api/v1/projects/${id}/render`)
+    .get<RenderResponse>(`/api/v1/projects/${id}/render`, {
+      params: { sourceName, pairId },
+    })
     .then((r) => r.data);
 
 export default api;

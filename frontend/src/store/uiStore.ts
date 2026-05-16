@@ -9,6 +9,11 @@ interface FloatingWidget {
   h: number;
 }
 
+export interface ActivePairEntry {
+  sourceName: string;
+  pairId: string;
+}
+
 interface UIStoreState {
   // Logs panel open/closed state – global, synced across all pair tabs
   logsPanelOpen: boolean;
@@ -21,6 +26,12 @@ interface UIStoreState {
   // Active project tab
   activeProjectId: string | null;
   setActiveProjectId: (id: string) => void;
+
+  // Active pair per project – frontend session state, NOT persisted.
+  // Keyed by projectId; the render cache is also keyed per-pair so switching
+  // between already-fetched pairs is instant.
+  activePairs: Record<string, ActivePairEntry>;
+  setActivePair: (projectId: string, sourceName: string, pairId: string) => void;
 
   // Indicator panel open/closed — global, same behaviour as logsPanelOpen
   indicatorPanelOpen: boolean;
@@ -56,6 +67,13 @@ export const useUIStore = create<UIStoreState>()(
       activeProjectId: null,
       setActiveProjectId: (id: string) => set({ activeProjectId: id }),
 
+      // Active pair per project – session-only, not persisted
+      activePairs: {},
+      setActivePair: (projectId: string, sourceName: string, pairId: string) =>
+        set((s) => ({
+          activePairs: { ...s.activePairs, [projectId]: { sourceName, pairId } },
+        })),
+
       // Indicator panel open/closed — global, same behaviour as logsPanelOpen
       indicatorPanelOpen: true,
       setIndicatorPanelOpen: (value: boolean) => set({ indicatorPanelOpen: value }),
@@ -74,7 +92,7 @@ export const useUIStore = create<UIStoreState>()(
     }),
     {
       name: 'candle-engine-ui',
-      // Persist log panel open state and log level filters across page reloads.
+      // Persist only the frontend-specific UI state. Active pairs are session-only.
       partialize: (s) => ({
         logsPanelOpen: s.logsPanelOpen,
         hiddenLogLevels: s.hiddenLogLevels,
