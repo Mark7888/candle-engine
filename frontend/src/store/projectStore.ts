@@ -7,6 +7,10 @@ import type { Project, ProjectDetail, RenderResponse } from '../types/api';
 const renderKey = (projectId: string, sourceName: string, pairId: string) =>
   `${projectId}:${sourceName}:${pairId}`;
 
+// Remove all entries whose key starts with the given prefix.
+const filterOutPrefix = <T>(record: Record<string, T>, prefix: string): Record<string, T> =>
+  Object.fromEntries(Object.entries(record).filter(([k]) => !k.startsWith(prefix)));
+
 interface ProjectStoreState {
   // List of { id, title }
   projects: Project[];
@@ -117,20 +121,11 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
       set((s) => {
         // Remove all render cache entries for this project (all pairs).
         const prefix = `${projectId}:`;
-        const newRenderData = Object.fromEntries(
-          Object.entries(s.renderData).filter(([k]) => !k.startsWith(prefix))
-        );
-        const newRenderLoading = Object.fromEntries(
-          Object.entries(s.renderLoading).filter(([k]) => !k.startsWith(prefix))
-        );
-        const newRenderErrors = Object.fromEntries(
-          Object.entries(s.renderErrors).filter(([k]) => !k.startsWith(prefix))
-        );
         return {
           projectDetails: { ...s.projectDetails, [projectId]: updatedDetail },
-          renderData: newRenderData,
-          renderLoading: newRenderLoading,
-          renderErrors: newRenderErrors,
+          renderData: filterOutPrefix(s.renderData, prefix),
+          renderLoading: filterOutPrefix(s.renderLoading, prefix),
+          renderErrors: filterOutPrefix(s.renderErrors, prefix),
         };
       });
     } catch (err) {

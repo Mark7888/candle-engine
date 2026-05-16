@@ -195,7 +195,7 @@ func (c *ChartProject) GetRender(sourceName, pairId string) (RenderableChartProj
 	// Resolve the active pair: use the supplied source/pair, or fall back to the
 	// first loaded pair when none is specified.
 	activePair := sources.SourcePairId{SourceName: sourceName, PairId: pairId}
-	if (activePair == sources.SourcePairId{}) && len(c.SelectedPairs) > 0 {
+	if sourceName == "" && pairId == "" && len(c.SelectedPairs) > 0 {
 		activePair = c.SelectedPairs[0]
 	}
 
