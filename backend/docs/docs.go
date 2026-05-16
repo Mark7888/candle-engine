@@ -92,7 +92,7 @@ const docTemplate = `{
         },
         "/api/v1/projects/{id}/render": {
             "get": {
-                "description": "Fetches OHLCV data and computes all configured indicators for the requested trading pair.\nThe response contains raw candle and indicator data for the frontend to render.\nIndicator PlotPoints arrays are index-aligned with the active pair's candle entries.\nOptional query parameters timeFrame, rangeFrom, rangeTo, candleBullishColor, and candleBearishColor\noverride the project defaults for this request only; no server-side state is mutated.",
+                "description": "Fetches OHLCV data and computes all configured indicators using the project's stored settings.\nThe response contains raw candle and indicator data for the frontend to render.\nIndicator PlotPoints arrays are index-aligned with the active pair's candle entries.\nTo change the active pair, time frame, date range, or candle colours, use PATCH /settings first.",
                 "produces": [
                     "application/json"
                 ],
@@ -107,38 +107,6 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Data source name (e.g. 'Binance')",
-                        "name": "source",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Trading pair ID (e.g. 'BTCUSDC')",
-                        "name": "pair",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Override time frame (e.g. '1h', '4h', '1d')",
-                        "name": "timeFrame",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Override range start as RFC3339 timestamp",
-                        "name": "rangeFrom",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Override range end as RFC3339 timestamp",
-                        "name": "rangeTo",
-                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -146,12 +114,6 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.ProjectRenderResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
@@ -162,6 +124,59 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/projects/{id}/settings": {
+            "patch": {
+                "description": "Persists the active pair, time frame, date range, and candle colours for the project.\nOnly non-empty fields in the request body are applied; omitted fields leave existing values unchanged.\nAfter updating, the frontend should re-fetch the render endpoint to get fresh chart data.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "projects"
+                ],
+                "summary": "Update session settings for a project",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Settings to update",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateSettingsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ProjectDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -325,11 +340,17 @@ const docTemplate = `{
         "models.ProjectDetailResponse": {
             "type": "object",
             "properties": {
+                "activePair": {
+                    "$ref": "#/definitions/models.SourcePair"
+                },
                 "availableTimeFrames": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
+                },
+                "candleColors": {
+                    "$ref": "#/definitions/models.CandleColors"
                 },
                 "id": {
                     "type": "string"
@@ -435,6 +456,39 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "start": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UpdateSettingsRequest": {
+            "type": "object",
+            "properties": {
+                "activePair": {
+                    "description": "ActivePair selects the trading pair to render. Both fields must be non-empty to apply.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.SourcePair"
+                        }
+                    ]
+                },
+                "candleBearishColor": {
+                    "description": "CandleBearishColor overrides the bearish candle color (CSS hex, e.g. \"#ef5350\").",
+                    "type": "string"
+                },
+                "candleBullishColor": {
+                    "description": "CandleBullishColor overrides the bullish candle color (CSS hex, e.g. \"#26a69a\").",
+                    "type": "string"
+                },
+                "rangeFrom": {
+                    "description": "RangeFrom overrides the range start as an RFC3339 timestamp string.",
+                    "type": "string"
+                },
+                "rangeTo": {
+                    "description": "RangeTo overrides the range end as an RFC3339 timestamp string.",
+                    "type": "string"
+                },
+                "timeFrame": {
+                    "description": "TimeFrame overrides the project's time frame (e.g. \"1h\", \"4h\", \"1d\").",
                     "type": "string"
                 }
             }
