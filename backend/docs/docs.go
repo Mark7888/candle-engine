@@ -92,7 +92,7 @@ const docTemplate = `{
         },
         "/api/v1/projects/{id}/render": {
             "get": {
-                "description": "Fetches OHLCV data and computes all configured indicators using the project's stored settings.\nThe response contains raw candle and indicator data for the frontend to render.\nIndicator PlotPoints arrays are index-aligned with the active pair's candle entries.\nTo change the active pair, time frame, date range, or candle colours, use PATCH /settings first.",
+                "description": "Fetches OHLCV data and computes all configured indicators using the project's stored settings.\nThe response contains raw candle and indicator data for the frontend to render.\nIndicator PlotPoints arrays are index-aligned with the active pair's candle entries.\nTo change the time frame, date range, or candle colours, use PATCH /settings first.",
                 "produces": [
                     "application/json"
                 ],
@@ -107,6 +107,18 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Source name of the pair to render (defaults to first loaded pair)",
+                        "name": "sourceName",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Pair ID to render (defaults to first loaded pair)",
+                        "name": "pairId",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -133,7 +145,7 @@ const docTemplate = `{
         },
         "/api/v1/projects/{id}/settings": {
             "patch": {
-                "description": "Persists the active pair, time frame, date range, and candle colours for the project.\nOnly non-empty fields in the request body are applied; omitted fields leave existing values unchanged.\nAfter updating, the frontend should re-fetch the render endpoint to get fresh chart data.",
+                "description": "Persists the time frame, date range, and candle colours for the project.\nOnly non-empty fields in the request body are applied; omitted fields leave existing values unchanged.\nAfter updating, the frontend should re-fetch the render endpoint to get fresh chart data.",
                 "consumes": [
                     "application/json"
                 ],
@@ -340,9 +352,6 @@ const docTemplate = `{
         "models.ProjectDetailResponse": {
             "type": "object",
             "properties": {
-                "activePair": {
-                    "$ref": "#/definitions/models.SourcePair"
-                },
                 "availableTimeFrames": {
                     "type": "array",
                     "items": {
@@ -463,14 +472,6 @@ const docTemplate = `{
         "models.UpdateSettingsRequest": {
             "type": "object",
             "properties": {
-                "activePair": {
-                    "description": "ActivePair selects the trading pair to render. Both fields must be non-empty to apply.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/models.SourcePair"
-                        }
-                    ]
-                },
                 "candleBearishColor": {
                     "description": "CandleBearishColor overrides the bearish candle color (CSS hex, e.g. \"#ef5350\").",
                     "type": "string"
