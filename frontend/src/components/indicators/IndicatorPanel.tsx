@@ -85,7 +85,9 @@ interface FloatingWidgetProps {
   collection: PlotPointCollection | null;
   position: { x: number; y: number };
   size: { w: number; h: number };
+  pinned: boolean;
   onSnapBack: () => void;
+  onTogglePin: () => void;
   onStop: (x: number, y: number) => void;
   onResize: (w: number, h: number) => void;
 }
@@ -95,7 +97,9 @@ function FloatingWidget({
   collection,
   position,
   size,
+  pinned,
   onSnapBack,
+  onTogglePin,
   onStop,
   onResize,
 }: FloatingWidgetProps) {
@@ -164,6 +168,7 @@ function FloatingWidget({
       handle=".drag-handle"
       position={dragPos}
       bounds={bounds}
+      disabled={pinned}
       nodeRef={nodeRef}
       onDrag={(_e: DraggableEvent, data: DraggableData) => setDragPos({ x: data.x, y: data.y })}
       onStop={(_e: DraggableEvent, data: DraggableData) => {
@@ -185,32 +190,36 @@ function FloatingWidget({
               ?.displayName || indicator.name
           }
           floating
+          pinned={pinned}
           onSnapBack={onSnapBack}
+          onTogglePin={onTogglePin}
           contentHeight={contentH}
         >
           <WidgetBody indicator={indicator} collection={collection} height={contentH} />
         </WidgetCard>
 
-        {/* Resize handle — bottom-right corner */}
-        <Box
-          as="svg"
-          viewBox="0 0 16 16"
-          position="absolute"
-          bottom="4px"
-          right="4px"
-          w="16px"
-          h="16px"
-          cursor="se-resize"
-          zIndex={10001}
-          onMouseDown={handleResizeMouseDown}
-          opacity={0.6}
-          _hover={{ opacity: 1 }}
-          sx={{ color: handleColor, pointerEvents: 'all' }}
-        >
-          <line x1="4" y1="16" x2="16" y2="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <line x1="9" y1="16" x2="16" y2="9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          <line x1="14" y1="16" x2="16" y2="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </Box>
+        {/* Resize handle — hidden when pinned */}
+        {!pinned && (
+          <Box
+            as="svg"
+            viewBox="0 0 16 16"
+            position="absolute"
+            bottom="4px"
+            right="4px"
+            w="16px"
+            h="16px"
+            cursor="se-resize"
+            zIndex={10001}
+            onMouseDown={handleResizeMouseDown}
+            opacity={0.6}
+            _hover={{ opacity: 1 }}
+            sx={{ color: handleColor, pointerEvents: 'all' }}
+          >
+            <line x1="4" y1="16" x2="16" y2="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <line x1="9" y1="16" x2="16" y2="9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <line x1="14" y1="16" x2="16" y2="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </Box>
+        )}
       </Box>
     </Draggable>,
     document.body
@@ -350,6 +359,18 @@ export default function IndicatorPanel({ renderData, projectId }: IndicatorPanel
     [floatingForProject, projectId, setFloatingWidgets]
   );
 
+  const toggleWidgetPin = useCallback(
+    (indicatorName: string) => {
+      setFloatingWidgets(
+        projectId,
+        floatingForProject.map((fw) =>
+          fw.id === indicatorName ? { ...fw, pinned: !fw.pinned } : fw
+        )
+      );
+    },
+    [floatingForProject, projectId, setFloatingWidgets]
+  );
+
   const snapBackAllWidgets = useCallback(() => {
     setFloatingWidgets(projectId, []);
   }, [projectId, setFloatingWidgets]);
@@ -396,7 +417,9 @@ export default function IndicatorPanel({ renderData, projectId }: IndicatorPanel
         collection={collection}
         position={{ x, y }}
         size={{ w, h }}
+        pinned={fw.pinned ?? false}
         onSnapBack={() => snapBackWidget(fw.id)}
+        onTogglePin={() => toggleWidgetPin(fw.id)}
         onStop={(px, py) => updateWidgetPosition(fw.id, px, py)}
         onResize={(nw, nh) => updateWidgetSize(fw.id, nw, nh)}
       />

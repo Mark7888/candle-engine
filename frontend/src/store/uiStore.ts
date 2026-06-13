@@ -7,6 +7,7 @@ interface FloatingWidget {
   yPct: number; // y as fraction of viewport height (0–1)
   w: number;
   h: number;
+  pinned?: boolean;
 }
 
 export interface ActivePairEntry {

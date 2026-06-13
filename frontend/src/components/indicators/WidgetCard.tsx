@@ -1,31 +1,25 @@
-import { Box, Flex, Text, IconButton, useColorMode } from '@chakra-ui/react';
-import { MdOpenInNew, MdCallReceived } from 'react-icons/md';
+import { Box, Flex, HStack, Text, IconButton, useColorMode } from '@chakra-ui/react';
+import { MdOpenInNew, MdCallReceived, MdPushPin } from 'react-icons/md';
 import type { ReactNode } from 'react';
 
 interface WidgetCardProps {
   title: string;
   floating?: boolean;
+  pinned?: boolean;
   onFloat?: () => void;
   onSnapBack?: () => void;
+  onTogglePin?: () => void;
   children?: ReactNode;
   contentHeight?: number;
 }
 
-/**
- * WidgetCard – shared wrapper for all drawer widget types.
- *
- * Props:
- *   title      – display name shown in the card header
- *   floating   – whether this card is currently floating (affects styling + icon)
- *   onFloat    – callback to pop out the card as a floating window
- *   onSnapBack – callback to return the card to the drawer
- *   children   – widget body content
- */
 export default function WidgetCard({
   title,
   floating = false,
+  pinned = false,
   onFloat,
   onSnapBack,
+  onTogglePin,
   children,
   contentHeight,
 }: WidgetCardProps) {
@@ -56,22 +50,33 @@ export default function WidgetCard({
         align="center"
         justify="space-between"
         flexShrink={0}
-        className={floating ? 'drag-handle' : undefined}
-        cursor={floating ? 'grab' : 'default'}
+        className={floating && !pinned ? 'drag-handle' : undefined}
+        cursor={floating && !pinned ? 'grab' : 'default'}
         userSelect="none"
       >
         <Text fontSize="xs" fontWeight="semibold" noOfLines={1}>
           {title}
         </Text>
         {floating ? (
-          <IconButton
-            icon={<MdCallReceived size={12} />}
-            size="xs"
-            variant="ghost"
-            aria-label="Return to drawer"
-            title="Return to drawer"
-            onClick={onSnapBack}
-          />
+          <HStack spacing={0}>
+            <IconButton
+              icon={<MdPushPin size={12} />}
+              size="xs"
+              variant="ghost"
+              aria-label={pinned ? 'Unpin widget' : 'Pin widget'}
+              title={pinned ? 'Unpin widget' : 'Pin widget'}
+              color={pinned ? 'blue.400' : undefined}
+              onClick={onTogglePin}
+            />
+            <IconButton
+              icon={<MdCallReceived size={12} />}
+              size="xs"
+              variant="ghost"
+              aria-label="Return to drawer"
+              title="Return to drawer"
+              onClick={onSnapBack}
+            />
+          </HStack>
         ) : (
           <IconButton
             icon={<MdOpenInNew size={12} />}
