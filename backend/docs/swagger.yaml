@@ -104,6 +104,8 @@ definitions:
         items:
           type: string
         type: array
+      candleColors:
+        $ref: '#/definitions/models.CandleColors'
       id:
         type: string
       pairs:
@@ -174,6 +176,27 @@ definitions:
       start:
         type: string
     type: object
+  models.UpdateSettingsRequest:
+    properties:
+      candleBearishColor:
+        description: CandleBearishColor overrides the bearish candle color (CSS hex,
+          e.g. "#ef5350").
+        type: string
+      candleBullishColor:
+        description: CandleBullishColor overrides the bullish candle color (CSS hex,
+          e.g. "#26a69a").
+        type: string
+      rangeFrom:
+        description: RangeFrom overrides the range start as an RFC3339 timestamp string.
+        type: string
+      rangeTo:
+        description: RangeTo overrides the range end as an RFC3339 timestamp string.
+        type: string
+      timeFrame:
+        description: TimeFrame overrides the project's time frame (e.g. "1h", "4h",
+          "1d").
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -235,38 +258,23 @@ paths:
   /api/v1/projects/{id}/render:
     get:
       description: |-
-        Fetches OHLCV data and computes all configured indicators for the requested trading pair.
+        Fetches OHLCV data and computes all configured indicators using the project's stored settings.
         The response contains raw candle and indicator data for the frontend to render.
         Indicator PlotPoints arrays are index-aligned with the active pair's candle entries.
-        Optional query parameters timeFrame, rangeFrom, rangeTo, candleBullishColor, and candleBearishColor
-        override the project defaults for this request only; no server-side state is mutated.
+        To change the time frame, date range, or candle colours, use PATCH /settings first.
       parameters:
       - description: Project UUID
         in: path
         name: id
         required: true
         type: string
-      - description: Data source name (e.g. 'Binance')
+      - description: Source name of the pair to render (defaults to first loaded pair)
         in: query
-        name: source
-        required: true
+        name: sourceName
         type: string
-      - description: Trading pair ID (e.g. 'BTCUSDC')
+      - description: Pair ID to render (defaults to first loaded pair)
         in: query
-        name: pair
-        required: true
-        type: string
-      - description: Override time frame (e.g. '1h', '4h', '1d')
-        in: query
-        name: timeFrame
-        type: string
-      - description: Override range start as RFC3339 timestamp
-        in: query
-        name: rangeFrom
-        type: string
-      - description: Override range end as RFC3339 timestamp
-        in: query
-        name: rangeTo
+        name: pairId
         type: string
       produces:
       - application/json
@@ -275,10 +283,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.ProjectRenderResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
         "404":
           description: Not Found
           schema:
@@ -288,6 +292,44 @@ paths:
           schema:
             $ref: '#/definitions/models.ErrorResponse'
       summary: Render chart data for a project
+      tags:
+      - projects
+  /api/v1/projects/{id}/settings:
+    patch:
+      consumes:
+      - application/json
+      description: |-
+        Persists the time frame, date range, and candle colours for the project.
+        Only non-empty fields in the request body are applied; omitted fields leave existing values unchanged.
+        After updating, the frontend should re-fetch the render endpoint to get fresh chart data.
+      parameters:
+      - description: Project UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Settings to update
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateSettingsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ProjectDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Update session settings for a project
       tags:
       - projects
 schemes:

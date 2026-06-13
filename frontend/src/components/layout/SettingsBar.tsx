@@ -13,20 +13,22 @@ import { BsPlayCircle } from 'react-icons/bs';
 import { LuSettings2 } from 'react-icons/lu';
 import ProjectSettingsModal from '../settings/ProjectSettingsModal';
 import { validateDateRange, isDateRangeValid } from '../../utils/validation';
+import type { CandleColors } from '../../types/api';
 
 interface SettingsBarProps {
   /** The ID of the project this bar belongs to (used for per-project settings). */
   projectId: string;
   availableTimeFrames?: string[];
-  defaultTimeFrame?: string;
-  defaultRangeFrom?: string;
-  defaultRangeTo?: string;
-  timeFrame?: string | null;
-  rangeFrom?: string | null;
-  rangeTo?: string | null;
+  timeFrame?: string;
+  rangeFrom?: string;
+  rangeTo?: string;
   onTimeFrameChange?: (value: string) => void;
   onRangeFromChange?: (value: string) => void;
   onRangeToChange?: (value: string) => void;
+  /** Current candle colors (read from backend-owned project detail). */
+  candleColors?: CandleColors;
+  /** Called with new colors when the user saves the settings modal. */
+  onColorsChange?: (bullish: string, bearish: string) => void;
   /** Whether Playback mode is currently active for this project. */
   playbackActive?: boolean;
   /** Called when the user clicks the Playback mode toggle button. */
@@ -35,36 +37,21 @@ interface SettingsBarProps {
 
 /**
  * SettingsBar – a horizontal toolbar rendered inside a project, above the pair
- * selector and chart.  It lets the user override the project-level time frame
- * and date range without touching any backend state.
- *
- * Props:
- *   projectId            number     – the owning project (required for per-project settings)
- *   availableTimeFrames  string[]   – ordered list of valid time frames
- *   defaultTimeFrame     string     – project default (used as placeholder)
- *   defaultRangeFrom     string     – project default range start (ISO)
- *   defaultRangeTo       string     – project default range end (ISO)
- *   timeFrame            string|null  – current client-side override
- *   rangeFrom            string|null  – current client-side override
- *   rangeTo              string|null  – current client-side override
- *   onTimeFrameChange    (value: string) => void
- *   onRangeFromChange    (value: string) => void
- *   onRangeToChange      (value: string) => void
- *   playbackActive       boolean – whether Playback mode is currently active
- *   onPlaybackToggle     () => void – called when the Playback button is clicked
+ * selector and chart.  It lets the user change the time frame and date range
+ * (which are persisted on the backend), and open the Project Settings modal to
+ * change candle colors.
  */
 export default function SettingsBar({
   projectId,
   availableTimeFrames = [],
-  defaultTimeFrame = '',
-  defaultRangeFrom = '',
-  defaultRangeTo = '',
-  timeFrame = null,
-  rangeFrom = null,
-  rangeTo = null,
+  timeFrame = '',
+  rangeFrom = '',
+  rangeTo = '',
   onTimeFrameChange,
   onRangeFromChange,
   onRangeToChange,
+  candleColors,
+  onColorsChange,
   playbackActive = false,
   onPlaybackToggle,
 }: SettingsBarProps) {
@@ -98,34 +85,36 @@ export default function SettingsBar({
     return new Date(value).toISOString();
   };
 
-  const displayFrom = rangeFrom ?? defaultRangeFrom;
-  const displayTo = rangeTo ?? defaultRangeTo;
-  const displayTimeFrame = timeFrame ?? defaultTimeFrame;
-
   // Local draft state for the datetime-local inputs so the user can freely edit
   // them without the controlled value resetting mid-edit.
-  const [fromDraft, setFromDraft] = useState(() => toDatetimeLocal(displayFrom));
-  const [toDraft, setToDraft] = useState(() => toDatetimeLocal(displayTo));
+  const [fromDraft, setFromDraft] = useState(() => toDatetimeLocal(rangeFrom));
+  const [toDraft, setToDraft] = useState(() => toDatetimeLocal(rangeTo));
   const [fromFocused, setFromFocused] = useState(false);
   const [toFocused, setToFocused] = useState(false);
 
   // Sync from external prop changes only when the input is not focused.
   // Using the "previous value in state" pattern (derived state) avoids calling
   // setState inside a useEffect, which the linter flags as a cascade risk.
-  const [prevDisplayFrom, setPrevDisplayFrom] = useState(displayFrom);
-  const [prevDisplayTo, setPrevDisplayTo] = useState(displayTo);
+  const [prevRangeFrom, setPrevRangeFrom] = useState(rangeFrom);
+  const [prevRangeTo, setPrevRangeTo] = useState(rangeTo);
 
-  if (displayFrom !== prevDisplayFrom) {
-    setPrevDisplayFrom(displayFrom);
-    if (!fromFocused) setFromDraft(toDatetimeLocal(displayFrom));
+  if (rangeFrom !== prevRangeFrom) {
+    setPrevRangeFrom(rangeFrom);
+    if (!fromFocused) setFromDraft(toDatetimeLocal(rangeFrom));
   }
-  if (displayTo !== prevDisplayTo) {
-    setPrevDisplayTo(displayTo);
-    if (!toFocused) setToDraft(toDatetimeLocal(displayTo));
+  if (rangeTo !== prevRangeTo) {
+    setPrevRangeTo(rangeTo);
+    if (!toFocused) setToDraft(toDatetimeLocal(rangeTo));
   }
 
   // Validate the current draft values on every render (cheap, pure computation).
   const rangeValidation = validateDateRange(fromDraft, toDraft);
+
+  // Default colors for when the project detail hasn't loaded yet.
+  const effectiveCandleColors: CandleColors = candleColors ?? {
+    bullishColor: '#26a69a',
+    bearishColor: '#ef5350',
+  };
 
   return (
     <Flex
@@ -145,7 +134,7 @@ export default function SettingsBar({
         </Text>
         <Select
           size="xs"
-          value={displayTimeFrame}
+          value={timeFrame}
           onChange={(e) => onTimeFrameChange?.(e.target.value)}
           w="80px"
           bg={inputBg}
@@ -266,6 +255,8 @@ export default function SettingsBar({
         projectId={projectId}
         isOpen={settingsOpen}
         onClose={handleSettingsClose}
+        candleColors={effectiveCandleColors}
+        onColorsChange={onColorsChange ?? (() => {})}
       />
     </Flex>
   );

@@ -35,6 +35,7 @@ type ProjectDetailResponse struct {
 	AvailableTimeFrames []string     `json:"availableTimeFrames"`
 	Pairs               []SourcePair `json:"pairs"`
 	TimeRange           TimeRange    `json:"timeRange"`
+	CandleColors        CandleColors `json:"candleColors"`
 }
 
 // CandleEntry is a single OHLCV data point.

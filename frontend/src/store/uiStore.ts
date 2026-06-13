@@ -9,15 +9,9 @@ interface FloatingWidget {
   h: number;
 }
 
-interface ActivePairEntry {
-  source: string;
-  pair: string;
-}
-
-interface ProjectSettings {
-  timeFrame?: string | null;
-  rangeFrom?: string | null;
-  rangeTo?: string | null;
+export interface ActivePairEntry {
+  sourceName: string;
+  pairId: string;
 }
 
 interface UIStoreState {
@@ -33,9 +27,11 @@ interface UIStoreState {
   activeProjectId: string | null;
   setActiveProjectId: (id: string) => void;
 
-  // Active pair per project: { [projectId]: { source, pair } }
+  // Active pair per project – frontend session state, NOT persisted.
+  // Keyed by projectId; the render cache is also keyed per-pair so switching
+  // between already-fetched pairs is instant.
   activePairs: Record<string, ActivePairEntry>;
-  setActivePair: (projectId: string, source: string, pair: string) => void;
+  setActivePair: (projectId: string, sourceName: string, pairId: string) => void;
 
   // Indicator panel open/closed — global, same behaviour as logsPanelOpen
   indicatorPanelOpen: boolean;
@@ -49,13 +45,6 @@ interface UIStoreState {
   // id is the indicator name. NOT persisted — session-only.
   floatingWidgets: Record<string, FloatingWidget[]>;
   setFloatingWidgets: (projectId: string, widgets: FloatingWidget[]) => void;
-
-  // Per-project chart settings (timeFrame, rangeFrom, rangeTo).
-  // null means "use the project default from the backend".
-  // Persisted so selections survive page reloads and are synced across pairs
-  // within the same project.
-  projectSettings: Record<string, ProjectSettings>;
-  setProjectSetting: (projectId: string, patch: Partial<ProjectSettings>) => void;
 }
 
 export const useUIStore = create<UIStoreState>()(
@@ -78,14 +67,11 @@ export const useUIStore = create<UIStoreState>()(
       activeProjectId: null,
       setActiveProjectId: (id: string) => set({ activeProjectId: id }),
 
-      // Active pair per project: { [projectId]: { source, pair } }
+      // Active pair per project – session-only, not persisted
       activePairs: {},
-      setActivePair: (projectId: string, source: string, pair: string) =>
+      setActivePair: (projectId: string, sourceName: string, pairId: string) =>
         set((s) => ({
-          activePairs: {
-            ...s.activePairs,
-            [projectId]: { source, pair },
-          },
+          activePairs: { ...s.activePairs, [projectId]: { sourceName, pairId } },
         })),
 
       // Indicator panel open/closed — global, same behaviour as logsPanelOpen
@@ -103,29 +89,15 @@ export const useUIStore = create<UIStoreState>()(
         set((s) => ({
           floatingWidgets: { ...s.floatingWidgets, [projectId]: widgets },
         })),
-
-      // Per-project chart settings (timeFrame, rangeFrom, rangeTo).
-      // null means "use the project default from the backend".
-      // Persisted so selections survive page reloads and are synced across pairs
-      // within the same project.
-      projectSettings: {},
-      setProjectSetting: (projectId: string, patch: Partial<ProjectSettings>) =>
-        set((s) => ({
-          projectSettings: {
-            ...s.projectSettings,
-            [projectId]: { ...(s.projectSettings[projectId] ?? {}), ...patch },
-          },
-        })),
     }),
     {
       name: 'candle-engine-ui',
-      // Persist log panel open state and log level filters across page reloads.
+      // Persist only the frontend-specific UI state. Active pairs are session-only.
       partialize: (s) => ({
         logsPanelOpen: s.logsPanelOpen,
         hiddenLogLevels: s.hiddenLogLevels,
         indicatorPanelOpen: s.indicatorPanelOpen,
         indicatorPanelHeight: s.indicatorPanelHeight,
-        projectSettings: s.projectSettings,
       }),
     }
   )

@@ -57,6 +57,7 @@ func GetProject(c *gin.Context) {
 	}
 
 	tr := project.GetTimeRange()
+	colors := project.GetColors()
 
 	c.JSON(http.StatusOK, models.ProjectDetailResponse{
 		ID:                  id,
@@ -65,5 +66,9 @@ func GetProject(c *gin.Context) {
 		AvailableTimeFrames: project.GetAvailableTimeFrames(),
 		Pairs:               pairs,
 		TimeRange:           models.TimeRange{Start: tr.Start, End: tr.End},
+		CandleColors: models.CandleColors{
+			BullishColor: colors.BullishColor,
+			BearishColor: colors.BearishColor,
+		},
 	})
 }

@@ -1,7 +1,15 @@
 import { create } from 'zustand';
-import { fetchProjects, fetchProject, fetchRender } from '../api/client';
-import type { RenderConfig } from '../api/client';
+import { fetchProjects, fetchProject, fetchRender, updateProjectSettings } from '../api/client';
+import type { UpdateSettingsRequest } from '../types/api';
 import type { Project, ProjectDetail, RenderResponse } from '../types/api';
+
+// Render cache key: identifies the exact data slice (project + pair).
+const renderKey = (projectId: string, sourceName: string, pairId: string) =>
+  `${projectId}:${sourceName}:${pairId}`;
+
+// Remove all entries whose key starts with the given prefix.
+const filterOutPrefix = <T>(record: Record<string, T>, prefix: string): Record<string, T> =>
+  Object.fromEntries(Object.entries(record).filter(([k]) => !k.startsWith(prefix)));
 
 interface ProjectStoreState {
   // List of { id, title }
@@ -9,25 +17,19 @@ interface ProjectStoreState {
   projectsLoading: boolean;
   projectsError: string | null;
 
-  // Per-project detail cache
+  // Per-project detail cache (authoritative state from backend)
   projectDetails: Record<string, ProjectDetail>;
 
-  // Per-pair render cache key: `${projectId}-${source}-${pair}`
+  // Per-project-per-pair render data cache
+  // Key: renderKey(projectId, sourceName, pairId)
   renderData: Record<string, RenderResponse>;
   renderLoading: Record<string, boolean>;
   renderErrors: Record<string, string | null>;
 
   loadProjects: () => Promise<void>;
   loadProject: (id: string) => Promise<void>;
-  clearProjectRenderCache: (projectId: string) => void;
-  loadRender: (
-    projectId: string,
-    config: RenderConfig
-  ) => Promise<void>;
-  getRender: (
-    projectId: number,
-    config: RenderConfig
-  ) => { data: RenderResponse | null; loading: boolean; error: string | null };
+  loadRender: (projectId: string, sourceName: string, pairId: string) => Promise<void>;
+  updateSettings: (projectId: string, settings: UpdateSettingsRequest) => Promise<void>;
 }
 
 export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
@@ -39,12 +41,14 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
   // Per-project detail cache
   projectDetails: {},
 
-  // Per-pair render cache key: `${projectId}-${source}-${pair}`
+  // Per-project-per-pair render cache
   renderData: {},
   renderLoading: {},
   renderErrors: {},
 
   loadProjects: async () => {
+    // Guard: skip if a fetch is already in flight or data is already loaded.
+    if (get().projectsLoading || get().projects.length > 0) return;
     set({ projectsLoading: true, projectsError: null });
     try {
       const projects = await fetchProjects();
@@ -67,51 +71,31 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
   },
 
   /**
-   * Clear all cached render data for a project (all pairs).
-   * Called when project-level settings (timeFrame/range) change so the next
-   * loadRender() call fetches fresh data with the updated parameters.
+   * Load render data for the given project + pair.
+   * Skips if already cached or a fetch is already in progress.
+   * The cache is cleared per-project by updateSettings, so calling this again
+   * after a settings change will always fetch fresh data for that pair.
    */
-  clearProjectRenderCache: (projectId: string) => {
+  loadRender: async (projectId: string, sourceName: string, pairId: string) => {
+    const key = renderKey(projectId, sourceName, pairId);
+
+    // Atomically check-and-set the loading flag to prevent concurrent duplicate fetches.
+    let shouldFetch = false;
     set((s) => {
-      const prefix = `${projectId}-`;
-      const newRenderData = Object.fromEntries(
-        Object.entries(s.renderData).filter(([k]) => !k.startsWith(prefix))
-      );
-      const newRenderLoading = Object.fromEntries(
-        Object.entries(s.renderLoading).filter(([k]) => !k.startsWith(prefix))
-      );
-      const newRenderErrors = Object.fromEntries(
-        Object.entries(s.renderErrors).filter(([k]) => !k.startsWith(prefix))
-      );
+      if (s.renderData[key] || s.renderLoading[key]) {
+        return s; // already cached or in flight — no change
+      }
+      shouldFetch = true;
       return {
-        renderData: newRenderData,
-        renderLoading: newRenderLoading,
-        renderErrors: newRenderErrors,
+        ...s,
+        renderLoading: { ...s.renderLoading, [key]: true },
+        renderErrors: { ...s.renderErrors, [key]: null },
       };
     });
-  },
+    if (!shouldFetch) return;
 
-  /**
-   * Load (or re-fetch) render data for a pair.
-   *
-   * @param projectId
-   * @param config - Render configuration (source, pair, and optional overrides)
-   */
-  loadRender: async (
-    projectId: string,
-    config: RenderConfig
-  ) => {
-    const key = `${projectId}-${config.source}-${config.pair}-${config.candleBullishColor ?? ''}-${config.candleBearishColor ?? ''}`;
-    // Skip if already cached. Cache invalidation when settings change is
-    // handled by clearProjectRenderCache, so the cache is always safe to use.
-    if (get().renderData[key]) return;
-
-    set((s) => ({
-      renderLoading: { ...s.renderLoading, [key]: true },
-      renderErrors: { ...s.renderErrors, [key]: null },
-    }));
     try {
-      const data = await fetchRender(projectId, config);
+      const data = await fetchRender(projectId, sourceName, pairId);
       set((s) => ({
         renderData: { ...s.renderData, [key]: data },
         renderLoading: { ...s.renderLoading, [key]: false },
@@ -124,12 +108,29 @@ export const useProjectStore = create<ProjectStoreState>()((set, get) => ({
     }
   },
 
-  getRender: (projectId: number, config: RenderConfig) => {
-    const key = `${projectId}-${config.source}-${config.pair}-${config.candleBullishColor ?? ''}-${config.candleBearishColor ?? ''}`;
-    return {
-      data: get().renderData[key] ?? null,
-      loading: get().renderLoading[key] ?? false,
-      error: get().renderErrors[key] ?? null,
-    };
+  /**
+   * Update backend settings for a project (timeFrame, timeRange, candleColors).
+   * Clears ALL render caches for this project since every pair's render will
+   * be stale after a settings change.  The updated project detail is stored so
+   * the UI reflects the new state immediately, and the effect in ProjectView
+   * will re-trigger loadRender() for the currently active pair.
+   */
+  updateSettings: async (projectId: string, settings: UpdateSettingsRequest) => {
+    try {
+      const updatedDetail = await updateProjectSettings(projectId, settings);
+      set((s) => {
+        // Remove all render cache entries for this project (all pairs).
+        const prefix = `${projectId}:`;
+        return {
+          projectDetails: { ...s.projectDetails, [projectId]: updatedDetail },
+          renderData: filterOutPrefix(s.renderData, prefix),
+          renderLoading: filterOutPrefix(s.renderLoading, prefix),
+          renderErrors: filterOutPrefix(s.renderErrors, prefix),
+        };
+      });
+    } catch (err) {
+      console.error('Failed to update project settings', projectId, err);
+      throw err;
+    }
   },
 }));

@@ -6,6 +6,7 @@ import (
 	"candle-engine/pkg/sources"
 	"fmt"
 	"slices"
+	"sync"
 	"time"
 )
 
@@ -22,6 +23,7 @@ type ChartProject struct {
 	Colors         sources.CandleColorConfig `json:"colors"`
 
 	// Non-serialised – injected at startup or after load.
+	mu  sync.RWMutex   `json:"-"`
 	reg *registry.Registry `json:"-"`
 }
 
@@ -62,30 +64,50 @@ func NewChartProject(id, title string, cfg ChartProjectConfig) *ChartProject {
 }
 
 func (c *ChartProject) SetRegistry(r *registry.Registry) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.reg = r
 }
 
 func (c *ChartProject) GetID() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return c.ID
 }
 
 func (c *ChartProject) GetTitle() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return c.Title
 }
 
 func (c *ChartProject) GetTimeFrame() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return c.TimeFrame
 }
 
 func (c *ChartProject) GetTimeRange() sources.TimeRange {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return c.TimeRange
 }
 
 func (c *ChartProject) GetLoadedPairs() []sources.SourcePairId {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return c.SelectedPairs
 }
 
+func (c *ChartProject) GetColors() sources.CandleColorConfig {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.Colors
+}
+
 func (c *ChartProject) GetAvailableTimeFrames() []string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	if c.reg == nil {
 		return []string{}
 	}
@@ -105,30 +127,40 @@ func (c *ChartProject) uniqueSourceNames() []string {
 }
 
 func (c *ChartProject) AddPair(pair sources.SourcePairId) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if !slices.Contains(c.SelectedPairs, pair) {
 		c.SelectedPairs = append(c.SelectedPairs, pair)
 	}
 }
 
 func (c *ChartProject) RemovePair(pair sources.SourcePairId) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.SelectedPairs = slices.DeleteFunc(c.SelectedPairs, func(p sources.SourcePairId) bool {
 		return p == pair
 	})
 }
 
 func (c *ChartProject) AddIndicatorByName(name string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if !slices.Contains(c.IndicatorNames, name) {
 		c.IndicatorNames = append(c.IndicatorNames, name)
 	}
 }
 
 func (c *ChartProject) RemoveIndicatorByName(name string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.IndicatorNames = slices.DeleteFunc(c.IndicatorNames, func(n string) bool {
 		return n == name
 	})
 }
 
 func (c *ChartProject) UpdateConfig(cfg ChartProjectConfig) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if cfg.TimeFrame != "" {
 		c.TimeFrame = cfg.TimeFrame
 	}
@@ -146,32 +178,28 @@ func (c *ChartProject) UpdateConfig(cfg ChartProjectConfig) {
 	}
 }
 
-// GetRender fetches and assembles all data needed to render the chart.
-// Non-zero cfg fields are used for this render only; no project state is mutated.
-func (c *ChartProject) GetRender(cfg RenderConfig) (RenderableChartProject, error) {
+// GetRender fetches and assembles all data needed to render the chart for the
+// specified source/pair. sourceName and pairId identify the active pair whose
+// candle data and indicator output should be returned; if both are empty the
+// first loaded pair is used as a fallback.
+func (c *ChartProject) GetRender(sourceName, pairId string) (RenderableChartProject, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
 	if c.reg == nil {
 		partial := NewRenderableChartProject()
 		partial.ProjectErrors = []error{fmt.Errorf("registry not set on project '%s'", c.Title)}
 		return partial, nil
 	}
 
-	timeFrame := c.TimeFrame
-	if cfg.TimeFrame != "" {
-		timeFrame = cfg.TimeFrame
-	}
-	timeRange := c.TimeRange
-	if !cfg.RangeFrom.IsZero() {
-		timeRange.Start = cfg.RangeFrom
-	}
-	if !cfg.RangeTo.IsZero() {
-		timeRange.End = cfg.RangeTo
-	}
-	colors := c.Colors
-	if cfg.CandleColors != nil {
-		colors = *cfg.CandleColors
+	// Resolve the active pair: use the supplied source/pair, or fall back to the
+	// first loaded pair when none is specified.
+	activePair := sources.SourcePairId{SourceName: sourceName, PairId: pairId}
+	if sourceName == "" && pairId == "" && len(c.SelectedPairs) > 0 {
+		activePair = c.SelectedPairs[0]
 	}
 
-	entries, width, err := c.reg.FetchSources(timeRange, c.SelectedPairs, timeFrame)
+	entries, width, err := c.reg.FetchSources(c.TimeRange, c.SelectedPairs, c.TimeFrame)
 	if err != nil {
 		partial := NewRenderableChartProject()
 		partial.ProjectErrors = []error{err}
@@ -180,8 +208,8 @@ func (c *ChartProject) GetRender(cfg RenderConfig) (RenderableChartProject, erro
 
 	sourceNames := c.uniqueSourceNames()
 	chartConfig := indicators.ChartConfig{
-		TimeFrameSeconds: c.reg.GetTimeFrameSeconds(sourceNames, timeFrame),
-		ActivePair:       cfg.ActivePair,
+		TimeFrameSeconds: c.reg.GetTimeFrameSeconds(sourceNames, c.TimeFrame),
+		ActivePair:       activePair,
 		LoadedPairs:      c.SelectedPairs,
 	}
 
@@ -205,13 +233,13 @@ func (c *ChartProject) GetRender(cfg RenderConfig) (RenderableChartProject, erro
 
 	renderableChartProject := NewRenderableChartProject()
 	renderableChartProject.Title = c.Title
-	renderableChartProject.TimeRange = timeRange
+	renderableChartProject.TimeRange = c.TimeRange
 	renderableChartProject.AvailableTimeFrames = c.reg.GetCommonTimeFrames(sourceNames)
-	renderableChartProject.ActiveTimeFrame = timeFrame
+	renderableChartProject.ActiveTimeFrame = c.TimeFrame
 	renderableChartProject.LoadedPairs = c.SelectedPairs
-	renderableChartProject.ActivePair = cfg.ActivePair
+	renderableChartProject.ActivePair = activePair
 	renderableChartProject.CandleData = entries
-	renderableChartProject.CandleColors = colors
+	renderableChartProject.CandleColors = c.Colors
 	renderableChartProject.IndicatorCharts = make(map[string][]RenderableIndicator)
 
 	for _, name := range c.IndicatorNames {
