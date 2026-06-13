@@ -261,6 +261,14 @@ export default function IndicatorPanel({ renderData, projectId }: IndicatorPanel
     [floatingWidgets, projectId]
   );
 
+  // Track viewport so percentage-based positions convert to correct pixels on resize
+  const [viewport, setViewport] = useState(() => ({ w: window.innerWidth, h: window.innerHeight }));
+  useEffect(() => {
+    const onResize = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   // ---------------------------------------------------------------------------
   // Resize handle
   // ---------------------------------------------------------------------------
@@ -292,14 +300,19 @@ export default function IndicatorPanel({ renderData, projectId }: IndicatorPanel
   // ---------------------------------------------------------------------------
   const floatWidget = useCallback(
     (indicatorName: string) => {
-      const existing = floatingForProject.find((w) => w.id === indicatorName);
-      if (existing) return;
+      if (floatingForProject.find((w) => w.id === indicatorName)) return;
       setFloatingWidgets(projectId, [
         ...floatingForProject,
-        { id: indicatorName, x: FLOATING_DEFAULT_X, y: FLOATING_DEFAULT_Y, w: FLOATING_DEFAULT_W, h: FLOATING_DEFAULT_H },
+        {
+          id: indicatorName,
+          xPct: FLOATING_DEFAULT_X / viewport.w,
+          yPct: FLOATING_DEFAULT_Y / viewport.h,
+          w: FLOATING_DEFAULT_W,
+          h: FLOATING_DEFAULT_H,
+        },
       ]);
     },
-    [floatingForProject, projectId, setFloatingWidgets]
+    [floatingForProject, projectId, setFloatingWidgets, viewport]
   );
 
   const snapBackWidget = useCallback(
@@ -312,14 +325,19 @@ export default function IndicatorPanel({ renderData, projectId }: IndicatorPanel
     [floatingForProject, projectId, setFloatingWidgets]
   );
 
+  // Pixels come in from the drag; convert to viewport fractions before storing
   const updateWidgetPosition = useCallback(
     (indicatorName: string, x: number, y: number) => {
       setFloatingWidgets(
         projectId,
-        floatingForProject.map((w) => (w.id === indicatorName ? { ...w, x, y } : w))
+        floatingForProject.map((w) =>
+          w.id === indicatorName
+            ? { ...w, xPct: x / viewport.w, yPct: y / viewport.h }
+            : w
+        )
       );
     },
-    [floatingForProject, projectId, setFloatingWidgets]
+    [floatingForProject, projectId, setFloatingWidgets, viewport]
   );
 
   const updateWidgetSize = useCallback(
@@ -334,28 +352,6 @@ export default function IndicatorPanel({ renderData, projectId }: IndicatorPanel
 
   const snapBackAllWidgets = useCallback(() => {
     setFloatingWidgets(projectId, []);
-  }, [projectId, setFloatingWidgets]);
-
-  // ---------------------------------------------------------------------------
-  // Clamp floating widget positions on window resize
-  // ---------------------------------------------------------------------------
-  // Keep a ref so the resize handler always sees fresh positions without
-  // needing to be re-registered on every state change.
-  const floatingForProjectRef = useRef(floatingForProject);
-  useEffect(() => { floatingForProjectRef.current = floatingForProject; }, [floatingForProject]);
-
-  useEffect(() => {
-    const onWindowResize = () => {
-      const clamped = floatingForProjectRef.current.map((fw) => ({
-        ...fw,
-        x: Math.min(fw.x, Math.max(0, window.innerWidth - fw.w)),
-        y: Math.min(fw.y, Math.max(0, window.innerHeight - FLOATING_HEADER_H)),
-      }));
-      setFloatingWidgets(projectId, clamped);
-    };
-
-    window.addEventListener('resize', onWindowResize);
-    return () => window.removeEventListener('resize', onWindowResize);
   }, [projectId, setFloatingWidgets]);
 
   // ---------------------------------------------------------------------------
@@ -387,16 +383,22 @@ export default function IndicatorPanel({ renderData, projectId }: IndicatorPanel
     const ind = drawerIndicators.find((i) => i.name === fw.id);
     if (!ind) return null;
     const collection = getLastValidCollection(ind.plotPoints);
+    const w = fw.w ?? FLOATING_DEFAULT_W;
+    const h = fw.h ?? FLOATING_DEFAULT_H;
+    // Convert stored fractions to pixels, clamping so the widget stays on-screen
+    // even if it is wider/taller than the current viewport.
+    const x = Math.min(Math.round(fw.xPct * viewport.w), Math.max(0, viewport.w - w));
+    const y = Math.min(Math.round(fw.yPct * viewport.h), Math.max(0, viewport.h - FLOATING_HEADER_H));
     return (
       <FloatingWidget
         key={fw.id}
         indicator={ind}
         collection={collection}
-        position={{ x: fw.x, y: fw.y }}
-        size={{ w: fw.w ?? FLOATING_DEFAULT_W, h: fw.h ?? FLOATING_DEFAULT_H }}
+        position={{ x, y }}
+        size={{ w, h }}
         onSnapBack={() => snapBackWidget(fw.id)}
-        onStop={(x, y) => updateWidgetPosition(fw.id, x, y)}
-        onResize={(w, h) => updateWidgetSize(fw.id, w, h)}
+        onStop={(px, py) => updateWidgetPosition(fw.id, px, py)}
+        onResize={(nw, nh) => updateWidgetSize(fw.id, nw, nh)}
       />
     );
   });

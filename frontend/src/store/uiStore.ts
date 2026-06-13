@@ -3,8 +3,8 @@ import { persist } from 'zustand/middleware';
 
 interface FloatingWidget {
   id: string;
-  x: number;
-  y: number;
+  xPct: number; // x as fraction of viewport width (0–1)
+  yPct: number; // y as fraction of viewport height (0–1)
   w: number;
   h: number;
 }
