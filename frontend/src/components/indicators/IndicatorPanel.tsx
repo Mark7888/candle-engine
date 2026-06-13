@@ -1,4 +1,4 @@
-import { useRef, useCallback, useMemo, useEffect } from 'react';
+import { useRef, useCallback, useMemo, useEffect, useState } from 'react';
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import ReactDOM from 'react-dom';
 import Draggable from 'react-draggable';
@@ -12,7 +12,7 @@ import {
   Divider,
   useColorMode,
 } from '@chakra-ui/react';
-import { MdExpandLess, MdExpandMore } from 'react-icons/md';
+import { MdExpandLess, MdExpandMore, MdCallReceived } from 'react-icons/md';
 import { useUIStore } from '../../store/uiStore';
 import WidgetCard from './WidgetCard';
 import TableWidget from './TableWidget';
@@ -106,6 +106,28 @@ function FloatingWidget({
   const { w, h } = size;
   const contentH = Math.max(FLOATING_MIN_CONTENT_H, h - FLOATING_HEADER_H);
 
+  // Controlled drag position — stays in sync with the store (e.g. after resize clamping)
+  const [dragPos, setDragPos] = useState({ x: position.x, y: position.y });
+  useEffect(() => {
+    setDragPos({ x: position.x, y: position.y });
+  }, [position.x, position.y]);
+
+  // Track live viewport size so drag bounds update when the window is resized
+  const [viewport, setViewport] = useState(() => ({ w: window.innerWidth, h: window.innerHeight }));
+  useEffect(() => {
+    const onResize = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Constrain dragging so the widget (at minimum its header) stays fully on-screen
+  const bounds = {
+    left: 0,
+    top: 0,
+    right: Math.max(0, viewport.w - w),
+    bottom: Math.max(0, viewport.h - FLOATING_HEADER_H),
+  };
+
   // Use refs to avoid stale closure in resize handler
   const wRef = useRef(w);
   const hRef = useRef(h);
@@ -140,9 +162,14 @@ function FloatingWidget({
   return ReactDOM.createPortal(
     <Draggable
       handle=".drag-handle"
-      defaultPosition={{ x: position.x, y: position.y }}
+      position={dragPos}
+      bounds={bounds}
       nodeRef={nodeRef}
-      onStop={(_e: DraggableEvent, data: DraggableData) => onStop(data.x, data.y)}
+      onDrag={(_e: DraggableEvent, data: DraggableData) => setDragPos({ x: data.x, y: data.y })}
+      onStop={(_e: DraggableEvent, data: DraggableData) => {
+        setDragPos({ x: data.x, y: data.y });
+        onStop(data.x, data.y);
+      }}
     >
       <Box
         ref={nodeRef}
@@ -305,6 +332,32 @@ export default function IndicatorPanel({ renderData, projectId }: IndicatorPanel
     [floatingForProject, projectId, setFloatingWidgets]
   );
 
+  const snapBackAllWidgets = useCallback(() => {
+    setFloatingWidgets(projectId, []);
+  }, [projectId, setFloatingWidgets]);
+
+  // ---------------------------------------------------------------------------
+  // Clamp floating widget positions on window resize
+  // ---------------------------------------------------------------------------
+  // Keep a ref so the resize handler always sees fresh positions without
+  // needing to be re-registered on every state change.
+  const floatingForProjectRef = useRef(floatingForProject);
+  useEffect(() => { floatingForProjectRef.current = floatingForProject; }, [floatingForProject]);
+
+  useEffect(() => {
+    const onWindowResize = () => {
+      const clamped = floatingForProjectRef.current.map((fw) => ({
+        ...fw,
+        x: Math.min(fw.x, Math.max(0, window.innerWidth - fw.w)),
+        y: Math.min(fw.y, Math.max(0, window.innerHeight - FLOATING_HEADER_H)),
+      }));
+      setFloatingWidgets(projectId, clamped);
+    };
+
+    window.addEventListener('resize', onWindowResize);
+    return () => window.removeEventListener('resize', onWindowResize);
+  }, [projectId, setFloatingWidgets]);
+
   // ---------------------------------------------------------------------------
   // Group widgets by targetChart
   // ---------------------------------------------------------------------------
@@ -385,13 +438,25 @@ export default function IndicatorPanel({ renderData, projectId }: IndicatorPanel
         <Text fontSize="sm" fontWeight="semibold">
           Indicators
         </Text>
-        <IconButton
-          icon={isOpen ? <MdExpandMore size={18} /> : <MdExpandLess size={18} />}
-          size="xs"
-          variant="ghost"
-          aria-label={isOpen ? 'Collapse indicator panel' : 'Expand indicator panel'}
-          onClick={() => setOpen(!isOpen)}
-        />
+        <HStack spacing={1}>
+          {floatingForProject.length > 0 && (
+            <IconButton
+              icon={<MdCallReceived size={14} />}
+              size="xs"
+              variant="ghost"
+              aria-label="Recover all floating widgets"
+              title="Recover all floating widgets"
+              onClick={snapBackAllWidgets}
+            />
+          )}
+          <IconButton
+            icon={isOpen ? <MdExpandMore size={18} /> : <MdExpandLess size={18} />}
+            size="xs"
+            variant="ghost"
+            aria-label={isOpen ? 'Collapse indicator panel' : 'Expand indicator panel'}
+            onClick={() => setOpen(!isOpen)}
+          />
+        </HStack>
       </HStack>
 
       {/* Content — only when open */}
