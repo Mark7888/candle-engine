@@ -115,7 +115,8 @@ func (c *CoinbaseSource) fetchDataIfNeeded(pairId string, granularity int, timeR
 	// https://docs.cdp.coinbase.com/exchange/rest-api/rate-limits
 
 	const maxCandlesPerRequest = 300
-	candleCount := int(timeRange.End.Sub(timeRange.Start).Seconds()) / granularity
+	// Both boundaries are inclusive, so a span of n granularities holds n+1 candles.
+	candleCount := int(timeRange.End.Sub(timeRange.Start).Seconds())/granularity + 1
 	requestCount := (candleCount + maxCandlesPerRequest - 1) / maxCandlesPerRequest
 
 	if requestCount == 0 {
@@ -129,7 +130,9 @@ func (c *CoinbaseSource) fetchDataIfNeeded(pairId string, granularity int, timeR
 		// fmt.Println("Fetching segment", i+1, "of", requestCount, " for Coinbase:", pairId)
 
 		segmentStart := timeRange.Start.Add(time.Duration(i*maxCandlesPerRequest*granularity) * time.Second)
-		segmentEnd := segmentStart.Add(time.Duration(maxCandlesPerRequest*granularity) * time.Second)
+		// Span exactly maxCandlesPerRequest candles: a wider window would be
+		// truncated to the newest 300 by the API, dropping its oldest candle.
+		segmentEnd := segmentStart.Add(time.Duration((maxCandlesPerRequest-1)*granularity) * time.Second)
 
 		if segmentEnd.After(timeRange.End) {
 			segmentEnd = timeRange.End
@@ -161,13 +164,16 @@ func (c *CoinbaseSource) fetchDataIfNeeded(pairId string, granularity int, timeR
 			})
 		}
 
+		// The Coinbase API returns each response in reverse chronological order.
+		// Reverse per segment – reversing only the concatenated result would put
+		// the segments themselves in descending order, leaving the overall slice
+		// unsorted (ascending runs in descending order).
+		slices.Reverse(candles)
+
 		if candles != nil {
 			allCandles = append(allCandles, candles...)
 		}
 	}
-
-	// Coinbase API returns candles in reverse chronological order, so we need to reverse them
-	slices.Reverse(allCandles)
 
 	return allCandles, nil
 }

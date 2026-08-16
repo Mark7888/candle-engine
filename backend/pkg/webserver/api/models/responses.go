@@ -90,11 +90,13 @@ type IndicatorData struct {
 }
 
 // LogEntry represents a single log line produced by an indicator.
+// Time is omitted for logs that are not tied to a specific candle (project and
+// rendering errors), so the client can render them without a bogus timestamp.
 type LogEntry struct {
-	Indicator string    `json:"indicator"`
-	Level     string    `json:"level"`
-	Time      time.Time `json:"time"`
-	Message   string    `json:"message"`
+	Indicator string     `json:"indicator"`
+	Level     string     `json:"level"`
+	Time      *time.Time `json:"time,omitempty"`
+	Message   string     `json:"message"`
 }
 
 // ProjectRenderResponse is returned by GET /api/v1/projects/:id/render.

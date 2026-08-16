@@ -75,7 +75,15 @@ func (d *DemoLineIndicator) HandleEntry(points indicators.PlotPointCollectionHis
 
 	var sum float64
 	for i := 0; i < period; i++ {
-		sum += chartsData.GetEntry(config.ActivePair, i).Close
+		entry := chartsData.GetEntry(config.ActivePair, i)
+		// Skip windows containing placeholder entries: this line shares the main
+		// chart's y-axis with the candles, so a value derived from them would
+		// rescale the axis and flatten the candles.
+		if entry == nil || !entry.IsValid() {
+			handler.SetSingleOutput(indicators.NewInvalidPlotPoint())
+			return handler, nil
+		}
+		sum += entry.Close
 	}
 
 	handler.SetSingleOutput(indicators.PlotPoint{

@@ -51,6 +51,14 @@ func (r *KAMAIndicator) HandleEntry(points indicators.PlotPointCollectionHistory
 	current := chartsData.GetEntry(config.ActivePair, 0)
 	past := chartsData.GetEntry(config.ActivePair, r.Len)
 
+	// Placeholder entries (pairs whose history starts later than the chart's
+	// other pairs) carry no real price. Plotting a value derived from them would
+	// stretch the main chart's y-axis and flatten every real candle.
+	if current == nil || past == nil || !current.IsValid() || !past.IsValid() {
+		handler.SetSingleOutput(indicators.NewInvalidPlotPoint())
+		return handler, nil
+	}
+
 	change := math.Abs(current.Close - past.Close)
 	var volatility float64
 	for i := 0; i < r.Len; i++ {

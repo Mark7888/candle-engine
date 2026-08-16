@@ -728,3 +728,137 @@ func TestGetData_StressParallelReadsAndWrites(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+// -----------------------------------------------------------------------------
+// Regression: unsorted upstream data must not leak out-of-range entries
+// -----------------------------------------------------------------------------
+
+// reverseChunks concatenates the chunks in reverse order, mimicking a source
+// that pages through a range but returns the pages newest-first (the shape the
+// Coinbase source used to produce for multi-segment fetches).
+func reverseChunks(chunks ...[]sources.ChartEntry) []sources.ChartEntry {
+	var out []sources.ChartEntry
+	for i := len(chunks) - 1; i >= 0; i-- {
+		out = append(out, chunks[i]...)
+	}
+	return out
+}
+
+func TestMergeEntries_SortsUnsortedInput(t *testing.T) {
+	// A single fetch (no existing cache) whose pages arrived out of order.
+	unsorted := reverseChunks(makeEntries(0, 2), makeEntries(3, 5))
+
+	merged := mergeEntries(nil, unsorted)
+
+	if got, want := mustTimestamps(merged), []int{0, 1, 2, 3, 4, 5}; !equalInts(got, want) {
+		t.Errorf("expected sorted timestamps %v, got %v", want, got)
+	}
+}
+
+func TestMergeEntries_DedupesAcrossLocations(t *testing.T) {
+	// Entries reloaded from the cache file parse as UTC while freshly fetched
+	// ones carry the local zone; the same instant must still collapse to one
+	// entry rather than producing a duplicate candle.
+	utcEntry := sources.ChartEntry{Timestamp: hour(1).UTC(), Close: 1}
+	localEntry := sources.ChartEntry{Timestamp: hour(1).In(time.FixedZone("X", 3600)), Close: 2}
+
+	merged := mergeEntries([]sources.ChartEntry{utcEntry}, []sources.ChartEntry{localEntry})
+
+	if len(merged) != 1 {
+		t.Fatalf("expected same instant to dedupe to 1 entry, got %d", len(merged))
+	}
+	if merged[0].Close != 2 {
+		t.Errorf("new entry should take precedence, got Close=%v", merged[0].Close)
+	}
+}
+
+// TestGetData_UnsortedSourceStaysInRange is the regression test for the chart
+// showing candles far older than the requested range: extractEntries binary
+// searches the cache, so unsorted entries made it return an arbitrary window of
+// everything ever cached for that pair.
+func TestGetData_UnsortedSourceStaysInRange(t *testing.T) {
+	mock := newMockSource(nil, nil)
+	mock.handler = func(_, _ string, r sources.TimeRange) ([]sources.ChartEntry, error) {
+		// Serve the range in two pages, newest page first.
+		all := filterEntries(makeEntries(0, 100), r)
+		if len(all) < 2 {
+			return all, nil
+		}
+		mid := len(all) / 2
+		return reverseChunks(all[:mid], all[mid:]), nil
+	}
+	cs := newCS(mock, false, t)
+
+	// Warm the cache with a wide range, the way an earlier, wider chart setting
+	// would have.
+	if _, err := cs.GetData("BTC", "1h", tr(0, 100)); err != nil {
+		t.Fatalf("warm-up GetData failed: %v", err)
+	}
+
+	// Now request a narrow, recent window – the equivalent of moving "From"
+	// forward on the chart.
+	got, err := cs.GetData("BTC", "1h", tr(90, 100))
+	if err != nil {
+		t.Fatalf("GetData failed: %v", err)
+	}
+
+	if len(got) == 0 {
+		t.Fatal("expected entries for the requested window, got none")
+	}
+	for i, e := range got {
+		if e.Timestamp.Before(hour(90)) || e.Timestamp.After(hour(100)) {
+			t.Fatalf("entry %d at %v is outside the requested range [%v, %v]",
+				i, e.Timestamp, hour(90), hour(100))
+		}
+		if i > 0 && !e.Timestamp.After(got[i-1].Timestamp) {
+			t.Fatalf("entries not sorted ascending at index %d", i)
+		}
+	}
+}
+
+func TestLoadFromFile_SortsUnsortedCache(t *testing.T) {
+	dir := t.TempDir()
+	filePath := filepath.Join(dir, "cache.json")
+
+	// Write a cache file whose entries are out of order, as produced by an
+	// older build.
+	pf := persistFormat{
+		Version: persistVersion,
+		Data: map[string]tfCache{
+			"BTC|1h": {
+				Entries: reverseChunks(makeEntries(0, 4), makeEntries(5, 9)),
+				Covered: []interval{{Start: hour(0), End: hour(9)}},
+			},
+		},
+	}
+	raw, err := json.Marshal(pf)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if err := os.WriteFile(filePath, raw, 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	mock := newMockSource(nil, makeEntries(0, 9))
+	cs := NewCachedSource(mock, filePath)
+
+	got, err := cs.GetData("BTC", "1h", tr(7, 9))
+	if err != nil {
+		t.Fatalf("GetData failed: %v", err)
+	}
+	if want := []int{7, 8, 9}; !equalInts(mustTimestamps(got), want) {
+		t.Errorf("expected %v from a repaired cache, got %v", want, mustTimestamps(got))
+	}
+}
+
+func equalInts(a, b []int) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}

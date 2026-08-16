@@ -127,7 +127,7 @@ func (r *Registry) alignChartData(rawData map[sources.SourcePairId][]sources.Cha
 	timestamps := r.collectAllTimestamps(rawData)
 	aligned := make(map[sources.SourcePairId][]sources.ChartEntry)
 	for pairId, entries := range rawData {
-		aligned[pairId] = sources.ForwardFillInvalidEntries(r.createAlignedEntries(entries, timestamps))
+		aligned[pairId] = sources.FillInvalidEntries(r.createAlignedEntries(entries, timestamps))
 	}
 	return aligned, nil
 }
