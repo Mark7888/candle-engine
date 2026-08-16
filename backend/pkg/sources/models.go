@@ -34,7 +34,17 @@ func GenerateInvalidEntry(timestamp time.Time) ChartEntry {
 	}
 }
 
+// IsValid reports whether the entry holds real market data.
+//
+// Entries that were only produced to align this pair with another pair's
+// timestamps are never valid, even after FillInvalidEntries has replaced their
+// sentinel numbers with plausible neighbouring values – the Invalid flag is the
+// authoritative signal, the value check only guards against sentinels that were
+// never filled.
 func (c ChartEntry) IsValid() bool {
+	if c.Invalid {
+		return false
+	}
 	return c.Open >= 0 && c.High >= 0 && c.Low >= 0 && c.Close >= 0 && c.Volume >= 0
 }
 

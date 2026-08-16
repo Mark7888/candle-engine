@@ -247,6 +247,19 @@ function buildAreaSeries(
   });
 }
 
+/**
+ * True when every OHLC value is a real, plottable price.
+ *
+ * Placeholder entries carry sentinel numbers (e.g. -999); letting one through
+ * stretches the shared y-axis so far that real candles collapse into wick-thin
+ * lines, so anything non-finite or negative is rendered as a gap instead.
+ */
+function hasPlottableOhlc(e: CandleEntry): boolean {
+  return [e.open, e.close, e.low, e.high].every(
+    (v) => Number.isFinite(v) && v >= 0
+  );
+}
+
 function buildCandlestickSeries(
   candleEntries: CandleEntry[],
   candleColors: CandleColors,
@@ -254,7 +267,7 @@ function buildCandlestickSeries(
   yAxisIndex: number
 ): EchartsObj {
   const data = candleEntries.map((e) =>
-    e.invalid ? '-' : [e.open, e.close, e.low, e.high]
+    e.invalid || !hasPlottableOhlc(e) ? '-' : [e.open, e.close, e.low, e.high]
   );
   return {
     name: 'Candlestick',

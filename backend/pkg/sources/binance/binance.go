@@ -127,7 +127,8 @@ func (c *BinanceSource) fetchDataIfNeeded(pairId string, granularity int, timeRa
 	// TODO - Implement rate limiting handling as per Binance API guidelines.
 
 	const maxCandlesPerRequest = 1500 // Binance allows up to 1500 candles per request
-	candleCount := int(timeRange.End.Sub(timeRange.Start).Seconds()) / granularity
+	// Both boundaries are inclusive, so a span of n granularities holds n+1 candles.
+	candleCount := int(timeRange.End.Sub(timeRange.Start).Seconds())/granularity + 1
 	requestCount := (candleCount + maxCandlesPerRequest - 1) / maxCandlesPerRequest
 
 	if requestCount == 0 {
@@ -148,7 +149,9 @@ func (c *BinanceSource) fetchDataIfNeeded(pairId string, granularity int, timeRa
 	// Fetch data in segments if needed
 	for i := 0; i < requestCount; i++ {
 		segmentStart := timeRange.Start.Add(time.Duration(i*maxCandlesPerRequest*granularity) * time.Second)
-		segmentEnd := segmentStart.Add(time.Duration(maxCandlesPerRequest*granularity) * time.Second)
+		// Span exactly maxCandlesPerRequest candles so the API's limit never
+		// truncates a segment and leaves a hole between it and the next one.
+		segmentEnd := segmentStart.Add(time.Duration((maxCandlesPerRequest-1)*granularity) * time.Second)
 
 		if segmentEnd.After(timeRange.End) {
 			segmentEnd = timeRange.End

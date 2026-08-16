@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"sort"
 
 	"candle-engine/pkg/chartmanager"
 	"candle-engine/pkg/chartproject"
@@ -10,6 +11,33 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+// sortedKeys returns the map's keys in ascending order, giving map-backed data
+// a deterministic iteration order in responses.
+func sortedKeys[V any](m map[string]V) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+// sortLogsByTime orders log entries chronologically so that lines from every
+// indicator are interleaved into a single timeline rather than appearing in
+// per-indicator blocks. The sort is stable, so entries sharing a timestamp keep
+// the order they were collected in, and untimed entries (project and rendering
+// errors, which are not tied to a candle) stay at the front.
+func sortLogsByTime(logs []models.LogEntry) {
+	sort.SliceStable(logs, func(i, j int) bool {
+		a, b := logs[i].Time, logs[j].Time
+		if a == nil || b == nil {
+			// nil sorts first; two nils compare equal and keep their order.
+			return a == nil && b != nil
+		}
+		return a.Before(*b)
+	})
+}
 
 // indicatorTypeName converts the internal IndicatorType int to a stable string
 // name that the frontend can use to select the correct rendering strategy.
@@ -148,11 +176,14 @@ func RenderProject(c *gin.Context) {
 	// --- Indicator data ---
 	// Flatten the per-chart map into a single slice; TargetChart is included on
 	// each indicator so the frontend can re-group them as needed.
+	// Iterate the map in sorted key order: Go randomises map iteration, so
+	// without this the indicators – and the logs collected alongside them –
+	// would come back in a different order on every request.
 	var indicatorData []models.IndicatorData
 	var logs []models.LogEntry
 
-	for _, indicatorGroup := range render.IndicatorCharts {
-		for _, ind := range indicatorGroup {
+	for _, chartID := range sortedKeys(render.IndicatorCharts) {
+		for _, ind := range render.IndicatorCharts[chartID] {
 			// Convert plot point collections.
 			plotPoints := make([]models.PlotPointCollection, len(ind.PlotPoints))
 			for i, coll := range ind.PlotPoints {
@@ -197,10 +228,11 @@ func RenderProject(c *gin.Context) {
 				}
 			}
 			for _, logEntry := range ind.Logs {
+				logTime := logEntry.Time
 				logs = append(logs, models.LogEntry{
 					Indicator: ind.Name,
 					Level:     string(logEntry.Level),
-					Time:      logEntry.Time,
+					Time:      &logTime,
 					Message:   logEntry.Message,
 				})
 			}
@@ -222,6 +254,7 @@ func RenderProject(c *gin.Context) {
 	if logs == nil {
 		logs = []models.LogEntry{}
 	}
+	sortLogsByTime(logs)
 
 	ap := render.ActivePair
 	renderTr := render.TimeRange

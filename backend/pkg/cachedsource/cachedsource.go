@@ -258,6 +258,10 @@ func (c *CachedSource) loadFromFile() error {
 	c.mu.Lock()
 	for k, tf := range pf.Data {
 		copied := tf
+		// Cache files written before entries were guaranteed to be sorted may
+		// hold out-of-order data, which would break the binary search in
+		// extractEntries. Restore the invariant on load.
+		copied.Entries = sortEntries(copied.Entries)
 		c.data[k] = &copied
 	}
 	c.mu.Unlock()
@@ -407,32 +411,42 @@ func addCoveredInterval(covered []interval, newIv interval) []interval {
 }
 
 // mergeEntries returns a sorted, deduplicated union of two entry slices.
-// Both inputs must be sorted ascending by Timestamp.
+// Neither input has to be sorted: upstream sources are not trusted to return
+// entries in chronological order, and extractEntries binary-searches the cache,
+// so the ascending invariant is established here rather than assumed.
 // When the same timestamp appears in both slices, newEntries takes precedence.
 func mergeEntries(existing, newEntries []sources.ChartEntry) []sources.ChartEntry {
 	if len(newEntries) == 0 {
-		return existing
+		return sortEntries(existing)
 	}
 	if len(existing) == 0 {
-		return newEntries
+		return sortEntries(newEntries)
 	}
 
-	combined := make(map[time.Time]sources.ChartEntry, len(existing)+len(newEntries))
+	// Key by instant, not by time.Time: values that describe the same moment in
+	// different locations (fresh fetches use time.Unix → Local, entries reloaded
+	// from the cache file parse as UTC) are distinct map keys but must dedupe.
+	combined := make(map[int64]sources.ChartEntry, len(existing)+len(newEntries))
 	for _, e := range existing {
-		combined[e.Timestamp] = e
+		combined[e.Timestamp.UnixNano()] = e
 	}
 	for _, e := range newEntries {
-		combined[e.Timestamp] = e
+		combined[e.Timestamp.UnixNano()] = e
 	}
 
 	result := make([]sources.ChartEntry, 0, len(combined))
 	for _, e := range combined {
 		result = append(result, e)
 	}
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].Timestamp.Before(result[j].Timestamp)
+	return sortEntries(result)
+}
+
+// sortEntries sorts entries ascending by Timestamp in place and returns them.
+func sortEntries(entries []sources.ChartEntry) []sources.ChartEntry {
+	sort.SliceStable(entries, func(i, j int) bool {
+		return entries[i].Timestamp.Before(entries[j].Timestamp)
 	})
-	return result
+	return entries
 }
 
 // extractEntries returns a copy of the entries in [want.Start, want.End] using
